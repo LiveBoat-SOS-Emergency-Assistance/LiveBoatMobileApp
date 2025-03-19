@@ -8,6 +8,7 @@
     "src",
     "App.tsx",
     "**/*.tsx",
-    "nativewind-env.d.ts"
+    "nativewind-env.d.ts",
+    "constants/theme.ts"
   ]
 }
