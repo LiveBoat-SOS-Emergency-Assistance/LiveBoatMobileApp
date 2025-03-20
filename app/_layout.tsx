@@ -1,33 +1,36 @@
 import { Stack } from "expo-router";
-import BackButton from "../components/Button/BackButton";
+import { StatusBar } from "react-native";
+import Toast from "react-native-toast-message";
 
-const StackLayout = () => {
+const RootLayout = () => {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Stack.Screen
-        name="(tabs)"
-        options={{ headerShown: false }}
-      ></Stack.Screen>
+    <>
+      <StatusBar hidden={false} barStyle={"dark-content"}></StatusBar>
+      <Stack
+        screenOptions={{
+          headerTitleAlign: "center",
+          headerStyle: { backgroundColor: "#fff" },
+          headerShadowVisible: false,
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-      <Stack.Screen
-        name="(auth)/login"
-        options={{
-          headerShown: true,
-          title: "",
-        }}
-      ></Stack.Screen>
-      <Stack.Screen
-        name="(auth)/register"
-        options={{
-          headerShown: true,
-          title: "",
-        }}
-      ></Stack.Screen>
-    </Stack>
+        <Stack.Screen
+          name="(auth)/login"
+          options={{ headerShown: true, title: "" }}
+        />
+        <Stack.Screen
+          name="(auth)/register"
+          options={{ headerShown: true, title: "" }}
+        />
+        <Stack.Screen
+          name="(auth)/forgot_password"
+          options={{ headerShown: true, title: "" }}
+        />
+      </Stack>
+      <Toast></Toast>
+    </>
   );
 };
-export default StackLayout;
+
+export default RootLayout;

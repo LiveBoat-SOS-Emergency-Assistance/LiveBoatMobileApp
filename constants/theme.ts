@@ -5,8 +5,8 @@ const FONTS = {
 };
 
 const COLORS = {
-  primary: "#eb4747",
+  primary: "#ed5a5a",
   secondary: "#404040",
   greyLight: "#d9d9d9",
 };
-export {FONTS, COLORS};
+export { FONTS, COLORS };
