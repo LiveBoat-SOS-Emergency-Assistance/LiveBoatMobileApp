@@ -1,5 +1,4 @@
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import tw from "twrnc";
 import Input from "../../components/Input/Input";
 import CustomButton from "../../components/Button/CustomButton";
 import Checkbox from "expo-checkbox";
@@ -9,15 +8,20 @@ import Toast from "react-native-toast-message";
 
 const Register = () => {
   const [isChecked, setIsChecked] = useState(false);
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [emailError, setEmailError] = useState(false);
+  const [phoneError, setPhoneError] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
+  // const validateEmail = (email: string) => {
+  //   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  //   return emailRegex.test(email);
+  // };
+  const validatePhoneNumber = (phone: string) => {
+    const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
+    return phoneRegex.test(phone);
   };
+
   const validatePassword = (password: string) => {
     if (password.length < 10) {
       return "Mật khẩu phải có ít nhất 10 ký tự.";
@@ -36,11 +40,12 @@ const Register = () => {
 
   const handleRegister = () => {
     setLoading(true);
-    if (!validateEmail(email)) {
-      setEmailError(true);
+    if (!validatePhoneNumber(phone)) {
+      setPhoneError(true);
       setLoading(false);
       return;
     }
+    setPhoneError(false);
     const passwordValidationMessage = validatePassword(password);
     if (passwordValidationMessage) {
       setPasswordError(passwordValidationMessage);
@@ -48,7 +53,7 @@ const Register = () => {
       return;
     }
     setPasswordError("");
-    setEmailError(false);
+    setPhoneError(false);
     Toast.show({
       type: "success",
       text1: "Thông báo",
@@ -60,19 +65,8 @@ const Register = () => {
   };
   return (
     <View className="bg-white w-full h-full min-h-dvh flex flex-col pt-10 relative">
-      <View className="flex gap-3 w-full flex-row items-center px-2  justify-center pb-5">
-        <View
-          style={tw.style(
-            "w-[60px] h-[60px] bg-[#ed5a5a] rounded-[90px] flex justify-center items-center"
-          )}
-        >
-          <Image
-            source={{
-              uri: "https://img.icons8.com/?size=100&id=EdlByEkcflBj&format=png",
-            }}
-            style={{ width: 30, height: 30, tintColor: "#ffffff" }}
-          />
-        </View>
+      <View className="flex gap-3 w-full flex-row items-start px-1  justify-center pb-5">
+        {/* <Logo></Logo> */}
         <Text className="font-bold text-[25px] text-[#404040]">
           Trở thành một phần của LiveBoat!
         </Text>
@@ -81,14 +75,15 @@ const Register = () => {
       <View className="flex flex-col gap-10 justify-center items-center w-full pt-5">
         <View className="flex flex-col justify-center items-center w-full gap-2">
           <Text className="text-start justify-start w-[90%] font-bold">
-            Email
+            Số điện thoại
           </Text>
           <Input
-            error={emailError}
-            value={email}
-            onChangeText={setEmail}
-            type="email"
-            placeholder="Email"
+            error={phoneError}
+            value={phone}
+            onChangeText={setPhone}
+            // type="number"
+            keyboardType="phone-pad"
+            placeholder="Số điện thoại"
           ></Input>
         </View>
         <View className="flex flex-col justify-center items-center w-full gap-2">
@@ -108,18 +103,18 @@ const Register = () => {
         <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
           <Image
             source={{
-              uri: "https://img.icons8.com/?size=100&id=82771&format=png&color=000000",
+              uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
             }}
-            style={{ width: 15, height: 15, tintColor: "#404040" }}
+            style={{ width: 15, height: 15 }}
           ></Image>
           <Text className="text-[12px]">Ít nhất 10 ký tự</Text>
         </View>
         <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
           <Image
             source={{
-              uri: "https://img.icons8.com/?size=100&id=82771&format=png&color=000000",
+              uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
             }}
-            style={{ width: 15, height: 15, tintColor: "#404040" }}
+            style={{ width: 15, height: 15 }}
           ></Image>
           <Text className="text-[12px]">
             Mật khẩu phải chứa số, chữ cái và ký tự đặc biệt
@@ -152,15 +147,6 @@ const Register = () => {
           onPress={() => router.replace("/login")}
         ></CustomButton>
       </View>
-
-      {/* <View className="w-full justify-center items-center bottom-0 absolute ">
-        <Text className="text-[11px]  mx-auto w-[80%] justify-center flex items-center text-center">
-          By proceeding, you agree to our
-          <Text className="font-bold"> Term of Use</Text> and confirm you have
-          read our
-          <Text className="font-bold"> Privacy and Cookie Statement</Text>
-        </Text>
-      </View> */}
     </View>
   );
 };

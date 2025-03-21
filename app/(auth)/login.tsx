@@ -6,22 +6,31 @@ import { router } from "expo-router";
 import { useState } from "react";
 import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
+import Logo from "../../components/Image/Logo";
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [emailError, setEmailError] = useState(false);
+  const [phoneError, setPhoneError] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
+  const validatePhoneNumber = (phone: string) => {
+    const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
+    return phoneRegex.test(phone);
   };
   const handleLogin = () => {
     setLoading(true);
-    if (!validateEmail(email)) {
-      setEmailError(true);
+    if (!validatePhoneNumber(phone)) {
+      setPhoneError(true);
       setLoading(false);
       return;
     }
+    setPhoneError(false);
+    if (!password) {
+      setPasswordError("Vui lòng nhập mật khẩu");
+      setLoading(false);
+      return;
+    }
+    setPasswordError("");
     Toast.show({
       type: "error",
       text1: "Thông báo",
@@ -30,25 +39,13 @@ const Login = () => {
       visibilityTime: 2000,
     });
     setLoading(false);
-    console.log(email, password);
+    console.log(phone, password);
   };
   return (
     <>
       <StatusBar style="dark"></StatusBar>
       <View className="bg-white w-full h-full flex flex-col pt-10 relative">
         <View className="flex gap-3 w-full flex-row items-center px-2  justify-center pb-5">
-          <View
-            style={tw.style(
-              "w-[60px] h-[60px] bg-[#ed5a5a] rounded-[90px] flex justify-center items-center"
-            )}
-          >
-            <Image
-              source={{
-                uri: "https://img.icons8.com/?size=100&id=EdlByEkcflBj&format=png",
-              }}
-              style={{ width: 30, height: 30, tintColor: "#ffffff" }}
-            />
-          </View>
           <Text className="font-bold text-[25px] text-[#404040]">
             Chào bạn, mừng bạn trở lại!
           </Text>
@@ -57,14 +54,15 @@ const Login = () => {
         <View className="flex flex-col gap-10 justify-center items-center w-full pt-5">
           <View className="flex flex-col justify-center items-center w-full gap-2">
             <Text className="text-start justify-start w-[90%] font-bold">
-              Email
+              Số điện thoại
             </Text>
             <Input
-              value={email}
-              onChangeText={setEmail}
-              error={emailError}
-              type="email"
-              placeholder="Email"
+              error={phoneError}
+              value={phone}
+              onChangeText={setPhone}
+              // type="number"
+              keyboardType="phone-pad"
+              placeholder="Số điện thoại"
             ></Input>
           </View>
           <View className="flex flex-col justify-center items-center w-full gap-2">
@@ -75,6 +73,7 @@ const Login = () => {
               value={password}
               onChangeText={setPassword}
               type="password"
+              errorPassword={passwordError}
               placeholder="Mật khẩu"
             ></Input>
           </View>

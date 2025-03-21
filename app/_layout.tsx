@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { StatusBar } from "react-native";
+import { Image, StatusBar } from "react-native";
 import Toast from "react-native-toast-message";
 
 const RootLayout = () => {
@@ -17,17 +17,53 @@ const RootLayout = () => {
 
         <Stack.Screen
           name="(auth)/login"
-          options={{ headerShown: true, title: "" }}
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
         />
         <Stack.Screen
           name="(auth)/register"
-          options={{ headerShown: true, title: "" }}
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
         />
         <Stack.Screen
           name="(auth)/forgot_password"
           options={{ headerShown: true, title: "" }}
         />
+        <Stack.Screen
+          name="(auth)/send_otp"
+          options={{ headerShown: true, title: "" }}
+        />
+        <Stack.Screen
+          name="(auth)/reset_password"
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
+        />
       </Stack>
+
       <Toast></Toast>
     </>
   );

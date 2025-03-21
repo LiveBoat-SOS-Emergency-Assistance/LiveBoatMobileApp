@@ -4,15 +4,22 @@ import { useRouter } from "expo-router";
 import CustomButton from "../../components/Button/CustomButton";
 import tw from "twrnc";
 import { StatusBar } from "expo-status-bar";
+import Toast from "react-native-toast-message";
 export default function home() {
   const router = useRouter();
-
+  const handleLoginViaGoogle = () => {
+    Toast.show({
+      type: "info",
+      text1: "Login via Google",
+      text2: "The feature will coming soon!",
+    });
+  };
   return (
     <>
       <StatusBar style="dark"></StatusBar>
       <View
         style={tw.style(
-          "flex-1 justify-center items-center w-full  flex flex-col relative gap-3 bg-white "
+          "flex-1 justify-center items-center w-full  flex flex-col relative gap-3 bg-white"
         )}
       >
         <View className="absolute top-7 flex flex-col justify-center items-center gap-3">
@@ -58,8 +65,7 @@ export default function home() {
               onPress={() => router.push("/register")}
             ></CustomButton>
             <Pressable
-              // onPress={() => router.push("/register")}
-              onPress={() => router.push("/forgot_password")}
+              onPress={handleLoginViaGoogle}
               className="bg-white py-3 flex items-center w-[100%] rounded-[30px] border-[#d9d9d9] border shadow-md flex-row justify-center gap-3"
             >
               <Image

@@ -26,12 +26,12 @@ const PinInput = ({ onComplete }: PinProps) => {
   };
 
   return (
-    <View className="flex-row justify-center space-x-2 gap-3 pt-10">
+    <View className="flex-row justify-center  gap-3 pt-10">
       {pin.map((_, index) => (
         <TextInput
           key={index}
           ref={(el) => (inputRefs.current[index] = el)}
-          className="w-16 h-16 border border-[#D9D9D9] outline-none text-center text-2xl rounded-[5px] shadow shadow-black bg-white"
+          className="w-[64px] h-[64px] border border-[#D9D9D9] outline-none text-center  text-2xl rounded-[5px]"
           keyboardType="number-pad"
           maxLength={1}
           value={pin[index]}

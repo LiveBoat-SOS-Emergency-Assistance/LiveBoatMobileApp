@@ -7,11 +7,11 @@ import {
 import tw from "twrnc";
 
 interface ButtonProps {
-  primary: boolean;
-  secondary: boolean;
+  primary?: boolean;
+  secondary?: boolean;
   title: string;
   isLoading?: boolean;
-  onPress: (event: GestureResponderEvent) => void;
+  onPress?: (event: GestureResponderEvent) => void;
 }
 
 const CustomButton = ({

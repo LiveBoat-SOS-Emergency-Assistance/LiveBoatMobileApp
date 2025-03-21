@@ -15,6 +15,7 @@ interface InputProps extends TextInputProps {
   onChangeText: (text: string) => void;
   error?: boolean;
   errorPassword?: string;
+  keyboardType?: any;
 }
 
 const Input = ({
@@ -24,6 +25,7 @@ const Input = ({
   onChangeText,
   error,
   errorPassword,
+  keyboardType,
   ...rest
 }: InputProps) => {
   const [focused, setFocused] = useState(false);
@@ -41,8 +43,9 @@ const Input = ({
       >
         <TextInput
           value={value}
+          keyboardType={keyboardType}
           onChangeText={onChangeText}
-          keyboardType={type === "email" ? "email-address" : "default"}
+          // keyboardType={type === "email" ? "email-address" : "default"}
           placeholder={placeholder}
           secureTextEntry={type === "password" && !isPasswordVisible}
           autoCapitalize={type === "email" ? "none" : "sentences"}
@@ -63,9 +66,9 @@ const Input = ({
           </TouchableOpacity>
         )}
       </View>
-      {type === "email" && error && (
+      {error && (
         <Text className="text-red-500 text-[12px] w-[90%] justify-start text-start pt-1">
-          Email không hợp lệ
+          Số điện thoại không hợp lệ
         </Text>
       )}
       {type === "password" && errorPassword && (
