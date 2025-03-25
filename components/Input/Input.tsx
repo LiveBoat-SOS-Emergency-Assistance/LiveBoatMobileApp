@@ -48,7 +48,7 @@ const Input = ({
           // keyboardType={type === "email" ? "email-address" : "default"}
           placeholder={placeholder}
           secureTextEntry={type === "password" && !isPasswordVisible}
-          autoCapitalize={type === "email" ? "none" : "sentences"}
+          // autoCapitalize={type === "email" ? "none" : "sentences"}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           {...rest}

@@ -66,7 +66,6 @@ const Register = () => {
   return (
     <View className="bg-white w-full h-full min-h-dvh flex flex-col pt-10 relative">
       <View className="flex gap-3 w-full flex-row items-start px-1  justify-center pb-5">
-        {/* <Logo></Logo> */}
         <Text className="font-bold text-[25px] text-[#404040]">
           Trở thành một phần của LiveBoat!
         </Text>
@@ -81,8 +80,7 @@ const Register = () => {
             error={phoneError}
             value={phone}
             onChangeText={setPhone}
-            // type="number"
-            keyboardType="phone-pad"
+            keyboardType="number-pad"
             placeholder="Số điện thoại"
           ></Input>
         </View>

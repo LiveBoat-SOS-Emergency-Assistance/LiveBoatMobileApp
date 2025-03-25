@@ -61,7 +61,7 @@ const Login = () => {
               value={phone}
               onChangeText={setPhone}
               // type="number"
-              keyboardType="phone-pad"
+              keyboardType="number-pad"
               placeholder="Số điện thoại"
             ></Input>
           </View>

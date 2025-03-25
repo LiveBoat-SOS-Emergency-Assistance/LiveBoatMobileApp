@@ -37,7 +37,7 @@ const forgot_password = () => {
           <Input
             value={phone}
             onChangeText={setPhone}
-            keyboardType="phone-pad"
+            keyboardType="number-pad"
             placeholder="Số điện thoại"
             error={phoneError}
           ></Input>
