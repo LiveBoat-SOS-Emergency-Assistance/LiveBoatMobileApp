@@ -22,7 +22,7 @@ export default function home() {
           "flex-1 justify-center items-center w-full  flex flex-col relative gap-3 bg-white"
         )}
       >
-        <View className="absolute top-7 flex flex-col justify-center items-center gap-3">
+        <View className="absolute top-0 flex flex-col justify-center items-center gap-3">
           <Image
             source={require("../../assets/images/imageHomepage.png")}
             style={{ width: 320, height: 350 }}

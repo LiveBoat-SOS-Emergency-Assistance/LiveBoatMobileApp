@@ -39,28 +39,29 @@ const Register = () => {
   };
 
   const handleRegister = () => {
-    setLoading(true);
-    if (!validatePhoneNumber(phone)) {
-      setPhoneError(true);
-      setLoading(false);
-      return;
-    }
-    setPhoneError(false);
-    const passwordValidationMessage = validatePassword(password);
-    if (passwordValidationMessage) {
-      setPasswordError(passwordValidationMessage);
-      setLoading(false);
-      return;
-    }
-    setPasswordError("");
-    setPhoneError(false);
-    Toast.show({
-      type: "success",
-      text1: "Thông báo",
-      text2: "Bạn đã đăng ký thành công!",
-      position: "top",
-      visibilityTime: 2000,
-    });
+    // setLoading(true);
+    // if (!validatePhoneNumber(phone)) {
+    //   setPhoneError(true);
+    //   setLoading(false);
+    //   return;
+    // }
+    // setPhoneError(false);
+    // const passwordValidationMessage = validatePassword(password);
+    // if (passwordValidationMessage) {
+    //   setPasswordError(passwordValidationMessage);
+    //   setLoading(false);
+    //   return;
+    // }
+    // setPasswordError("");
+    // setPhoneError(false);
+    router.push("/verify_account");
+    // Toast.show({
+    //   type: "success",
+    //   text1: "Thông báo",
+    //   text2: "Bạn đã đăng ký thành công!",
+    //   position: "top",
+    //   visibilityTime: 2000,
+    // });
     setLoading(false);
   };
   return (

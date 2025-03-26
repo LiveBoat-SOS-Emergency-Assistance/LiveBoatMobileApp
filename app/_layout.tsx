@@ -62,6 +62,19 @@ const RootLayout = () => {
             ),
           }}
         />
+        <Stack.Screen
+          name="(auth)/verify_account"
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
+        />
       </Stack>
 
       <Toast></Toast>
