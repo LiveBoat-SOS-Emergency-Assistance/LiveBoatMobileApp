@@ -9,10 +9,10 @@ import {
 import { Eye, EyeOff } from "lucide-react-native";
 
 interface InputProps extends TextInputProps {
-  placeholder: string;
+  placeholder?: string;
   type?: string;
-  value: string;
-  onChangeText: (text: string) => void;
+  value?: string;
+  onChangeText?: (text: string) => void;
   error?: boolean;
   errorPassword?: string;
   keyboardType?: any;
@@ -66,7 +66,12 @@ const Input = ({
           </TouchableOpacity>
         )}
       </View>
-      {error && (
+      {error && type === "email" && (
+        <Text className="text-red-500 text-[12px] w-[90%] justify-start text-start pt-1">
+          Email không hợp lệ
+        </Text>
+      )}
+      {error && type === "phone" && (
         <Text className="text-red-500 text-[12px] w-[90%] justify-start text-start pt-1">
           Số điện thoại không hợp lệ
         </Text>

@@ -1,12 +1,10 @@
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
-import tw from "twrnc";
 import Input from "../../components/Input/Input";
 import CustomButton from "../../components/Button/CustomButton";
 import { router } from "expo-router";
 import { useState } from "react";
 import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
-import Logo from "../../components/Image/Logo";
 const Login = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -60,7 +58,7 @@ const Login = () => {
               error={phoneError}
               value={phone}
               onChangeText={setPhone}
-              // type="number"
+              type="phone"
               keyboardType="number-pad"
               placeholder="Số điện thoại"
             ></Input>
@@ -80,7 +78,7 @@ const Login = () => {
         </View>
         <Pressable
           onPress={() => router.push("/forgot_password")}
-          className="w-full justify-center flex items-center pt-10"
+          className="w-full justify-center  flex items-center pt-10"
         >
           <Text className="font-bold underline w-[90%] ">Quên mật khẩu?</Text>
         </Pressable>

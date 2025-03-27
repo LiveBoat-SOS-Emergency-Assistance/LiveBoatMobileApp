@@ -1,13 +1,65 @@
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
-import tw from "twrnc";
-import { StatusBar } from "expo-status-bar";
+import { Pressable, Text, View } from "react-native";
 import PinInput from "../../components/Pin/PinInput";
 import CustomButton from "../../components/Button/CustomButton";
 import { router } from "expo-router";
 import ImageCustom from "../../components/Image/Image";
 import Logo from "../../components/Image/Logo";
 import OTPCountdown from "../../components/Pin/OTPCountdown";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "./AuthContext";
+import { useState } from "react";
+import Toast from "react-native-toast-message";
 const send_otp = () => {
+  const [otp, setOtp] = useState("");
+  const { send_otp, register } = useAuth();
+  const handleResetOTP = async () => {
+    const email = AsyncStorage.getItem("email");
+    if (email) {
+      await send_otp(email);
+      Toast.show({
+        type: "success",
+        text1: "Thông báo",
+        text2: "Mã OTP đã được gửi đến email của bạn!",
+        position: "top",
+        visibilityTime: 2000,
+      });
+    }
+  };
+  const handleCompleteRegister = async () => {
+    const phone = AsyncStorage.getItem("phone");
+    const password = AsyncStorage.getItem("password");
+    const email = AsyncStorage.getItem("email");
+
+    try {
+      if (phone && password && email && otp) {
+        await register!({
+          phone: phone,
+          password: password,
+          email: email,
+          code: otp,
+        });
+        router.push("/login");
+        Toast.show({
+          type: "success",
+          text1: "Thông báo",
+          text2: "Bạn đã đăng ký thành công!",
+          position: "top",
+          visibilityTime: 2000,
+        });
+      } else {
+        console.log("error");
+      }
+    } catch (error: any) {
+      console.error(error.response);
+      Toast.show({
+        type: "error",
+        text1: "Thông báo",
+        text2: "Mã OTP không hợp lệ!",
+        position: "top",
+        visibilityTime: 2000,
+      });
+    }
+  };
   return (
     <>
       <View className="flex flex-col bg-white w-full h-full min-h-dvh items-center py-2 gap-5">
@@ -21,13 +73,11 @@ const send_otp = () => {
           </Text>
         </View>
         <View className="w-full">
-          <PinInput
-            onComplete={(pin) => console.log("Mã PIN nhập:", pin)}
-          ></PinInput>
+          <PinInput onComplete={(pin) => setOtp(pin)}></PinInput>
         </View>
         <View className="w-[90%] pt-10 justify-center items-center gap-8">
           <CustomButton
-            onPress={() => router.push("/reset_password")}
+            onPress={handleCompleteRegister}
             primary={true}
             title="Tiếp tục"
           ></CustomButton>

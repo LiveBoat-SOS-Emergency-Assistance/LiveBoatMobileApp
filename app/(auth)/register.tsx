@@ -2,9 +2,10 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 import Input from "../../components/Input/Input";
 import CustomButton from "../../components/Button/CustomButton";
 import Checkbox from "expo-checkbox";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { router } from "expo-router";
-import Toast from "react-native-toast-message";
+import { useAuth } from "./AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Register = () => {
   const [isChecked, setIsChecked] = useState(false);
@@ -13,6 +14,7 @@ const Register = () => {
   const [phoneError, setPhoneError] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
   // const validateEmail = (email: string) => {
   //   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   //   return emailRegex.test(email);
@@ -38,23 +40,34 @@ const Register = () => {
     return "";
   };
 
-  const handleRegister = () => {
-    // setLoading(true);
-    // if (!validatePhoneNumber(phone)) {
-    //   setPhoneError(true);
-    //   setLoading(false);
-    //   return;
-    // }
-    // setPhoneError(false);
-    // const passwordValidationMessage = validatePassword(password);
-    // if (passwordValidationMessage) {
-    //   setPasswordError(passwordValidationMessage);
-    //   setLoading(false);
-    //   return;
-    // }
-    // setPasswordError("");
-    // setPhoneError(false);
+  const handleRegister = async () => {
+    setLoading(true);
+    if (!validatePhoneNumber(phone)) {
+      setPhoneError(true);
+      setLoading(false);
+      return;
+    }
+    setPhoneError(false);
+    const passwordValidationMessage = validatePassword(password);
+    if (passwordValidationMessage) {
+      setPasswordError(passwordValidationMessage);
+      setLoading(false);
+      return;
+    }
+    setPasswordError("");
+    setPhoneError(false);
+
+    AsyncStorage.setItem("phone", phone);
+    AsyncStorage.setItem("password", password);
     router.push("/verify_account");
+    // try {
+    //   await register!({
+    //     phone: phone.trim(),
+    //     password: password.trim(),
+    //   });
+    // } catch (error: any) {
+    //   console.error(error.response);
+    // }
     // Toast.show({
     //   type: "success",
     //   text1: "Thông báo",
@@ -80,6 +93,7 @@ const Register = () => {
           <Input
             error={phoneError}
             value={phone}
+            type="phone"
             onChangeText={setPhone}
             keyboardType="number-pad"
             placeholder="Số điện thoại"

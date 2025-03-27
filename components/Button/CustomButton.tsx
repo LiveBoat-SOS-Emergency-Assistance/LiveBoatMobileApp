@@ -9,6 +9,7 @@ import tw from "twrnc";
 interface ButtonProps {
   primary?: boolean;
   secondary?: boolean;
+  third?: boolean;
   title: string;
   isLoading?: boolean;
   onPress?: (event: GestureResponderEvent) => void;
@@ -17,6 +18,7 @@ interface ButtonProps {
 const CustomButton = ({
   primary,
   secondary,
+  third,
   title,
   isLoading,
   onPress,
@@ -27,7 +29,8 @@ const CustomButton = ({
       style={tw.style(
         "w-[100%] h-14 rounded-full justify-center items-center shadow-md text-[18px]",
         primary ? "bg-[#ed5a5a]" : "bg-gray-400",
-        secondary ? "bg-white border border-[#D9D9D9]" : ""
+        secondary ? "bg-white border border-[#D9D9D9]" : "",
+        third ? "bg-[#80C4E9]" : ""
       )}
     >
       {isLoading ? (
@@ -36,7 +39,7 @@ const CustomButton = ({
         <Text
           style={tw.style(
             " font-bold text-lg",
-            primary && "text-white",
+            (primary || third) && "text-white",
             secondary && "text-[#404040]"
           )}
         >

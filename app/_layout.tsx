@@ -1,10 +1,10 @@
 import { Stack } from "expo-router";
 import { Image, StatusBar } from "react-native";
 import Toast from "react-native-toast-message";
-
+import AuthProvider from "./(auth)/AuthContext";
 const RootLayout = () => {
   return (
-    <>
+    <AuthProvider>
       <StatusBar hidden={false} barStyle={"dark-content"}></StatusBar>
       <Stack
         screenOptions={{
@@ -75,10 +75,23 @@ const RootLayout = () => {
             ),
           }}
         />
+        <Stack.Screen
+          name="(auth)/verify_email_phone"
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
+        />
       </Stack>
 
       <Toast></Toast>
-    </>
+    </AuthProvider>
   );
 };
 
