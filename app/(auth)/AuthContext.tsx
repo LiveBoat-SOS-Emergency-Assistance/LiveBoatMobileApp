@@ -8,6 +8,7 @@ import React, {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authen } from "../../services/authentication";
 import { jwtServices } from "../../services/jwt";
+import { router } from "expo-router";
 
 interface RegisterData {
   phone: string;
@@ -63,21 +64,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setLoading(false);
       }
     };
+
     loadAccessToken();
-    // const loadUser = async () => {
-    //   try {
-    //     const storedUser = await AsyncStorage.getItem("user");
-    //     if (storedUser) {
-    //       setUser(JSON.parse(storedUser));
-    //     }
-    //   } catch (error) {
-    //     console.error("Error loading user:", error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-    // loadUser();
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      if (accessToken) {
+        router.replace("/(tabs)/home");
+      } else {
+        router.replace("/");
+      }
+    }
+  }, [loading, accessToken]);
 
   const get_access_token = async () => {
     try {
