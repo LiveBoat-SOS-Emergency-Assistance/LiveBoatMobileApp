@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "liveboatapp",
     "name": "liveboatapp",
     "slug": "liveboatapp",
     "version": "1.0.0",
@@ -19,11 +20,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.liveboatapp"
     },
     "web": {
       "favicon": "./assets/favicon.png",
-       "bundler": "metro"
-    }
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-router"
+    ]
   }
 }

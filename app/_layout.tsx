@@ -1,4 +1,4 @@
-import { router, Stack } from "expo-router";
+import { router, Stack, useRouter } from "expo-router";
 import { Image, StatusBar, View, ActivityIndicator } from "react-native";
 import Toast from "react-native-toast-message";
 import AuthProvider from "./(auth)/AuthContext";
@@ -6,38 +6,30 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
 
-// Giữ splash screen cho đến khi token kiểm tra xong
-SplashScreen.preventAutoHideAsync();
-
 const Layout = () => {
-  const [isLoading, setIsLoading] = useState(true);
-
+  const [tokenLoaded, setTokenLoaded] = useState(true);
   useEffect(() => {
     const checkLoginStatus = async () => {
-      try {
-        const token = await AsyncStorage.getItem("accessToken");
-        console.log("🔑 Token nhận được:", token);
+      const token = await AsyncStorage.getItem("accessToken");
+      // console.log("🔑 Token nhận được:", token);
 
-        if (token) {
-          console.log("🔄 Điều hướng đến: /(tabs)/home/index");
-          router.replace("/(tabs)/home/");
-        } else {
-          console.log("🔄 Điều hướng đến: / (Trang Login)");
-          router.replace("/");
-        }
-      } catch (error) {
-        console.error("Lỗi khi lấy token:", error);
-      } finally {
-        // Đảm bảo điều hướng xong mới ẩn splash screen
-        setIsLoading(false);
-        await SplashScreen.hideAsync();
+      if (token !== null && tokenLoaded === false) {
+        setTokenLoaded(true);
+        console.log("🔄 Điều hướng đến: /(tabs)/home/index");
+        router.replace("/(tabs)/home");
+      } else if (token === null && tokenLoaded === false) {
+        setTokenLoaded(true);
+        console.log("🔄 Điều hướng đến: / (Trang Login)");
+        router.replace("/");
       }
+
+      await SplashScreen.hideAsync();
     };
 
     checkLoginStatus();
-  }, []);
+  }, [tokenLoaded]);
 
-  if (isLoading) {
+  if (!tokenLoaded) {
     return (
       <View
         style={{
