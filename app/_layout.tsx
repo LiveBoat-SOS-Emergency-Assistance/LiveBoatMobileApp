@@ -7,43 +7,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
 
 const Layout = () => {
-  const [tokenLoaded, setTokenLoaded] = useState(true);
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      const token = await AsyncStorage.getItem("accessToken");
-      // console.log("🔑 Token nhận được:", token);
-
-      if (token !== null && tokenLoaded === false) {
-        setTokenLoaded(true);
-        console.log("🔄 Điều hướng đến: /(tabs)/home/index");
-        router.replace("/(tabs)/home");
-      } else if (token === null && tokenLoaded === false) {
-        setTokenLoaded(true);
-        console.log("🔄 Điều hướng đến: / (Trang Login)");
-        router.replace("/");
-      }
-
-      await SplashScreen.hideAsync();
-    };
-
-    checkLoginStatus();
-  }, [tokenLoaded]);
-
-  if (!tokenLoaded) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#fff",
-        }}
-      >
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
   return (
     <AuthProvider>
       <StatusBar hidden={false} barStyle={"dark-content"} />

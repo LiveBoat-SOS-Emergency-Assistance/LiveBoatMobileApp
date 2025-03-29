@@ -64,19 +64,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
     loadAccessToken();
-    // const loadUser = async () => {
-    //   try {
-    //     const storedUser = await AsyncStorage.getItem("user");
-    //     if (storedUser) {
-    //       setUser(JSON.parse(storedUser));
-    //     }
-    //   } catch (error) {
-    //     console.error("Error loading user:", error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-    // loadUser();
   }, []);
 
   const get_access_token = async () => {

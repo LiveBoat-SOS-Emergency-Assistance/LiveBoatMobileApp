@@ -1,10 +1,21 @@
-import { View, Text, StyleSheet, Image, Button, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Button,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import { FONTS, COLORS } from "../constants/theme";
-import { useRouter } from "expo-router";
+import { SplashScreen, useRouter } from "expo-router";
 import CustomButton from "../components/Button/CustomButton";
 import tw from "twrnc";
+import "../global.css";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
+import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function home() {
   const router = useRouter();
   const handleLoginViaGoogle = () => {
