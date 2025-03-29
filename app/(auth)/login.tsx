@@ -5,17 +5,19 @@ import { router } from "expo-router";
 import { useState } from "react";
 import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
+import { useAuth } from "./AuthContext";
 const Login = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [phoneError, setPhoneError] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const validatePhoneNumber = (phone: string) => {
     const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
     return phoneRegex.test(phone);
   };
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setLoading(true);
     if (!validatePhoneNumber(phone)) {
       setPhoneError(true);
@@ -29,15 +31,29 @@ const Login = () => {
       return;
     }
     setPasswordError("");
-    Toast.show({
-      type: "error",
-      text1: "Thông báo",
-      text2: "Tài khoản hoặc mật khẩu không hợp lệ!",
-      position: "top",
-      visibilityTime: 2000,
-    });
-    setLoading(false);
-    console.log(phone, password);
+    try {
+      await login!({ phone: phone, password: password });
+      setLoading(false);
+      Toast.show({
+        type: "success",
+        text1: "Thông báo",
+        text2: "Đăng nhập thành công!",
+        position: "top",
+        visibilityTime: 2000,
+      });
+      router.push("/(tabs)/home");
+    } catch (error: any) {
+      console.error(error.response);
+      Toast.show({
+        type: "error",
+        text1: "Thông báo",
+        text2: "Tài khoản hoặc mật khẩu không hợp lệ!",
+        position: "top",
+        visibilityTime: 2000,
+      });
+      setLoading(false);
+      console.log(phone, password);
+    }
   };
   return (
     <>
@@ -77,6 +93,7 @@ const Login = () => {
           </View>
         </View>
         <Pressable
+          // onPress={handleForgotPassword}
           onPress={() => router.push("/forgot_password")}
           className="w-full justify-center  flex items-center pt-10"
         >

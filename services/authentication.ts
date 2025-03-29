@@ -29,4 +29,32 @@ export class authen {
       throw error;
     }
   }
+  static async login(data: any) {
+    try {
+      const result = await authentication("/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: JSON.stringify(data),
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  static async reset_password(data: any) {
+    try {
+      const result = await authentication("/reset-password-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: JSON.stringify(data),
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
 }

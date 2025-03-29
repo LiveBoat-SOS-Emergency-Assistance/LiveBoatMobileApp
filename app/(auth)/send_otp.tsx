@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import PinInput from "../../components/Pin/PinInput";
 import CustomButton from "../../components/Button/CustomButton";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import ImageCustom from "../../components/Image/Image";
 import Logo from "../../components/Image/Logo";
 import OTPCountdown from "../../components/Pin/OTPCountdown";
@@ -12,45 +12,73 @@ import Toast from "react-native-toast-message";
 const send_otp = () => {
   const [otp, setOtp] = useState("");
   const { send_otp, register } = useAuth();
+  const { type } = useLocalSearchParams();
+  const [loading, setLoading] = useState(false);
   const handleResetOTP = async () => {
-    const email = AsyncStorage.getItem("email");
-    if (email) {
-      await send_otp(email);
-      Toast.show({
-        type: "success",
-        text1: "Thông báo",
-        text2: "Mã OTP đã được gửi đến email của bạn!",
-        position: "top",
-        visibilityTime: 2000,
-      });
-    }
-  };
-  const handleCompleteRegister = async () => {
-    const phone = AsyncStorage.getItem("phone");
-    const password = AsyncStorage.getItem("password");
-    const email = AsyncStorage.getItem("email");
-
-    try {
-      if (phone && password && email && otp) {
-        await register!({
-          phone: phone,
-          password: password,
-          email: email,
-          code: otp,
-        });
-        router.push("/login");
+    if (type === "register_email") {
+      const email = await AsyncStorage.getItem("email");
+      if (email) {
+        await send_otp({ email });
         Toast.show({
           type: "success",
           text1: "Thông báo",
-          text2: "Bạn đã đăng ký thành công!",
+          text2: "Mã OTP đã được gửi đến email của bạn!",
           position: "top",
           visibilityTime: 2000,
         });
-      } else {
-        console.log("error");
+      }
+    } else if (type === "forgot_password") {
+      const email = await AsyncStorage.getItem("email");
+      if (email) {
+        await send_otp({ email });
+        Toast.show({
+          type: "success",
+          text1: "Thông báo",
+          text2: "Mã OTP đã được gửi đến email của bạn!",
+          position: "top",
+          visibilityTime: 2000,
+        });
+      }
+    }
+  };
+  const handleCompleteRegister = async () => {
+    try {
+      setLoading(true);
+      if (!otp) {
+        Toast.show({
+          type: "error",
+          text1: "Thông báo",
+          text2: "Vui lòng nhập mã OTP!",
+          position: "top",
+          visibilityTime: 2000,
+        });
+        setLoading(false);
+        return;
+      }
+      console.log(type);
+      if (type === "register_email") {
+        const phone = await AsyncStorage.getItem("phone");
+        const password = await AsyncStorage.getItem("password");
+        const email = await AsyncStorage.getItem("email");
+        console.log(phone, password, email);
+        if (phone && password && email) {
+          await register({ phone, password, email, code: otp });
+          router.push("/login");
+          setLoading(false);
+          Toast.show({
+            type: "success",
+            text1: "Thông báo",
+            text2: "Bạn đã đăng ký thành công!",
+            position: "top",
+            visibilityTime: 2000,
+          });
+        }
+      }else{
+        
       }
     } catch (error: any) {
       console.error(error.response);
+      setLoading(false);
       Toast.show({
         type: "error",
         text1: "Thông báo",
@@ -66,10 +94,18 @@ const send_otp = () => {
         <View className="flex flex-col gap-3 w-full items-center">
           <Logo></Logo>
           <Text className="font-bold text-[25px] text-[#404040]">
-            Xác minh tài khoản
+            {type === "register_email"
+              ? "Xác minh tài khoản"
+              : type === "register_phone"
+              ? "Xác minh số điện thoại"
+              : "Quên mật khẩu"}
           </Text>
           <Text className="text-[#9A9898] text-[14px]">
-            Chúng tôi sẽ gửi cho bạn hướng dẫn đặt lại mật khẩu.
+            {type === "register_email"
+              ? "Nhập mã OTP để hoàn tất đăng ký."
+              : type === "register_phone"
+              ? "Nhập mã OTP để xác minh số điện thoại của bạn."
+              : "Nhập mã OTP để đặt lại mật khẩu."}
           </Text>
         </View>
         <View className="w-full">

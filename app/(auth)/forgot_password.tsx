@@ -3,24 +3,52 @@ import CustomButton from "../../components/Button/CustomButton";
 import { router } from "expo-router";
 import Input from "../../components/Input/Input";
 import { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "./AuthContext";
+import Toast from "react-native-toast-message";
 const forgot_password = () => {
-  const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState(false);
   const [loading, setLoading] = useState(false);
-  const validatePhoneNumber = (phone: string) => {
-    const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
-    return phoneRegex.test(phone);
+  // const [phone, setPhone] = useState("");
+  // const [phoneError, setPhoneError] = useState(false);
+  // const validatePhoneNumber = (phone: string) => {
+  //   const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
+  //   return phoneRegex.test(phone);
+  // };
+  const send_otp_auth = useAuth().send_otp;
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState(false);
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
   };
-  const handleSendSMS = () => {
+  const handleSendSMS = async () => {
     setLoading(true);
-    if (!validatePhoneNumber(phone)) {
-      setPhoneError(true);
+    if (!validateEmail(email)) {
+      setEmailError(true);
       setLoading(false);
       return;
     }
-    setPhoneError(false);
-    setLoading(false);
-    router.push("/send_otp");
+    try {
+      await send_otp_auth!({ email: email.trim() });
+      await AsyncStorage.setItem("email", email);
+      setEmailError(false);
+      setLoading(false);
+      router.push({
+        pathname: "/send_otp",
+        params: { type: "forgot_password" },
+      });
+    } catch (error: any) {
+      console.error(error);
+      Toast.show({
+        type: "info",
+        text1: "Thông báo",
+        text2: "Email này chưa được đăng ký!",
+        position: "top",
+        visibilityTime: 2000,
+      });
+      setLoading(false);
+      setEmailError(true);
+    }
   };
   return (
     <>
@@ -32,14 +60,14 @@ const forgot_password = () => {
         </View>
         <View className="flex flex-col w-full justify-center items-center gap-2 pt-5">
           <Text className="text-start justify-start w-[90%] font-bold">
-            Số điện thoại
+            Email/Số điện thoại
           </Text>
           <Input
-            value={phone}
-            onChangeText={setPhone}
+            value={email}
+            onChangeText={setEmail}
             keyboardType="number-pad"
             placeholder="Số điện thoại"
-            error={phoneError}
+            error={emailError}
           ></Input>
         </View>
 

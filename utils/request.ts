@@ -11,4 +11,5 @@ const createAxiosInstance = (servicePath: string) => {
 
 const authentication = createAxiosInstance("auth");
 const email = createAxiosInstance("email");
-export { authentication, email };
+const jwt = createAxiosInstance("jwt");
+export { authentication, email, jwt };

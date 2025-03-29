@@ -57,24 +57,9 @@ const Register = () => {
     setPasswordError("");
     setPhoneError(false);
 
-    AsyncStorage.setItem("phone", phone);
-    AsyncStorage.setItem("password", password);
+    await AsyncStorage.setItem("phone", phone);
+    await AsyncStorage.setItem("password", password);
     router.push("/verify_account");
-    // try {
-    //   await register!({
-    //     phone: phone.trim(),
-    //     password: password.trim(),
-    //   });
-    // } catch (error: any) {
-    //   console.error(error.response);
-    // }
-    // Toast.show({
-    //   type: "success",
-    //   text1: "Thông báo",
-    //   text2: "Bạn đã đăng ký thành công!",
-    //   position: "top",
-    //   visibilityTime: 2000,
-    // });
     setLoading(false);
   };
   return (

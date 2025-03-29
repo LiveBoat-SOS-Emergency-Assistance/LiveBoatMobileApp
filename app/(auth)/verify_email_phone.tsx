@@ -21,14 +21,18 @@ const verify_email_phone = () => {
       setEmailError(true);
       return;
     }
-    AsyncStorage.setItem("email", email);
+    await AsyncStorage.setItem("email", email);
     try {
       await send_otp_auth!({ email: email.trim() });
       setEmailError(false);
       setLoading(false);
-      router.push("/send_otp");
+      router.push({
+        pathname: "/send_otp",
+        params: { type: "register_email" },
+      });
     } catch (error: any) {
       console.error(error);
+      setLoading(false);
     }
   };
   return (
