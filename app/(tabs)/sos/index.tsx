@@ -1,9 +1,9 @@
 import { View, Text } from "react-native";
 import React from "react";
-export default function Profile() {
+export default function SOSScreen() {
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Profile Screen</Text>
+      <Text>SOS Screen</Text>
     </View>
   );
 }

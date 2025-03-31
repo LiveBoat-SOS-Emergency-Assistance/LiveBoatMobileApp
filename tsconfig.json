@@ -1,7 +1,10 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "esModuleInterop": true
   },
   "include": [
     "nativewind.d.ts",
@@ -9,6 +12,7 @@
     "App.tsx",
     "**/*.tsx",
     "nativewind-env.d.ts",
-    "constants/theme.ts"
+    "src/constants/theme.ts",
+    "env.d.ts"
   ]
 }

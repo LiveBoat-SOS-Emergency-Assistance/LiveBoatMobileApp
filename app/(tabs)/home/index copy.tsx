@@ -12,11 +12,11 @@ import BottomSheet, {
 import React from "react";
 
 export default function HomeScreen() {
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
 
   const openBottomSheet = useCallback(() => {
     console.log("click");
-    bottomSheetRef.current?.expand();
+    bottomSheetRef.current?.present();
   }, []);
 
   return (
@@ -106,7 +106,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <BottomSheet ref={bottomSheetRef} snapPoints={["25%", "50%"]}>
+        <BottomSheetModal ref={bottomSheetRef} snapPoints={["25%", "50%"]}>
           <View
             style={{
               flex: 1,
@@ -119,7 +119,7 @@ export default function HomeScreen() {
               onPress={() => bottomSheetRef.current?.dismiss()}
             />
           </View>
-        </BottomSheet>
+        </BottomSheetModal>
       </View>
     </>
   );

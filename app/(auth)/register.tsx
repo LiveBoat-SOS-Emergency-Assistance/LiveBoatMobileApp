@@ -6,7 +6,7 @@ import { useContext, useState } from "react";
 import { router } from "expo-router";
 import { useAuth } from "./AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import React from "react";
 const Register = () => {
   const [isChecked, setIsChecked] = useState(false);
   const [phone, setPhone] = useState("");

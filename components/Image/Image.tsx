@@ -1,4 +1,5 @@
 import { Image } from "react-native";
+import React from "react";
 interface imageProps {
   source: any;
   width: number;

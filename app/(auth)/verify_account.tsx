@@ -2,7 +2,7 @@ import { Image, Pressable, Text, View } from "react-native";
 import CustomButton from "../../components/Button/CustomButton";
 import { useState } from "react";
 import { router } from "expo-router";
-
+import React from "react";
 const verify_account = () => {
   const [isMethod, setIsMethod] = useState("email");
   const handleVerify = () => {

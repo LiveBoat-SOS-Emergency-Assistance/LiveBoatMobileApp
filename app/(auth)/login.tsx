@@ -6,6 +6,7 @@ import { useState } from "react";
 import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "./AuthContext";
+import React from "react";
 const Login = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
