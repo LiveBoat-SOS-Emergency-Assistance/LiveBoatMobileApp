@@ -116,7 +116,7 @@ export default function HomeScreen() {
           >
             <Button
               title="Đóng"
-              onPress={() => bottomSheetRef.current?.dismiss()}
+              onPress={() => bottomSheetRef.current?.close()}
             />
           </View>
         </BottomSheet>
