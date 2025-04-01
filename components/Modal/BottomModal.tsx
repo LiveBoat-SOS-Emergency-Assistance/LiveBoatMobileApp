@@ -20,8 +20,8 @@ const BottomModal = ({
   children,
   initialExpanded = false,
 }: BottomModalProps) => {
-  const COLLAPSED_HEIGHT = 30;
-  const EXPANDED_HEIGHT = 50;
+  const COLLAPSED_HEIGHT = 27;
+  const EXPANDED_HEIGHT = 65;
 
   const initialHeight = initialExpanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT;
   const height = useSharedValue(initialHeight);

@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import { Eye, EyeOff } from "lucide-react-native";
-
+import React from "react";
 interface InputProps extends TextInputProps {
   placeholder?: string;
   type?: string;

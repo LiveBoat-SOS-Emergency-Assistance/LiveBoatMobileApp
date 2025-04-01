@@ -1,26 +1,29 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { View, Text, Image, Pressable, Button } from "react-native";
+import { useCallback, useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  ScrollView,
+  SafeAreaView,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { ChevronDown } from "lucide-react-native";
 import Map from "../../../components/Map/Map";
-import BottomSheet, {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetModalProvider,
-  type BottomSheetBackdropProps,
-} from "@gorhom/bottom-sheet";
 import React from "react";
-
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { router } from "expo-router";
+import { AnimatePresence } from "framer-motion";
+import BottomModal from "../../../components/Modal/BottomModal";
+import MemberCard from "../../../components/Card/MemberCard";
 export default function HomeScreen() {
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
-
-  const openBottomSheet = useCallback(() => {
-    console.log("click");
-    bottomSheetRef.current?.present();
+  const [activeTab, setActiveTab] = useState(true);
+  const handleChangeTab = useCallback((choice: boolean) => {
+    console.log("choice", choice);
+    setActiveTab(choice);
   }, []);
-
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
@@ -29,10 +32,12 @@ export default function HomeScreen() {
           <View className="w-full flex flex-row items-center justify-between px-2">
             {/* Avatar */}
             <View className="w-[75px] h-[75px] rounded-full flex justify-center items-center border-[#EB4747] border-[3px]">
-              <Image
-                className="w-[65px] h-[65px] rounded-full object-cover"
-                source={require("../../../assets/images/ava.jpg")}
-              />
+              <Pressable onPress={() => router.push("/(main)/profile")}>
+                <Image
+                  className="w-[65px] h-[65px] rounded-full object-cover"
+                  source={require("../../../assets/images/ava.jpg")}
+                />
+              </Pressable>
             </View>
 
             {/* Button Cộng đồng */}
@@ -50,7 +55,7 @@ export default function HomeScreen() {
                 className="text-white text-base font-bold"
                 style={{ fontFamily: "Poppins" }}
               >
-                Cộng đồng
+                Gia đình
               </Text>
               <ChevronDown
                 size={20}
@@ -83,7 +88,6 @@ export default function HomeScreen() {
           </View>
           <View className="w-full justify-end items-end px-2">
             <Pressable
-              onPress={openBottomSheet}
               className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow "
               style={{
                 shadowColor: "#000",
@@ -105,8 +109,71 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
+        <AnimatePresence>
+          <BottomModal>
+            <View className="w-full flex flex-col justify-center items-center">
+              <View
+                className="flex flex-row h-[50px] gap-4 w-[80%] rounded-[30px] px-1 bg-[#fdb1b1] justify-around items-center"
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
+              >
+                <Pressable
+                  className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
+                    activeTab ? "bg-white shadow-md" : "bg-transparent"
+                  }`}
+                >
+                  <Text
+                    className={`font-bold ${
+                      activeTab ? "text-[#EB4747]" : "text-white"
+                    }`}
+                  >
+                    Thành viên
+                  </Text>
+                </Pressable>
+                <Pressable
+                  className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
+                    activeTab === false
+                      ? "bg-white shadow-md"
+                      : "bg-transparent"
+                  }`}
+                >
+                  <Text
+                    className={`font-bold ${
+                      activeTab === false ? "text-[#EB4747]" : "text-white"
+                    }`}
+                  >
+                    Địa điểm
+                  </Text>
+                </Pressable>
+              </View>
 
-        <BottomSheetModal ref={bottomSheetRef} snapPoints={["25%", "50%"]}>
+              <ScrollView
+                style={{ width: "100%", flexGrow: 1 }}
+                contentContainerStyle={{
+                  paddingVertical: 20,
+                  gap: 25,
+                }}
+                showsVerticalScrollIndicator={false}
+              >
+                <MemberCard active />
+                <MemberCard />
+                <MemberCard />
+              </ScrollView>
+            </View>
+          </BottomModal>
+        </AnimatePresence>
+        {/* <BottomSheet
+          ref={bottomSheetRef}
+          snapPoints={["25%", "50%"]}
+          index={-1}
+          style={{ zIndex: 10 }}
+          enablePanDownToClose={true}
+        >
           <View
             style={{
               flex: 1,
@@ -114,13 +181,14 @@ export default function HomeScreen() {
               alignItems: "center",
             }}
           >
+            <Text>Nội dung BottomSheet</Text>
             <Button
               title="Đóng"
-              onPress={() => bottomSheetRef.current?.dismiss()}
+              onPress={() => bottomSheetRef.current?.close()}
             />
           </View>
-        </BottomSheetModal>
+        </BottomSheet> */}
       </View>
-    </>
+    </GestureHandlerRootView>
   );
 }

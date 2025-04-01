@@ -1,35 +1,48 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { View, Text, Image, Pressable, Button, StyleSheet } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  ScrollView,
+  BackHandler,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { ChevronDown } from "lucide-react-native";
 import Map from "../../../components/Map/Map";
-import BottomSheet, {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetModalProvider,
-  type BottomSheetBackdropProps,
-} from "@gorhom/bottom-sheet";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { AnimatePresence } from "framer-motion";
 import BottomModal from "../../../components/Modal/BottomModal";
-import LinearGradient from "react-native-linear-gradient";
-
+import MemberCard from "../../../components/Card/MemberCard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function HomeScreen() {
-  const bottomSheetRef = useRef<BottomSheet>(null);
-
-  const openBottomSheet = useCallback(() => {
-    console.log("Opening BottomSheet");
-    bottomSheetRef.current?.expand();
+  const [activeTab, setActiveTab] = useState(true);
+  const handleChangeTab = useCallback((choice: boolean) => {
+    console.log("choice", choice);
+    setActiveTab(choice);
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const getAccessToken = async () => {
+        const token = await AsyncStorage.getItem("accessToken");
+        if (!token) {
+          router.replace("/");
+          return;
+        }
+      };
+      getAccessToken();
+    }, [])
+  );
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
-        {/* <Map></Map> */}
+        <Map></Map>
         <View className="absolute top-[45px] w-full flex flex-col items-center px-2">
           <View className="w-full flex flex-row items-center justify-between px-2">
             {/* Avatar */}
@@ -90,7 +103,6 @@ export default function HomeScreen() {
           </View>
           <View className="w-full justify-end items-end px-2">
             <Pressable
-              onPress={openBottomSheet}
               className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow "
               style={{
                 shadowColor: "#000",
@@ -114,23 +126,59 @@ export default function HomeScreen() {
         </View>
         <AnimatePresence>
           <BottomModal>
-            <View className="flex flex-col gap-4">
-              <LinearGradient
-                colors={["#FFA6A6", "#F73D3D"]}
-                style={styles.linear}
+            <View className="w-full flex flex-col justify-center items-center">
+              <View
+                className="flex flex-row h-[50px] gap-4 w-[80%] rounded-[30px] px-1 bg-[#fdb1b1] justify-around items-center"
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
               >
-                {[
-                  <View
-                    key="1"
-                    className="w-full flex flex-row justify-between"
+                <Pressable
+                  className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
+                    activeTab ? "bg-white shadow-md" : "bg-transparent"
+                  }`}
+                >
+                  <Text
+                    className={`font-bold ${
+                      activeTab ? "text-[#EB4747]" : "text-white"
+                    }`}
                   >
-                    <Pressable className="">
-                      <Text>Thành viên</Text>
-                    </Pressable>
-                    <Text>Địa điểm</Text>
-                  </View>,
-                ]}
-              </LinearGradient>
+                    Thành viên
+                  </Text>
+                </Pressable>
+                <Pressable
+                  className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
+                    activeTab === false
+                      ? "bg-white shadow-md"
+                      : "bg-transparent"
+                  }`}
+                >
+                  <Text
+                    className={`font-bold ${
+                      activeTab === false ? "text-[#EB4747]" : "text-white"
+                    }`}
+                  >
+                    Địa điểm
+                  </Text>
+                </Pressable>
+              </View>
+
+              <ScrollView
+                style={{ width: "100%", flexGrow: 1 }}
+                contentContainerStyle={{
+                  paddingVertical: 20,
+                  gap: 25,
+                }}
+                showsVerticalScrollIndicator={false}
+              >
+                <MemberCard active />
+                <MemberCard />
+                <MemberCard />
+              </ScrollView>
             </View>
           </BottomModal>
         </AnimatePresence>
@@ -159,14 +207,3 @@ export default function HomeScreen() {
     </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  linear: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "60%",
-    borderRadius: 30,
-    shadowColor: "#ddd",
-  },
-});

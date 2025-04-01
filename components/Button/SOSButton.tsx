@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react-native";
-import { Pressable, View, Animated } from "react-native";
+import { Pressable, View, Animated, Vibration } from "react-native";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -61,8 +61,9 @@ const SOSButton = () => {
   const handlePressIn = () => {
     setIsPressed(true);
     startWaveAnimation();
-
+    Vibration.vibrate([500, 500, 500], true);
     const newTimer = setTimeout(() => {
+      Vibration.cancel();
       router.push("/(tabs)/home/sos_alert");
     }, 3000);
     setTimer(newTimer);
@@ -75,6 +76,7 @@ const SOSButton = () => {
       clearTimeout(timer);
       setTimer(null);
     }
+    Vibration.cancel();
   };
 
   return (

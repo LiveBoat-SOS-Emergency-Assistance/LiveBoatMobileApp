@@ -5,11 +5,17 @@ import { MenuItem } from "../../../components/Menu/MenuItem";
 import { SettingsSection } from "../../../components/SettingSection/SettingSection";
 import CustomButton from "../../../components/Button/CustomButton";
 import { useAuth } from "../../(auth)/AuthContext";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 
 export default function Profile() {
   const [loading, setLoading] = useState(false);
   const { logout } = useAuth();
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push("/(main)/profile/edit_profile");
+  };
+
   const handleLogout = async () => {
     setLoading(true);
     try {
@@ -30,7 +36,10 @@ export default function Profile() {
             className="w-32 h-32 rounded-full mb-3"
           />
           <Text className="text-xl font-semibold">Bạch Dương</Text>
-          <TouchableOpacity className="flex-row items-center bg-[#80C4E9] px-5 py-2 rounded-[30px] mt-2">
+          <TouchableOpacity
+            onPress={handlePress}
+            className="flex-row items-center bg-[#80C4E9] px-5 py-2 rounded-[30px] mt-2"
+          >
             <ImageCustom
               source="https://img.icons8.com/?size=100&id=86376&format=png&color=000000"
               width={18}
@@ -40,7 +49,24 @@ export default function Profile() {
             <Text className="ml-1 text-white font-bold">Chỉnh sửa</Text>
           </TouchableOpacity>
         </View>
-
+        {/* <SettingsSection title="Tài khoản">
+          <View className="flex-row justify-between py-2 px-5">
+            <View className="flex flex-row gap-2  items-center w-full">
+              <ImageCustom
+                source="https://img.icons8.com/?size=100&id=Iw5aeMT37fzK&format=png&color=000000"
+                width={24}
+                height={24}
+                color="#404040"
+              ></ImageCustom>
+              <View className="flex flex-col">
+                <Text className="text-lg">Số điện thoại:</Text>
+                <Text className="font-bold text-[#404040] text-lg">
+                  + 0914136585
+                </Text>
+              </View>
+            </View>
+          </View>
+        </SettingsSection> */}
         <SettingsSection title="Cài đặt Nhóm">
           <MenuItem title="Quản lý Nhóm" />
           <MenuItem title="Chia sẻ Vị trí" />
@@ -48,15 +74,8 @@ export default function Profile() {
         </SettingsSection>
 
         <SettingsSection title="Cài đặt Chung">
-          <MenuItem
-            title="Liên hệ Khẩn cấp"
-            subtitle="Chia sẻ hoạt động và cảnh báo liên hệ khẩn cấp nếu bạn kích hoạt chế độ SOS."
-          />
-          <MenuItem
-            title="Đổi Mã PIN"
-            subtitle="Bạn cần nhập mã PIN này để tắt chế độ SOS."
-          />
-          <MenuItem title="Nâng cấp lên Premium" />
+          <MenuItem title="Đổi mật khẩu" />
+          <MenuItem title="Lịch sử SOS" />
           <MenuItem title="Cài đặt" />
           <MenuItem title="Giới thiệu bạn bè" />
           <MenuItem title="Câu hỏi thường gặp (FAQ)" />
