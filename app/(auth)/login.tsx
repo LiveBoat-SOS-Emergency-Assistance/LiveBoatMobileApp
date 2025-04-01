@@ -42,7 +42,7 @@ const Login = () => {
         position: "top",
         visibilityTime: 2000,
       });
-      router.push("/(tabs)/home");
+      router.replace("/(tabs)/home");
     } catch (error: any) {
       console.error(error.response);
       Toast.show({

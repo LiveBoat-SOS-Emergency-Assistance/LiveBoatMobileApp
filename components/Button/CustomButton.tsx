@@ -5,7 +5,7 @@ import {
   Text,
 } from "react-native";
 import tw from "twrnc";
-
+import React from "react";
 interface ButtonProps {
   primary?: boolean;
   secondary?: boolean;

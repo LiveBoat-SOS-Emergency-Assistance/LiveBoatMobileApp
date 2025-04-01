@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { View, Text, Image, Pressable, Button } from "react-native";
+import { View, Text, Image, Pressable, Button, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { ChevronDown } from "lucide-react-native";
 import Map from "../../../components/Map/Map";
@@ -10,29 +10,36 @@ import BottomSheet, {
   type BottomSheetBackdropProps,
 } from "@gorhom/bottom-sheet";
 import React from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { router } from "expo-router";
+import { AnimatePresence } from "framer-motion";
+import BottomModal from "../../../components/Modal/BottomModal";
+import LinearGradient from "react-native-linear-gradient";
 
 export default function HomeScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   const openBottomSheet = useCallback(() => {
-    console.log("click");
+    console.log("Opening BottomSheet");
     bottomSheetRef.current?.expand();
   }, []);
 
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
-        <Map></Map>
+        {/* <Map></Map> */}
         <View className="absolute top-[45px] w-full flex flex-col items-center px-2">
           <View className="w-full flex flex-row items-center justify-between px-2">
             {/* Avatar */}
             <View className="w-[75px] h-[75px] rounded-full flex justify-center items-center border-[#EB4747] border-[3px]">
-              <Image
-                className="w-[65px] h-[65px] rounded-full object-cover"
-                source={require("../../../assets/images/ava.jpg")}
-              />
+              <Pressable onPress={() => router.push("/(main)/profile")}>
+                <Image
+                  className="w-[65px] h-[65px] rounded-full object-cover"
+                  source={require("../../../assets/images/ava.jpg")}
+                />
+              </Pressable>
             </View>
 
             {/* Button Cộng đồng */}
@@ -50,7 +57,7 @@ export default function HomeScreen() {
                 className="text-white text-base font-bold"
                 style={{ fontFamily: "Poppins" }}
               >
-                Cộng đồng
+                Gia đình
               </Text>
               <ChevronDown
                 size={20}
@@ -105,8 +112,35 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
-
-        <BottomSheet ref={bottomSheetRef} snapPoints={["25%", "50%"]}>
+        <AnimatePresence>
+          <BottomModal>
+            <View className="flex flex-col gap-4">
+              <LinearGradient
+                colors={["#FFA6A6", "#F73D3D"]}
+                style={styles.linear}
+              >
+                {[
+                  <View
+                    key="1"
+                    className="w-full flex flex-row justify-between"
+                  >
+                    <Pressable className="">
+                      <Text>Thành viên</Text>
+                    </Pressable>
+                    <Text>Địa điểm</Text>
+                  </View>,
+                ]}
+              </LinearGradient>
+            </View>
+          </BottomModal>
+        </AnimatePresence>
+        {/* <BottomSheet
+          ref={bottomSheetRef}
+          snapPoints={["25%", "50%"]}
+          index={-1}
+          style={{ zIndex: 10 }}
+          enablePanDownToClose={true}
+        >
           <View
             style={{
               flex: 1,
@@ -114,13 +148,25 @@ export default function HomeScreen() {
               alignItems: "center",
             }}
           >
+            <Text>Nội dung BottomSheet</Text>
             <Button
               title="Đóng"
               onPress={() => bottomSheetRef.current?.close()}
             />
           </View>
-        </BottomSheet>
+        </BottomSheet> */}
       </View>
-    </>
+    </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  linear: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "60%",
+    borderRadius: 30,
+    shadowColor: "#ddd",
+  },
+});

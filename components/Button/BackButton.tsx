@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { Image, TouchableOpacity } from "react-native";
-
+import React from "react";
 const BackButton = ({ size = 24 }) => {
   const router = useRouter();
   return (

@@ -24,6 +24,9 @@ export default function BottomNavigation() {
           backgroundColor: "white",
           borderTopWidth: 1,
           borderTopColor: "#ddd",
+          justifyContent: "space-evenly",
+          alignItems: "center",
+          paddingTop: 9,
         },
         tabBarShowLabel: false,
         tabBarIconStyle: {
@@ -97,8 +100,9 @@ export default function BottomNavigation() {
       />
 
       <Tabs.Screen
-        name="profile"
+        name="chatbot"
         options={{
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <Image
               source={{
