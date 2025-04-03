@@ -6,7 +6,7 @@ import ImageCustom from "../../components/Image/Image";
 import Logo from "../../components/Image/Logo";
 import OTPCountdown from "../../components/Pin/OTPCountdown";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
 import Toast from "react-native-toast-message";
 import React from "react";
@@ -74,8 +74,7 @@ const send_otp = () => {
             visibilityTime: 2000,
           });
         }
-      }else{
-        
+      } else {
       }
     } catch (error: any) {
       console.error(error.response);

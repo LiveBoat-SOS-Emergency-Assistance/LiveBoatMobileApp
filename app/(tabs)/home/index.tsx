@@ -17,6 +17,7 @@ import { AnimatePresence } from "framer-motion";
 import BottomModal from "../../../components/Modal/BottomModal";
 import MemberCard from "../../../components/Card/MemberCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState(true);
   const handleChangeTab = useCallback((choice: boolean) => {

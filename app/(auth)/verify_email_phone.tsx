@@ -4,7 +4,7 @@ import { useState } from "react";
 import { router } from "expo-router";
 import Input from "../../components/Input/Input";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import React from "react";
 const verify_email_phone = () => {
   const [email, setEmail] = useState("");
@@ -45,7 +45,7 @@ const verify_email_phone = () => {
       </View>
       <View className="flex gap-3 w-[90%] flex-row items-start px-1 pt-10 justify-center pb-5">
         <Text className="font-bold text-[25px] text-[#404040]">
-          Nhập email để xác minh
+          Enter Email for verification
         </Text>
       </View>
       <View className="flex flex-col justify-center items-center w-full gap-2">
@@ -61,7 +61,7 @@ const verify_email_phone = () => {
         <CustomButton
           primary={true}
           isLoading={loading}
-          title="Tiếp tục"
+          title="Continue"
           onPress={handleSendOTP}
         ></CustomButton>
       </View>

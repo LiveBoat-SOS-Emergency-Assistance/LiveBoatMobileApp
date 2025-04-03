@@ -6,10 +6,10 @@ import React, {
   useContext,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { authen } from "../../services/authentication";
-import { jwtServices } from "../../services/jwt";
+import { authen } from "../services/authentication";
+import { jwtServices } from "../services/jwt";
 import { router } from "expo-router";
-
+import { jwtDecode } from "jwt-decode";
 interface RegisterData {
   phone: string;
   password: string;
@@ -33,6 +33,7 @@ type AuthProps = {
   send_otp: (data: SendOtpData) => Promise<void>;
   reset_password: (data: any) => Promise<void>;
   get_access_token: () => Promise<string | null>;
+  change_password: (data: any) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthProps | undefined>(undefined);
@@ -51,6 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const loadAccessToken = async () => {
       try {
@@ -80,6 +82,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const get_access_token = async () => {
     try {
+      const token = await AsyncStorage.getItem("accessToken");
+      if (token) {
+        const decoded: any = jwtDecode(token);
+        const currentTime = Math.floor(Date.now() / 1000);
+
+        if (decoded.exp > currentTime) {
+          return token;
+        }
+      }
+
       const refreshToken = await AsyncStorage.getItem("refreshToken");
       if (!refreshToken) {
         await logout();
@@ -94,12 +106,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await AsyncStorage.setItem("accessToken", newAccessToken);
         return newAccessToken;
       } else {
-        console.log("Refresh token expired or invalid, logging out.");
+        if (result?.status === 401) {
+          console.log("Refresh token hết hạn hoặc không hợp lệ, đăng xuất...");
+          await logout();
+          return null;
+        }
+        console.log("Lỗi không xác định khi refresh token.");
         await logout();
         return null;
       }
-    } catch (error: any) {
-      console.error("Error refreshing access token:", error);
+    } catch (error) {
+      console.error("Lỗi khi refresh access token:", error);
       await logout();
       return null;
     }
@@ -123,6 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const result = await authen.login(userData);
       if (result) {
+        await AsyncStorage.setItem("accessToken", result.data?.accessToken);
         await AsyncStorage.setItem("refreshToken", result.data?.refreshToken);
         const newAccessToken = await get_access_token();
         setAccessToken(newAccessToken);
@@ -159,6 +177,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const change_password = async (data: RegisterData) => {
+    try {
+      await authen.change_password(data);
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -168,6 +194,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         get_access_token,
         login,
         logout,
+        change_password,
       }}
     >
       {!loading && children}

@@ -3,12 +3,23 @@ import { FONTS } from "../constants/theme";
 import { useRouter } from "expo-router";
 import CustomButton from "../components/Button/CustomButton";
 import tw from "twrnc";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "../global.css";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
+import { jwtDecode } from "jwt-decode";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { baseURL } from "../baseUrl";
+import * as SplashScreen from "expo-splash-screen";
+import {
+  configureReanimatedLogger,
+  ReanimatedLogLevel,
+} from "react-native-reanimated";
+SplashScreen.preventAutoHideAsync();
 export default function home() {
   const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
   const handleLoginViaGoogle = () => {
     Toast.show({
       type: "info",
@@ -16,6 +27,79 @@ export default function home() {
       text2: "The feature will coming soon!",
     });
   };
+  // Cấu hình logger
+  configureReanimatedLogger({
+    level: ReanimatedLogLevel.warn, // Mức độ log là warn
+    strict: true, // Kích hoạt chế độ strict
+  });
+
+  useEffect(() => {
+    const loading = async () => {
+      SplashScreen.preventAutoHideAsync();
+      await getHealthStatus();
+      await handleToken();
+      SplashScreen.hideAsync();
+    };
+
+    loading();
+  }, []);
+
+  const isTokenExpired = (token: string | null): boolean => {
+    if (!token) return true;
+
+    try {
+      const decoded: any = jwtDecode(token);
+      const currentTime = Math.floor(Date.now() / 1000);
+      return decoded.exp < currentTime;
+    } catch (error) {
+      return true;
+    }
+  };
+
+  const getHealthStatus = async () => {
+    const accessToken = await AsyncStorage.getItem("accessToken");
+    if (accessToken && !isTokenExpired(accessToken)) {
+      setIsChecking(false);
+      return accessToken;
+    }
+    const refreshToken = await AsyncStorage.getItem("refreshToken");
+    if (!refreshToken || isTokenExpired(refreshToken)) {
+      await AsyncStorage.removeItem("accessToken");
+      await AsyncStorage.removeItem("refreshToken");
+      setIsChecking(false);
+      return null;
+    }
+    try {
+      const response = await axios.post(`${baseURL}/jwt/access-token`, {
+        refreshToken,
+      });
+      const newAccessToken = response.data?.accessToken;
+      await AsyncStorage.setItem("accessToken", newAccessToken);
+      setIsChecking(false);
+      return newAccessToken;
+    } catch (error) {
+      console.log("Làm mới token thất bại, đăng xuất.");
+      await AsyncStorage.removeItem("accessToken");
+      await AsyncStorage.removeItem("refreshToken");
+      setIsChecking(false);
+      return null;
+    }
+  };
+  const handleToken = async () => {
+    if (!isChecking) {
+      const accessToken = await AsyncStorage.getItem("accessToken");
+      const refreshToken = await AsyncStorage.getItem("refreshToken");
+
+      if (accessToken && refreshToken) {
+        router.replace("/(tabs)/home");
+      } else {
+        router.replace("/");
+      }
+    }
+  };
+  if (isChecking) {
+    return null;
+  }
   return (
     <>
       <StatusBar style="dark"></StatusBar>
@@ -50,20 +134,20 @@ export default function home() {
               className="font-extrabold text-[25px]  text-[#404040]"
               style={{ fontFamily: FONTS.PoppinsBold }}
             >
-              Khẩn cấp?
+              Emergency?
             </Text>
             <Text
               className="font-extrabold text-[25px] text-[#404040]"
               style={{ fontFamily: FONTS.PoppinsBold }}
             >
-              Luôn có chúng tôi bên bạn!
+              You are never alone!
             </Text>
           </View>
           <View className="flex flex-col gap-4 w-full justify-center items-center pt-8">
             <CustomButton
               primary={true}
               secondary={false}
-              title="Tạo tài khoản"
+              title="Create account"
               onPress={() => router.push("/register")}
             ></CustomButton>
             <Pressable
@@ -75,24 +159,21 @@ export default function home() {
                 style={{ width: 30, height: 30 }}
               />
               <Text className="text-[#404040] font-bold text-[18px]">
-                Tiếp tục với Google
+                Continue with Google
               </Text>
             </Pressable>
             <Pressable onPress={() => router.push("/login")}>
               <Text className="underline text-[#404040]">
-                Đã có tài khoản? Đăng nhập
+                Have an account? Sign in
               </Text>
             </Pressable>
           </View>
         </View>
         <Text className="text-[11px] bottom-2  absolute w-[80%] justify-center flex items-center text-center">
-          Bằng cách tiếp tục, bạn đồng ý với
-          <Text className="font-bold"> Điều khoản sử dụng </Text>và xác nhận đã
-          đọc
-          <Text className="font-bold">
-            {" "}
-            Chính sách quyền riêng tư & Cookie.
-          </Text>
+          By proceeding, you agree to our
+          <Text className="font-bold"> Term of Use </Text>and confirm you have
+          read our
+          <Text className="font-bold"> Privacy and Cookie Statement</Text>
         </Text>
       </View>
     </>
