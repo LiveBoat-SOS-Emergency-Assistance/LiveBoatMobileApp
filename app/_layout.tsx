@@ -1,11 +1,10 @@
-import { router, Slot, Stack, useRouter } from "expo-router";
-import { Image, StatusBar, View, ActivityIndicator } from "react-native";
+import { Stack } from "expo-router";
+import { Image, StatusBar } from "react-native";
 import Toast from "react-native-toast-message";
 import AuthProvider from "./(auth)/AuthContext";
-import { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SplashScreen from "expo-splash-screen";
-
+import React from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 const Layout = () => {
   return (
     <AuthProvider>
@@ -19,6 +18,9 @@ const Layout = () => {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(main)" options={{ title: "" }} />
+        {/* <Stack.Screen name="(main)" />
+        <Stack.Screen name="(main)/chat/chatbot" /> */}
         <Stack.Screen
           name="(auth)/login"
           options={{
@@ -34,6 +36,32 @@ const Layout = () => {
         />
         <Stack.Screen
           name="(auth)/register"
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="(auth)/send_otp"
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="(auth)/forgot_password"
           options={{
             headerShown: true,
             title: "",

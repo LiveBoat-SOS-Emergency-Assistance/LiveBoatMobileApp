@@ -3,6 +3,7 @@ import { FONTS } from "../constants/theme";
 import { useRouter } from "expo-router";
 import CustomButton from "../components/Button/CustomButton";
 import tw from "twrnc";
+import React from "react";
 import "../global.css";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";

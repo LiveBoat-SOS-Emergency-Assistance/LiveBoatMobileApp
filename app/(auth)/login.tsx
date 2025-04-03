@@ -1,11 +1,19 @@
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  BackHandler,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import Input from "../../components/Input/Input";
 import CustomButton from "../../components/Button/CustomButton";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "./AuthContext";
+import React from "react";
 const Login = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -17,6 +25,15 @@ const Login = () => {
     const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
     return phoneRegex.test(phone);
   };
+  // useEffect(() => {
+  //   const backHandler = BackHandler.addEventListener(
+  //     "hardwareBackPress",
+  //     () => {
+  //       return false;
+  //     }
+  //   );
+  //   return () => backHandler.remove();
+  // }, []);
   const handleLogin = async () => {
     setLoading(true);
     if (!validatePhoneNumber(phone)) {
@@ -41,9 +58,8 @@ const Login = () => {
         position: "top",
         visibilityTime: 2000,
       });
-      router.push("/(tabs)/home");
+      router.replace("/(tabs)/home");
     } catch (error: any) {
-      console.error(error.response);
       Toast.show({
         type: "error",
         text1: "Thông báo",

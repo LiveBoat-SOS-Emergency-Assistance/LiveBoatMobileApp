@@ -6,6 +6,7 @@ import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./AuthContext";
 import Toast from "react-native-toast-message";
+import React from "react";
 const forgot_password = () => {
   const [loading, setLoading] = useState(false);
   // const [phone, setPhone] = useState("");

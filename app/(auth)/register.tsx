@@ -1,12 +1,12 @@
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { BackHandler, Image, Text, TouchableOpacity, View } from "react-native";
 import Input from "../../components/Input/Input";
 import CustomButton from "../../components/Button/CustomButton";
 import Checkbox from "expo-checkbox";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { router } from "expo-router";
 import { useAuth } from "./AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import React from "react";
 const Register = () => {
   const [isChecked, setIsChecked] = useState(false);
   const [phone, setPhone] = useState("");
@@ -39,7 +39,15 @@ const Register = () => {
     }
     return "";
   };
-
+  // useEffect(() => {
+  //   const backHandler = BackHandler.addEventListener(
+  //     "hardwareBackPress",
+  //     () => {
+  //       return false;
+  //     }
+  //   );
+  //   return () => backHandler.remove();
+  // }, []);
   const handleRegister = async () => {
     setLoading(true);
     if (!validatePhoneNumber(phone)) {

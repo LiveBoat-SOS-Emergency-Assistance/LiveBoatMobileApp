@@ -9,6 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./AuthContext";
 import { useState } from "react";
 import Toast from "react-native-toast-message";
+import React from "react";
 const send_otp = () => {
   const [otp, setOtp] = useState("");
   const { send_otp, register } = useAuth();

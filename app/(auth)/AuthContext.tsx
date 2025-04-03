@@ -81,17 +81,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const get_access_token = async () => {
     try {
       const refreshToken = await AsyncStorage.getItem("refreshToken");
-      if (!refreshToken) return null;
+      if (!refreshToken) {
+        await logout();
+        return null;
+      }
+
       const result = await jwtServices.getAccessToken({ refreshToken });
+
       if (result && result.data?.accessToken) {
         const newAccessToken = result.data?.accessToken;
         setAccessToken(newAccessToken);
         await AsyncStorage.setItem("accessToken", newAccessToken);
         return newAccessToken;
+      } else {
+        console.log("Refresh token expired or invalid, logging out.");
+        await logout();
+        return null;
       }
-      return null;
     } catch (error: any) {
-      throw error;
+      console.error("Error refreshing access token:", error);
+      await logout();
+      return null;
     }
   };
 
@@ -134,9 +144,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = async () => {
-    console.log("Logout user");
-    await AsyncStorage.removeItem("user");
-    setUser(null);
+    try {
+      const result = await authen.logout();
+      if (result) {
+        await AsyncStorage.removeItem("accessToken");
+        await AsyncStorage.removeItem("refreshToken");
+        await AsyncStorage.removeItem("user");
+        setAccessToken(null);
+        setUser(null);
+        return;
+      }
+    } catch (error: any) {
+      throw error;
+    }
   };
 
   return (

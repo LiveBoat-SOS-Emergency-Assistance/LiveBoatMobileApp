@@ -7,6 +7,7 @@ import { useState } from "react";
 import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
 import ImageCustom from "../../components/Image/Image";
+import React from "react";
 const Login = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

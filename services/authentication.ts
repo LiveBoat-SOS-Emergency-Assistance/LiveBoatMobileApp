@@ -57,4 +57,17 @@ export class authen {
       throw error;
     }
   }
+  static async logout() {
+    try {
+      const result = await authentication("/logout", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
 }

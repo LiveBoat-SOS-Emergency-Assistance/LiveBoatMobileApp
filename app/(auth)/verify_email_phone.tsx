@@ -5,7 +5,7 @@ import { router } from "expo-router";
 import Input from "../../components/Input/Input";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./AuthContext";
-
+import React from "react";
 const verify_email_phone = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
