@@ -4,7 +4,7 @@ import ImageCustom from "../../../components/Image/Image";
 import { MenuItem } from "../../../components/Menu/MenuItem";
 import { SettingsSection } from "../../../components/SettingSection/SettingSection";
 import CustomButton from "../../../components/Button/CustomButton";
-import { useAuth } from "../../(auth)/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 import { router, useRouter } from "expo-router";
 
 export default function Profile() {
@@ -14,6 +14,9 @@ export default function Profile() {
 
   const handlePress = () => {
     router.push("/(main)/profile/edit_profile");
+  };
+  const handleChangePassword = () => {
+    router.push("/(auth)/change_password");
   };
 
   const handleLogout = async () => {
@@ -46,7 +49,7 @@ export default function Profile() {
               height={18}
               color="#ffffff"
             ></ImageCustom>
-            <Text className="ml-1 text-white font-bold">Chỉnh sửa</Text>
+            <Text className="ml-1 text-white font-bold">Edit Profile</Text>
           </TouchableOpacity>
         </View>
         {/* <SettingsSection title="Tài khoản">
@@ -67,25 +70,24 @@ export default function Profile() {
             </View>
           </View>
         </SettingsSection> */}
-        <SettingsSection title="Cài đặt Nhóm">
-          <MenuItem title="Quản lý Nhóm" />
-          <MenuItem title="Chia sẻ Vị trí" />
-          <MenuItem title="Thông báo Thông minh" />
+        <SettingsSection title="Group Settings">
+          <MenuItem title="Manage Group" />
+          <MenuItem title="Share Location" />
+          <MenuItem title="Smart Notifications" />
         </SettingsSection>
 
-        <SettingsSection title="Cài đặt Chung">
-          <MenuItem title="Đổi mật khẩu" />
-          <MenuItem title="Lịch sử SOS" />
-          <MenuItem title="Cài đặt" />
-          <MenuItem title="Giới thiệu bạn bè" />
-          <MenuItem title="Câu hỏi thường gặp (FAQ)" />
+        <SettingsSection title="General Settings">
+          <MenuItem title="Change Password" onPress={handleChangePassword} />
+          <MenuItem title="SOS History" />
+          <MenuItem title="Settings" />
+          <MenuItem title="Invite Friends" />
+          <MenuItem title="FAQ" />
         </SettingsSection>
-
         <View className="px-8 mb-[80px] mt-5">
           <CustomButton
             primary={true}
             isLoading={loading}
-            title="Đăng xuất"
+            title="Logout"
             onPress={handleLogout}
           ></CustomButton>
         </View>

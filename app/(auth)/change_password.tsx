@@ -8,76 +8,110 @@ import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
 import ImageCustom from "../../components/Image/Image";
 import React from "react";
-const Login = () => {
+import { useAuth } from "../../context/AuthContext";
+const ChangePassword = () => {
+  const [oldPassword, setOldPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [oldPasswordError, setOldPasswordError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
-
+  const { change_password } = useAuth();
   const [loading, setLoading] = useState(false);
   const validatePassword = (password: string) => {
     if (password.length < 10) {
-      return "Mật khẩu phải có ít nhất 10 ký tự.";
+      return "Password must be at least 10 characters.";
     }
     if (!/[A-Za-z]/.test(password)) {
-      return "Mật khẩu phải chứa ít nhất một chữ cái.";
+      return "Password must contain at least one letter.";
     }
     if (!/\d/.test(password)) {
-      return "Mật khẩu phải chứa ít nhất một số.";
+      return "Password must contain at least one number.";
     }
     if (!/[@$!%*?&]/.test(password)) {
-      return "Mật khẩu phải chứa ít nhất một ký tự đặc biệt (@$!%*?&).";
+      return "Password must contain at least one special character (@$!%*?&).";
     }
     return "";
   };
-  const handleResetPassword = () => {
+  const handleChangePassword = async () => {
     setLoading(true);
-    const passwordValidationMessage = validatePassword(password);
-    if (passwordValidationMessage) {
-      setPasswordError(passwordValidationMessage);
+    try {
+      if (!oldPassword) {
+        setOldPasswordError("Please enter your old password");
+        setLoading(false);
+        return;
+      }
+      if (validatePassword(password)) {
+        setPasswordError(validatePassword(password));
+        setLoading(false);
+        return;
+      }
+      setPasswordError("");
+      if (password !== confirmPassword) {
+        setConfirmPasswordError("Confirm password does not match");
+        setLoading(false);
+        return;
+      }
+      setConfirmPasswordError("");
+      await change_password!({
+        oldPassword: oldPassword,
+        newPassword: password,
+      });
       setLoading(false);
-      return;
-    }
-    setPasswordError("");
-    if (password !== confirmPassword) {
-      setConfirmPasswordError("Confirm password does not match");
+      Toast.show({
+        type: "success",
+        text1: "Notification",
+        text2: "Password changed successfully!",
+        position: "top",
+        visibilityTime: 2000,
+      });
+      router.replace("/(main)/profile");
+    } catch (error: any) {
+      console.error(error);
       setLoading(false);
-      return;
+      Toast.show({
+        type: "error",
+        text1: "Notification",
+        text2: "Old password is not correct!",
+        position: "top",
+        visibilityTime: 2000,
+      });
     }
-    setConfirmPasswordError("");
-    Toast.show({
-      type: "success",
-      text1: "Notification!",
-      text2: "Password changed successfully!",
-      position: "top",
-      visibilityTime: 2000,
-    });
-    setLoading(false);
   };
+
   return (
     <>
       <StatusBar style="dark"></StatusBar>
       <View className="bg-white w-full h-full flex flex-col pt-10 relative">
         <View className="flex gap-3 w-full flex-col items-center px-2  justify-center pb-5">
           <Text className="font-bold text-[25px] text-[#404040]">
-            Set up a new password
-          </Text>
-          <Text className="text-[#9A9898] text-[14px]">
-            We'll send you password reset instructions.
+            Set a new password
           </Text>
         </View>
 
         <View className="flex flex-col gap-10 justify-center items-center w-full pt-5">
           <View className="flex flex-col justify-center items-center w-full gap-2">
             <Text className="text-start justify-start w-[90%] font-bold">
-              Password
+              Old password
+            </Text>
+            <Input
+              value={oldPassword}
+              errorPassword={oldPasswordError}
+              onChangeText={setOldPassword}
+              type="password"
+              placeholder="Old Password"
+            ></Input>
+          </View>
+          <View className="flex flex-col justify-center items-center w-full gap-2">
+            <Text className="text-start justify-start w-[90%] font-bold">
+              New password
             </Text>
             <Input
               value={password}
               errorPassword={passwordError}
               onChangeText={setPassword}
               type="password"
-              placeholder="Password"
+              placeholder="New Password"
             ></Input>
           </View>
           <View className="flex flex-col justify-center items-center w-full gap-2">
@@ -89,7 +123,7 @@ const Login = () => {
               onChangeText={setConfirmPassword}
               errorPassword={confirmPasswordError}
               type="password"
-              placeholder="Password"
+              placeholder="Confirm Password"
             ></Input>
           </View>
         </View>
@@ -110,7 +144,7 @@ const Login = () => {
               }}
               style={{ width: 15, height: 15 }}
             ></Image>
-            <Text className="text-[12px]">
+            <Text className="text-[12px] w-[90%]">
               Password must contain a number, a letter, and a special character
             </Text>
           </View>
@@ -120,24 +154,12 @@ const Login = () => {
             primary={true}
             secondary={false}
             isLoading={loading}
-            title="Reset Password"
-            onPress={handleResetPassword}
+            title="Change Password"
+            onPress={handleChangePassword}
           ></CustomButton>
-          <Pressable
-            className="flex gap-2 flex-row"
-            onPress={() => router.replace("/login")}
-          >
-            <ImageCustom
-              source="https://img.icons8.com/?size=100&id=357&format=png"
-              width={20}
-              height={20}
-              color="#404040"
-            ></ImageCustom>
-            <Text className="text-[#404040] text-[12px]">Return to login</Text>
-          </Pressable>
         </View>
       </View>
     </>
   );
 };
-export default Login;
+export default ChangePassword;

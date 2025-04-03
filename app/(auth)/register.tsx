@@ -4,7 +4,7 @@ import CustomButton from "../../components/Button/CustomButton";
 import Checkbox from "expo-checkbox";
 import { useContext, useEffect, useState } from "react";
 import { router } from "expo-router";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React from "react";
 const Register = () => {
@@ -26,16 +26,16 @@ const Register = () => {
 
   const validatePassword = (password: string) => {
     if (password.length < 10) {
-      return "Mật khẩu phải có ít nhất 10 ký tự.";
+      return "Password must be at least 10 characters.";
     }
     if (!/[A-Za-z]/.test(password)) {
-      return "Mật khẩu phải chứa ít nhất một chữ cái.";
+      return "Password must contain at least one letter.";
     }
     if (!/\d/.test(password)) {
-      return "Mật khẩu phải chứa ít nhất một số.";
+      return "Password must contain at least one number.";
     }
     if (!/[@$!%*?&]/.test(password)) {
-      return "Mật khẩu phải chứa ít nhất một ký tự đặc biệt (@$!%*?&).";
+      return "Password must contain at least one special character (@$!%*?&).";
     }
     return "";
   };
@@ -74,14 +74,14 @@ const Register = () => {
     <View className="bg-white w-full h-full min-h-dvh flex flex-col pt-10 relative">
       <View className="flex gap-3 w-full flex-row items-start px-1  justify-center pb-5">
         <Text className="font-bold text-[25px] text-[#404040]">
-          Trở thành một phần của LiveBoat!
+          Become a LiveBoat member.
         </Text>
       </View>
 
       <View className="flex flex-col gap-10 justify-center items-center w-full pt-5">
         <View className="flex flex-col justify-center items-center w-full gap-2">
           <Text className="text-start justify-start w-[90%] font-bold">
-            Số điện thoại
+            Phone number
           </Text>
           <Input
             error={phoneError}
@@ -89,18 +89,18 @@ const Register = () => {
             type="phone"
             onChangeText={setPhone}
             keyboardType="number-pad"
-            placeholder="Số điện thoại"
+            placeholder="Phone number"
           ></Input>
         </View>
         <View className="flex flex-col justify-center items-center w-full gap-2">
           <Text className="text-start justify-start w-[90%] font-bold">
-            Mật khẩu
+            Password
           </Text>
           <Input
             errorPassword={passwordError}
             value={password}
             onChangeText={setPassword}
-            placeholder="Mật khẩu"
+            placeholder="Password"
             type="password"
           ></Input>
         </View>
@@ -113,7 +113,7 @@ const Register = () => {
             }}
             style={{ width: 15, height: 15 }}
           ></Image>
-          <Text className="text-[12px]">Ít nhất 10 ký tự</Text>
+          <Text className="text-[12px]">At least 10 characters</Text>
         </View>
         <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
           <Image
@@ -123,7 +123,7 @@ const Register = () => {
             style={{ width: 15, height: 15 }}
           ></Image>
           <Text className="text-[12px]">
-            Mật khẩu phải chứa số, chữ cái và ký tự đặc biệt
+            Password must contain a number, a letter, and a special character
           </Text>
         </View>
         <TouchableOpacity
@@ -132,8 +132,7 @@ const Register = () => {
         >
           <Checkbox value={isChecked} onValueChange={setIsChecked}></Checkbox>
           <Text className="w-[90%] leading-4 text-[13px]">
-            Có, hãy thông báo cho tôi về ưu đãi & tính năng mới. Tôi có thể hủy
-            bất kỳ lúc nào.
+            Yes, inform me on deals & new features. I can opt out of any time
           </Text>
         </TouchableOpacity>
       </View>
@@ -142,14 +141,14 @@ const Register = () => {
         <CustomButton
           primary={true}
           secondary={false}
-          title="Đăng ký"
+          title="Register"
           isLoading={loading}
           onPress={handleRegister}
         ></CustomButton>
         <CustomButton
           primary={false}
           secondary={true}
-          title="Đăng nhập"
+          title="Login"
           onPress={() => router.replace("/login")}
         ></CustomButton>
       </View>

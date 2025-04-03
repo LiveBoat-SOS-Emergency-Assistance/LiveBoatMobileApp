@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { Image, StatusBar } from "react-native";
 import Toast from "react-native-toast-message";
-import AuthProvider from "./(auth)/AuthContext";
+import AuthProvider from "../context/AuthContext";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -48,6 +48,19 @@ const Layout = () => {
           }}
         />
         <Stack.Screen
+          name="(auth)/verify_account"
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
+        />
+        <Stack.Screen
           name="(auth)/send_otp"
           options={{
             headerShown: true,
@@ -62,6 +75,19 @@ const Layout = () => {
         />
         <Stack.Screen
           name="(auth)/forgot_password"
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="(auth)/change_password"
           options={{
             headerShown: true,
             title: "",

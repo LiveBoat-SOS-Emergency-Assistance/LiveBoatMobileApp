@@ -12,7 +12,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import React from "react";
 const Login = () => {
   const [phone, setPhone] = useState("");
@@ -43,7 +43,7 @@ const Login = () => {
     }
     setPhoneError(false);
     if (!password) {
-      setPasswordError("Vui lòng nhập mật khẩu");
+      setPasswordError("Please enter your password");
       setLoading(false);
       return;
     }
@@ -53,8 +53,8 @@ const Login = () => {
       setLoading(false);
       Toast.show({
         type: "success",
-        text1: "Thông báo",
-        text2: "Đăng nhập thành công!",
+        text1: "Notification",
+        text2: "Login successful!",
         position: "top",
         visibilityTime: 2000,
       });
@@ -62,8 +62,8 @@ const Login = () => {
     } catch (error: any) {
       Toast.show({
         type: "error",
-        text1: "Thông báo",
-        text2: "Tài khoản hoặc mật khẩu không hợp lệ!",
+        text1: "Notification",
+        text2: "Invalid account or password!",
         position: "top",
         visibilityTime: 2000,
       });
@@ -77,14 +77,14 @@ const Login = () => {
       <View className="bg-white w-full h-full flex flex-col pt-10 relative">
         <View className="flex gap-3 w-full flex-row items-center px-2  justify-center pb-5">
           <Text className="font-bold text-[25px] text-[#404040]">
-            Chào bạn, mừng bạn trở lại!
+            Hello, welcome back!
           </Text>
         </View>
 
         <View className="flex flex-col gap-10 justify-center items-center w-full pt-5">
           <View className="flex flex-col justify-center items-center w-full gap-2">
             <Text className="text-start justify-start w-[90%] font-bold">
-              Số điện thoại
+              Phone Number
             </Text>
             <Input
               error={phoneError}
@@ -92,19 +92,19 @@ const Login = () => {
               onChangeText={setPhone}
               type="phone"
               keyboardType="number-pad"
-              placeholder="Số điện thoại"
+              placeholder="Phone Number"
             ></Input>
           </View>
           <View className="flex flex-col justify-center items-center w-full gap-2">
             <Text className="text-start justify-start w-[90%] font-bold">
-              Mật khẩu
+              Password
             </Text>
             <Input
               value={password}
               onChangeText={setPassword}
               type="password"
               errorPassword={passwordError}
-              placeholder="Mật khẩu"
+              placeholder="Password"
             ></Input>
           </View>
         </View>
@@ -113,20 +113,20 @@ const Login = () => {
           onPress={() => router.push("/forgot_password")}
           className="w-full justify-center  flex items-center pt-10"
         >
-          <Text className="font-bold underline w-[90%] ">Quên mật khẩu?</Text>
+          <Text className="font-bold underline w-[90%] ">Forgot password?</Text>
         </Pressable>
         <View className="flex flex-col mx-auto w-[90%] justify-center items-center pt-10 gap-5">
           <CustomButton
             primary={true}
             secondary={false}
             isLoading={loading}
-            title="Đăng nhập"
+            title="Login"
             onPress={handleLogin}
           ></CustomButton>
           <CustomButton
             primary={false}
             secondary={true}
-            title="Đăng ký"
+            title="Register"
             onPress={() => router.replace("/register")}
           ></CustomButton>
         </View>

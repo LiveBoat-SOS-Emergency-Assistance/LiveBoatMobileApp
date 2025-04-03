@@ -95,7 +95,7 @@ const edit_profile = () => {
             ></TextInput>
           </SettingsSection>
           <View className="w-[90%] mx-auto">
-            <CustomButton third title="Save"></CustomButton>
+            <CustomButton third title="Lưu"></CustomButton>
           </View>
         </View>
       </ScrollView>

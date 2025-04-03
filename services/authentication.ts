@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authentication, email } from "../utils/request";
 
 export class authen {
@@ -64,6 +65,23 @@ export class authen {
         headers: {
           "Content-Type": "application/json",
         },
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  static async change_password(data: any) {
+    const token = await AsyncStorage.getItem("accessToken");
+
+    try {
+      const result = await authentication("/change-password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        data: JSON.stringify(data),
       });
       return result;
     } catch (error: any) {

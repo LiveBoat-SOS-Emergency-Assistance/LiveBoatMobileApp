@@ -16,7 +16,7 @@ const verify_account = () => {
     <View className="bg-white w-full h-full min-h-dvh flex flex-col gap-[50px]">
       <View className="flex gap-3 w-full flex-row items-start px-1 pt-10 justify-center pb-5">
         <Text className="font-bold text-[25px] text-[#404040]">
-          Xác minh tài khoản
+          Verify account
         </Text>
       </View>
       <View className="w-full flex flex-col justify-center items-center gap-[60px]">
@@ -35,7 +35,7 @@ const verify_account = () => {
               isMethod === "phone" ? "text-[#5698BC]" : "text-[#404040]"
             }`}
           >
-            Xác minh tài khoản qua số điện thoại
+            Verify account via phone number
           </Text>
         </Pressable>
         <Pressable
@@ -53,13 +53,13 @@ const verify_account = () => {
               isMethod === "email" ? "text-[#5698BC]" : "text-[#404040]"
             }`}
           >
-            Xác minh tài khoản qua Email
+            Verify account via Email
           </Text>
         </Pressable>
         <View className="w-[90%] flex justify-center items-center">
           <CustomButton
             third={true}
-            title="Tiếp tục"
+            title="Continue"
             onPress={handleVerify}
             // onPress={() => console.log("hi")}
           ></CustomButton>

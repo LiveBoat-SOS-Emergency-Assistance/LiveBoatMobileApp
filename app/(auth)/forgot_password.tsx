@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import Input from "../../components/Input/Input";
 import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import Toast from "react-native-toast-message";
 import React from "react";
 const forgot_password = () => {
