@@ -1,4 +1,12 @@
-import { View, Text, StyleSheet, Image, Button, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Button,
+  Pressable,
+  LogBox,
+} from "react-native";
 import { FONTS } from "../constants/theme";
 import { useRouter } from "expo-router";
 import CustomButton from "../components/Button/CustomButton";
@@ -17,6 +25,7 @@ import {
   ReanimatedLogLevel,
 } from "react-native-reanimated";
 SplashScreen.preventAutoHideAsync();
+LogBox.ignoreAllLogs();
 export default function home() {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
@@ -27,10 +36,10 @@ export default function home() {
       text2: "The feature will coming soon!",
     });
   };
-  // Cấu hình logger
+
   configureReanimatedLogger({
-    level: ReanimatedLogLevel.warn, // Mức độ log là warn
-    strict: true, // Kích hoạt chế độ strict
+    level: ReanimatedLogLevel.warn,
+    strict: true,
   });
 
   useEffect(() => {
@@ -73,6 +82,7 @@ export default function home() {
       const response = await axios.post(`${baseURL}/jwt/access-token`, {
         refreshToken,
       });
+      console.log(response.data.accessToken);
       const newAccessToken = response.data?.accessToken;
       await AsyncStorage.setItem("accessToken", newAccessToken);
       setIsChecking(false);

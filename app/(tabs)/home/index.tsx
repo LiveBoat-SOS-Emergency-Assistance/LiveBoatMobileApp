@@ -43,7 +43,7 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
-        <Map></Map>
+        <Map signal="normal"></Map>
         <View className="absolute top-[45px] w-full flex flex-col items-center px-2">
           <View className="w-full flex flex-row items-center justify-between px-2">
             {/* Avatar */}
@@ -71,7 +71,7 @@ export default function HomeScreen() {
                 className="text-white text-base font-bold"
                 style={{ fontFamily: "Poppins" }}
               >
-                Gia đình
+                My family
               </Text>
               <ChevronDown
                 size={20}
@@ -148,7 +148,7 @@ export default function HomeScreen() {
                       activeTab ? "text-[#EB4747]" : "text-white"
                     }`}
                   >
-                    Thành viên
+                    Member
                   </Text>
                 </Pressable>
                 <Pressable
@@ -163,7 +163,7 @@ export default function HomeScreen() {
                       activeTab === false ? "text-[#EB4747]" : "text-white"
                     }`}
                   >
-                    Địa điểm
+                    Places
                   </Text>
                 </Pressable>
               </View>
@@ -183,27 +183,6 @@ export default function HomeScreen() {
             </View>
           </BottomModal>
         </AnimatePresence>
-        {/* <BottomSheet
-          ref={bottomSheetRef}
-          snapPoints={["25%", "50%"]}
-          index={-1}
-          style={{ zIndex: 10 }}
-          enablePanDownToClose={true}
-        >
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Text>Nội dung BottomSheet</Text>
-            <Button
-              title="Đóng"
-              onPress={() => bottomSheetRef.current?.close()}
-            />
-          </View>
-        </BottomSheet> */}
       </View>
     </GestureHandlerRootView>
   );

@@ -1,4 +1,3 @@
-"use client";
 import React, { useEffect } from "react";
 import { View, StyleSheet, Image } from "react-native";
 import Animated, {

@@ -2,14 +2,16 @@ import React, { useEffect, useState } from "react";
 import { View, PermissionsAndroid, Platform, StyleSheet } from "react-native";
 import MapboxGL, { MapView, Camera, PointAnnotation } from "@rnmapbox/maps";
 import { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "@env";
+import UserSOS from "./UserSOS";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import UserLocation from "./UserLocation";
 
 MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN);
-MapboxGL.setTelemetryEnabled(false); // Tắt telemetry để tránh lỗi không mong muốn
+MapboxGL.setTelemetryEnabled(false);
 
-const Map = () => {
+const Map = ({ signal }: { signal?: string }) => {
   const [location, setLocation] = useState<[number, number] | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false); // Kiểm tra khi Mapbox đã sẵn sàng
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     const requestLocationPermission = async () => {
@@ -18,7 +20,7 @@ const Map = () => {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
         );
         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          console.warn("Quyền truy cập vị trí bị từ chối!");
+          console.warn("Location permission denied!");
           return;
         }
       }
@@ -36,7 +38,7 @@ const Map = () => {
           ]);
         }
       } catch (error) {
-        console.error("Lỗi lấy vị trí:", error);
+        console.error("Error getting location:", error);
       }
     };
 
@@ -55,7 +57,10 @@ const Map = () => {
           <>
             <Camera zoomLevel={14} centerCoordinate={location} />
             <PointAnnotation id="current-location" coordinate={location}>
-              <UserLocation />
+              <View className="flex-1 justify-center items-center">
+                {/* <UserSOS></UserSOS> */}
+                {signal === "sos" ? <UserSOS /> : <UserLocation></UserLocation>}
+              </View>
             </PointAnnotation>
           </>
         )}
@@ -73,14 +78,6 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
-  },
-  marker: {
-    width: 16,
-    height: 16,
-    backgroundColor: "blue",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "white",
   },
 });
 

@@ -9,23 +9,28 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-
 interface BottomModalProps {
   children: ReactNode;
   onClose?: () => void;
   initialExpanded?: boolean;
+  collapsedHeight?: number;
+  expandedHeight?: number;
+  color?: string;
 }
-
 const BottomModal = ({
   children,
   initialExpanded = false,
+  collapsedHeight = 27,
+  expandedHeight = 65,
+  color = "#FFD9D9",
 }: BottomModalProps) => {
-  const COLLAPSED_HEIGHT = 27;
-  const EXPANDED_HEIGHT = 65;
-
-  const initialHeight = initialExpanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT;
+  const initialHeight = initialExpanded ? expandedHeight : collapsedHeight;
   const height = useSharedValue(initialHeight);
   const isExpanded = useSharedValue(initialExpanded);
+
+  // const initialHeight = initialExpanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT;
+  // const height = useSharedValue(initialHeight);
+  // const isExpanded = useSharedValue(initialExpanded);
 
   const windowHeight = useSharedValue(Dimensions.get("window").height);
 
@@ -41,10 +46,10 @@ const BottomModal = ({
     onStart: () => {},
     onActive: (event) => {
       if (event.translationY < -20 && !isExpanded.value) {
-        height.value = withSpring(EXPANDED_HEIGHT, { damping: 15 });
+        height.value = withSpring(expandedHeight, { damping: 15 });
         isExpanded.value = true;
       } else if (event.translationY > 20 && isExpanded.value) {
-        height.value = withSpring(COLLAPSED_HEIGHT, { damping: 15 });
+        height.value = withSpring(collapsedHeight, { damping: 15 });
         isExpanded.value = false;
       }
     },
@@ -67,7 +72,7 @@ const BottomModal = ({
               position: "absolute",
               bottom: 0,
               width: "100%",
-              backgroundColor: "#FFD9D9",
+              backgroundColor: color,
               padding: 16,
               borderTopLeftRadius: 30,
               borderTopRightRadius: 30,

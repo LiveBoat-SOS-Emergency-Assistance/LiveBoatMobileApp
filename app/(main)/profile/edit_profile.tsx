@@ -44,13 +44,13 @@ const edit_profile = () => {
         <View className="w-full pt-5 flex flex-col gap-8 justify-center">
           <View className=" w-[100%] justify-center items-center gap-2">
             <Text className="text-gray-500 font-semibold justify-start items-start text-start w-[90%]">
-              Họ và tên
+              Full name
             </Text>
             <Input value="Bach Duong"></Input>
           </View>
           <View className=" w-[100%] justify-center items-center gap-3 relative">
             <Text className="text-gray-500 font-semibold justify-start items-start text-start w-[90%]">
-              Thông tin liên hệ
+            Contact Information
             </Text>
             <View className="flex flex-row w-[90%] border h-[50px] rounded-[5px] gap-2 border-[#D9D9D9] px-2 items-center">
               <ImageCustom
@@ -60,7 +60,7 @@ const edit_profile = () => {
                 source="https://img.icons8.com/?size=100&id=12580&format=png&color=000000"
               ></ImageCustom>
               <Text className="">bachduongvan0402@gmail.com</Text>
-              <Text className="text-[9px] text-green-500">Đã xác thực</Text>
+              <Text className="text-[9px] text-green-500">Verified</Text>
               <View className="absolute right-2">
                 <Icon path="M9 6L15 12L9 18" />
               </View>
@@ -78,14 +78,14 @@ const edit_profile = () => {
               </View>
             </View>
           </View>
-          <SettingsSection title="Thông tin cá nhân">
-            <MenuItem title="Địa chỉ" />
-            <MenuItem title="Ngày sinh" />
-            <MenuItem title="Chiều cao" />
-            <MenuItem title="Cân nặng" />
-            <MenuItem title="Nhóm máu" />
+          <SettingsSection title="Personal Information">
+            <MenuItem title="Address" />
+            <MenuItem title="Date of Birth" />
+            <MenuItem title="Height" />
+            <MenuItem title="Weight" />
+            <MenuItem title="Blood Type" />
             <TextInput
-              placeholder="Dị ứng"
+              placeholder="Allergies"
               className="w-full h-[100px] border items-start border-[#d9d9d9] rounded-[5px] justify-start mt-3 p-2"
               onChangeText={(text) => setText(text)}
               value={text}
@@ -95,7 +95,7 @@ const edit_profile = () => {
             ></TextInput>
           </SettingsSection>
           <View className="w-[90%] mx-auto">
-            <CustomButton third title="Lưu"></CustomButton>
+            <CustomButton third title="Save"></CustomButton>
           </View>
         </View>
       </ScrollView>
