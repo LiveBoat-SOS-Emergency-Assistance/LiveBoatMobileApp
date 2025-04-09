@@ -33,7 +33,7 @@ const Input = ({
   return (
     <View className="w-[90%]">
       <View
-        className={`w-full border h-[54px] rounded-[5px] px-4 outline-none flex relative justify-center ${
+        className={`w-full border h-[48px] rounded-[5px] px-4 outline-none flex relative justify-center ${
           error
             ? "border-red-500"
             : focused

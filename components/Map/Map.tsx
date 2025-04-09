@@ -5,45 +5,54 @@ import { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "@env";
 import UserSOS from "./UserSOS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import UserLocation from "./UserLocation";
-
+import { getCurrentLocation } from "../../utils/location";
 MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN);
 MapboxGL.setTelemetryEnabled(false);
 
 const Map = ({ signal }: { signal?: string }) => {
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-
   useEffect(() => {
-    const requestLocationPermission = async () => {
-      if (Platform.OS === "android") {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          console.warn("Location permission denied!");
-          return;
-        }
-      }
-      getCurrentLocation();
-    };
-
-    const getCurrentLocation = async () => {
-      try {
-        const userLocation =
-          await MapboxGL.locationManager.getLastKnownLocation();
-        if (userLocation) {
-          setLocation([
-            userLocation.coords.longitude,
-            userLocation.coords.latitude,
-          ]);
-        }
-      } catch (error) {
-        console.error("Error getting location:", error);
+    const fetchLocation = async () => {
+      const loc = await getCurrentLocation();
+      if (loc) {
+        setLocation([loc.longitude, loc.latitude]);
       }
     };
 
-    requestLocationPermission();
+    fetchLocation();
   }, []);
+  // useEffect(() => {
+  //   const requestLocationPermission = async () => {
+  //     if (Platform.OS === "android") {
+  //       const granted = await PermissionsAndroid.request(
+  //         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+  //       );
+  //       if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+  //         console.warn("Location permission denied!");
+  //         return;
+  //       }
+  //     }
+  //     getCurrentLocation();
+  //   };
+
+  //   const getCurrentLocation = async () => {
+  //     try {
+  //       const userLocation =
+  //         await MapboxGL.locationManager.getLastKnownLocation();
+  //       if (userLocation) {
+  //         setLocation([
+  //           userLocation.coords.longitude,
+  //           userLocation.coords.latitude,
+  //         ]);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error getting location:", error);
+  //     }
+  //   };
+
+  //   requestLocationPermission();
+  // }, []);
 
   return (
     <View style={styles.container}>

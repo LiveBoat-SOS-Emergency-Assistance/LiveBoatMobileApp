@@ -1,12 +1,64 @@
 import { GestureResponderEvent, Pressable, Text, View } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ImageCustom from "../Image/Image";
+import { userServices } from "../../services/user";
+import axios from "axios";
+import { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "@env";
+import { router } from "expo-router";
 interface cardProps {
-  onPress?: () => void;
+  data: any;
 }
-const SOSCardFilter = ({ onPress }: cardProps) => {
+const SOSCardFilter = ({ data }: cardProps) => {
+  const [user, setUser] = useState<any>(null);
+  const [locationName, setLocationName] = useState<string | null>(null);
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const result = await userServices.getUserByID(data.user_id);
+        // console.log(result.data);
+        setUser(result.data);
+      } catch (error: any) {
+        console.error("Error at SOSCardFilter", error);
+      }
+    };
+    if (data) {
+      getUser();
+    }
+  }, []);
+
+  useEffect(() => {
+    const getLocationName = async () => {
+      if (data.latitude && data.longitude) {
+        try {
+          // Mapbox Reverse Geocoding API
+          const response = await axios.get(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${data.longitude},${data.latitude}.json?access_token=${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`
+          );
+
+          // Check if results are available and set the location name
+          if (response.data.features && response.data.features.length > 0) {
+            const location = response.data.features[0].place_name; // Location name from Mapbox API
+            setLocationName(location);
+          }
+        } catch (error) {
+          console.error("Error fetching location name", error);
+        }
+      }
+    };
+
+    getLocationName();
+  }, [data.latitude, data.longitude]);
+
+  const handlePress = () => {
+    if (data) {
+      router.push({
+        pathname: "/(tabs)/history/profile_sos",
+        params: { id: data.id },
+      });
+    }
+  };
   return (
-    <Pressable onPress={onPress} className="w-full">
+    <Pressable onPress={handlePress} className="w-full">
       <View className="w-full bg-white rounded-[10px] border-gray-200 shadow-md border py-2 px-2 flex flex-row justify-start items-start">
         <View className="flex flex-row gap-5  justify-center items-center">
           <ImageCustom
@@ -16,11 +68,16 @@ const SOSCardFilter = ({ onPress }: cardProps) => {
           ></ImageCustom>
           <View className="flex flex-col gap-1">
             <Text className="text-[#404040] font-bold text-[12px]">
-              Ran out of gas on the highway
+              {data?.name != null ? data.name : `SOS-${data.id}`}
             </Text>
             <View className="flex flex-row">
-              <Text className="text-[#404040] text-[8px]">Phuong Anh - </Text>
-              <Text className="text-[#404040] text-[8px]"> 0914165874</Text>
+              <Text className="text-[#404040] text-[8px]">
+                {user?.name || "Unknown name"}
+              </Text>
+              <Text className="text-[#404040] text-[8px]">
+                {" - "}
+                {user?.User.phone}
+              </Text>
             </View>
             <View className="flex flex-row">
               <ImageCustom
@@ -29,7 +86,11 @@ const SOSCardFilter = ({ onPress }: cardProps) => {
                 source="https://img.icons8.com/?size=100&id=r9lfc22rXPaO&format=png&color=000000"
               ></ImageCustom>
               <Text className="text-[#404040] text-[8px]">
-                150 Me Suot, Lien Chieu, Da Nang
+                {locationName
+                  ? locationName.length > 50
+                    ? locationName.slice(0, 50) + "..."
+                    : locationName
+                  : "Unknown location..."}
               </Text>
             </View>
           </View>

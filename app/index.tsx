@@ -82,7 +82,7 @@ export default function home() {
       const response = await axios.post(`${baseURL}/jwt/access-token`, {
         refreshToken,
       });
-      console.log(response.data.accessToken);
+      // console.log(response.data.accessToken);
       const newAccessToken = response.data?.accessToken;
       await AsyncStorage.setItem("accessToken", newAccessToken);
       setIsChecking(false);
@@ -91,6 +91,7 @@ export default function home() {
       console.log("Làm mới token thất bại, đăng xuất.");
       await AsyncStorage.removeItem("accessToken");
       await AsyncStorage.removeItem("refreshToken");
+      router.replace("/");
       setIsChecking(false);
       return null;
     }

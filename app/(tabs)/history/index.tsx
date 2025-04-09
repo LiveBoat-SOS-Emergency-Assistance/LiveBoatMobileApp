@@ -18,6 +18,7 @@ import SOSCardFilter from "../../../components/Card/SOSCardFilter";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { sosService } from "../../../services/sos";
+import InfiniteScrollPagination from "../../../components/Pagination/InfiniteScrollPagination";
 export default function History() {
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth / 3;
@@ -27,8 +28,9 @@ export default function History() {
   useEffect(() => {
     const getListSOS = async () => {
       try {
-        const result = await sosService.get_status_all();
-        console.log(result);
+        const result = await sosService.getSOSByStatus("ONGOING");
+        setListSOS(result.data);
+        // console.log(result.data);
       } catch (error: any) {
         console.error(error);
       }
@@ -44,7 +46,7 @@ export default function History() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
       >
         <ScrollView
-          className="bg-white h-full flex flex-col pb-12 gap-3"
+          className="bg-white h-full flex flex-col pb-12 gap-3 mb-24"
           contentContainerStyle={{
             flexDirection: "column",
             alignItems: "center",
@@ -204,21 +206,11 @@ export default function History() {
               ></ImageCustom>
             </View>
           </View>
-          <ScrollView
-            className="bg-white w-[90%] mb-10 flex flex-col py-12 gap-3"
-            contentContainerStyle={{
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 12,
-            }}
-            keyboardShouldPersistTaps="handled"
-          >
-            <SOSCardFilter
-              onPress={() => router.push("/(main)/profile/profile_sos")}
-            ></SOSCardFilter>
-            <SOSCardFilter></SOSCardFilter>
-            <SOSCardFilter></SOSCardFilter>
-          </ScrollView>
+          <InfiniteScrollPagination
+            data={listSOS}
+            itemsPerPage={4}
+            renderItem={(item) => <SOSCardFilter data={item} />}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

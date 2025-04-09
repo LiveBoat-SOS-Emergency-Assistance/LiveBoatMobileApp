@@ -15,9 +15,11 @@ import BottomModal from "../../../components/Modal/BottomModal";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SlideToCancel from "../../../components/Button/SlideCancelButton";
 import { router } from "expo-router";
+import CustomDialog from "../../../components/Dialog/DialogEditSOS";
 
 export default function SOSMap() {
   const [isDisable, setIsDisable] = useState(false);
+  const [visible, setVisible] = useState(false);
   const handleDisableSOS = () => {
     setIsDisable(true);
   };
@@ -25,6 +27,9 @@ export default function SOSMap() {
   const handleCancelSOS = () => {
     setIsDisable(false);
     router.push("/(tabs)/home/sos_diable");
+  };
+  const handleEditSOS = () => {
+    setVisible(true);
   };
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -34,6 +39,19 @@ export default function SOSMap() {
             SOS Activated
           </Text>
         </View>
+        {visible && (
+          <CustomDialog
+            title="Edit SOS signal"
+            message="Are you sure you want to edit the SOS signal?"
+            confirmText="Accept"
+            cancelText="Cancel"
+            onConfirm={() => {
+              console.log("Confirmed");
+              setVisible(false);
+            }}
+            onCancel={() => setVisible(false)}
+          />
+        )}
         <Map signal="sos" />
 
         {/* Action Buttons */}
@@ -107,10 +125,8 @@ export default function SOSMap() {
             </AnimatePresence>
             {/* Bottom Controls */}
             <View className="absolute bg-white border border-t-[#ddd] bottom-0 py-5 left-0 right-0 flex-row justify-around px-5  items-center">
-              {/* <Text className="text-lg font-bold text-gray-400">Are you OK?</Text> */}
-              {/* <CustomButton secondary title="Edit SOS"></CustomButton> */}
               <TouchableOpacity
-                // onPress={handleDisableSOS}
+                onPress={handleEditSOS}
                 className="flex-row items-center bg-white px-4 py-2 rounded-full shadow"
               >
                 <ImageCustom

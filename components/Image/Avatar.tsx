@@ -2,15 +2,25 @@ import { Image } from "react-native";
 import React from "react";
 
 interface imageProps {
-  source?: any;
+  source?: string;
+  className?: string;
   width?: number;
   height?: number;
 }
-const Avatar = ({ source, width, height }: imageProps) => {
+const Avatar = ({
+  source,
+  width = 100,
+  height = 100,
+  className,
+}: imageProps) => {
+  const imageSource = source
+    ? { uri: source }
+    : require("../../assets/images/ava.jpg");
+
   return (
     <Image
-      className=" rounded-full object-cover"
-      source={require("../../assets/images/ava.jpg")}
+      className={`rounded-full object-cover${className}`}
+      source={imageSource}
       style={{ width: width, height: height }}
     />
   );

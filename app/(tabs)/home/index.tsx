@@ -17,6 +17,7 @@ import { AnimatePresence } from "framer-motion";
 import BottomModal from "../../../components/Modal/BottomModal";
 import MemberCard from "../../../components/Card/MemberCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import CustomDialog from "../../../components/Dialog/DialogEditSOS";
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState(true);
@@ -37,12 +38,12 @@ export default function HomeScreen() {
       getAccessToken();
     }, [])
   );
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
+
         <Map signal="normal"></Map>
         <View className="absolute top-[45px] w-full flex flex-col items-center px-2">
           <View className="w-full flex flex-row items-center justify-between px-2">
@@ -104,6 +105,7 @@ export default function HomeScreen() {
           </View>
           <View className="w-full justify-end items-end px-2">
             <Pressable
+              // onPress={handleEditSOS}
               className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow "
               style={{
                 shadowColor: "#000",
@@ -125,6 +127,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
+
         <AnimatePresence>
           <BottomModal>
             <View className="w-full flex flex-col justify-center items-center">

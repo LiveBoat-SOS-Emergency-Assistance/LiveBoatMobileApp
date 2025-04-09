@@ -11,7 +11,6 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const { logout } = useAuth();
   const router = useRouter();
-
   const handlePress = () => {
     router.push("/(main)/profile/edit_profile");
   };
@@ -52,24 +51,6 @@ export default function Profile() {
             <Text className="ml-1 text-white font-bold">Edit Profile</Text>
           </TouchableOpacity>
         </View>
-        {/* <SettingsSection title="Tài khoản">
-          <View className="flex-row justify-between py-2 px-5">
-            <View className="flex flex-row gap-2  items-center w-full">
-              <ImageCustom
-                source="https://img.icons8.com/?size=100&id=Iw5aeMT37fzK&format=png&color=000000"
-                width={24}
-                height={24}
-                color="#404040"
-              ></ImageCustom>
-              <View className="flex flex-col">
-                <Text className="text-lg">Số điện thoại:</Text>
-                <Text className="font-bold text-[#404040] text-lg">
-                  + 0914136585
-                </Text>
-              </View>
-            </View>
-          </View>
-        </SettingsSection> */}
         <SettingsSection title="Group Settings">
           <MenuItem title="Manage Group" />
           <MenuItem title="Share Location" />

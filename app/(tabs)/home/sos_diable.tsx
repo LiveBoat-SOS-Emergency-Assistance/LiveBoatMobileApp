@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { sosService } from "../../../services/sos";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomButton from "../../../components/Button/CustomButton";
+import Toast from "react-native-toast-message";
 
 export default function SOSDiable() {
   const handleOk = async () => {
@@ -18,7 +19,14 @@ export default function SOSDiable() {
         longitude: longitude,
         latitude: latitude,
         accuracy: accuracy,
-        status: "CANCEl",
+        status: "CANCELED",
+      });
+      Toast.show({
+        type: "info",
+        text1: "Notification",
+        text2: "Your sos signal has been cancelled!",
+        position: "top",
+        visibilityTime: 2000,
       });
       router.replace("/(tabs)/home");
     } catch (error: any) {
@@ -39,12 +47,6 @@ export default function SOSDiable() {
         </Text>
       </View>
       <CustomButton onPress={handleOk} title="OK" third></CustomButton>
-      {/* <TouchableOpacity
-        onPress={handleOk}
-        className="bg-[#80C4E9] py-4 px-10 rounded-full w-full items-center absolute bottom-[150px]"
-      >
-        <Text className="text-white font-bold text-lg">OK</Text>
-      </TouchableOpacity> */}
     </View>
   );
 }

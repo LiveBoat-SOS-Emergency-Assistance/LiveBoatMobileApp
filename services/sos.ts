@@ -1,43 +1,60 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { sos } from "../utils/request";
+import axiosPrivate, { CustomAxiosRequestConfig } from "../utils/api";
 export class sosService {
   static async sos_create(data: any) {
-    const token = await AsyncStorage.getItem("accessToken");
     try {
-      const result = await sos("/create", {
-        method: "POST",
+      const result = await axiosPrivate.post("/sos/create", data, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        data: JSON.stringify(data),
-      });
+        requiresAuth: true,
+      } as CustomAxiosRequestConfig);
       return result;
     } catch (error: any) {
       throw error;
     }
   }
   static async sos_edit(sosId: string, data: any) {
-    const token = await AsyncStorage.getItem("accessToken");
     try {
-      const result = await sos(`/update/${sosId}`, {
-        method: "PUT",
+      const result = await axiosPrivate.put(`/sos/update/${sosId}`, data, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        data: JSON.stringify(data),
+
+        requiresAuth: true,
+      } as CustomAxiosRequestConfig);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  static async getSOSAll() {
+    try {
+      const result = await axiosPrivate.get(`/sos/all`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
       return result;
     } catch (error: any) {
       throw error;
     }
   }
-  static async get_status_all() {
-    // const token = await AsyncStorage.getItem("accessToken");
+  static async getSOSById(id: number) {
     try {
-      const result = await sos(`/all`, {
-        method: "GET",
+      const result = await axiosPrivate.get(`/sos/${id}`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  static async getSOSByStatus(status: string) {
+    try {
+      const result = await axiosPrivate.get(`/sos/all?status=${status}`, {
         headers: {
           "Content-Type": "application/json",
         },
