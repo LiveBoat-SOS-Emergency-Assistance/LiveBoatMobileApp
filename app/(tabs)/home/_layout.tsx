@@ -14,6 +14,10 @@ export default function Layout() {
           headerShadowVisible: false,
         }}
       />
+      <Stack.Screen
+        name="add_group"
+        options={{ headerShown: true, title: "" }}
+      />
     </Stack>
   );
 }

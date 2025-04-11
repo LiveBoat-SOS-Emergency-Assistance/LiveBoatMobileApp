@@ -2,14 +2,7 @@ import React from "react";
 import { View, StyleSheet, Image } from "react-native";
 
 const UserSOS = () => {
-  return (
-    <View style={styles.container}>
-      <Image
-        style={styles.avatar}
-        source={require("../../assets/images/ava.jpg")}
-      />
-    </View>
-  );
+  return <View className="w-[50px] h-[50px] bg-[#EB4747] rounded-full"></View>;
 };
 
 const styles = StyleSheet.create({

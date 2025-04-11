@@ -5,6 +5,7 @@ import AuthProvider from "../context/AuthContext";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { SCREENS } from "../constants/screens";
 const Layout = () => {
   return (
     <AuthProvider>
@@ -16,16 +17,25 @@ const Layout = () => {
           headerShadowVisible: false,
         }}
       >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(main)" options={{ title: "" }} />
+        <Stack.Screen
+          name={SCREENS.INDEX.name}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={SCREENS.TABS.name}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={SCREENS.MAIN.name}
+          options={{ title: SCREENS.MAIN.title }}
+        />
         {/* <Stack.Screen name="(main)" />
         <Stack.Screen name="(main)/chat/chatbot" /> */}
         <Stack.Screen
-          name="(auth)/login"
+          name={SCREENS.LOGIN.name}
           options={{
             headerShown: true,
-            title: "",
+            title: SCREENS.LOGIN.title,
             headerRight: () => (
               <Image
                 source={require("../assets/images/liveboat.png")}
@@ -35,10 +45,10 @@ const Layout = () => {
           }}
         />
         <Stack.Screen
-          name="(auth)/register"
+          name={SCREENS.REGISTER.name}
           options={{
             headerShown: true,
-            title: "",
+            title: SCREENS.REGISTER.title,
             headerRight: () => (
               <Image
                 source={require("../assets/images/liveboat.png")}
@@ -48,10 +58,10 @@ const Layout = () => {
           }}
         />
         <Stack.Screen
-          name="(auth)/verify_account"
+          name={SCREENS.VERIFY_ACCOUNT.name}
           options={{
             headerShown: true,
-            title: "",
+            title: SCREENS.VERIFY_ACCOUNT.title,
             headerRight: () => (
               <Image
                 source={require("../assets/images/liveboat.png")}
@@ -61,10 +71,10 @@ const Layout = () => {
           }}
         />
         <Stack.Screen
-          name="(auth)/send_otp"
+          name={SCREENS.SEND_OTP.name}
           options={{
             headerShown: true,
-            title: "",
+            title: SCREENS.SEND_OTP.title,
             headerRight: () => (
               <Image
                 source={require("../assets/images/liveboat.png")}
@@ -88,6 +98,19 @@ const Layout = () => {
         />
         <Stack.Screen
           name="(auth)/change_password"
+          options={{
+            headerShown: true,
+            title: "",
+            headerRight: () => (
+              <Image
+                source={require("../assets/images/liveboat.png")}
+                style={{ marginRight: 0 }}
+              />
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="(auth)/verify_email_phone"
           options={{
             headerShown: true,
             title: "",

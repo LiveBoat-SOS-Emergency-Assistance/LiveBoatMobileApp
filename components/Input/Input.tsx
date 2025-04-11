@@ -68,12 +68,12 @@ const Input = ({
       </View>
       {error && type === "email" && (
         <Text className="text-red-500 text-[12px] w-[90%] justify-start text-start pt-1">
-          Email không hợp lệ
+          Invalid email
         </Text>
       )}
       {error && type === "phone" && (
         <Text className="text-red-500 text-[12px] w-[90%] justify-start text-start pt-1">
-          Số điện thoại không hợp lệ
+          Invalid phone number
         </Text>
       )}
       {type === "password" && errorPassword && (

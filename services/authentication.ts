@@ -20,7 +20,7 @@ export class authen {
   }
   static async send_otp(data: any) {
     try {
-      const result = await axiosPrivate.post("/auth/send-otp", data, {
+      const result = await axiosPrivate.post("/email/send-otp", data, {
         headers: {
           "Content-Type": "application/json",
         },

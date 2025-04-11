@@ -7,9 +7,10 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authen } from "../services/authentication";
-import { jwtServices } from "../services/jwt";
+// import { jwtServices } from "../services/jwt";
 import { router } from "expo-router";
 import { jwtDecode } from "jwt-decode";
+import axiosPrivate from "../utils/api";
 interface RegisterData {
   phone: string;
   password: string;
@@ -80,48 +81,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [loading, accessToken]);
 
-  const get_access_token = async () => {
+  const get_access_token = async (): Promise<string | null> => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
       if (token) {
         const decoded: any = jwtDecode(token);
         const currentTime = Math.floor(Date.now() / 1000);
 
+        // Check if the token is still valid
         if (decoded.exp > currentTime) {
           return token;
         }
       }
 
+      // If the token is expired, refresh it
       const refreshToken = await AsyncStorage.getItem("refreshToken");
       if (!refreshToken) {
+        console.log("No refresh token found, logging out...");
         await logout();
         return null;
       }
 
-      const result = await jwtServices.getAccessToken({ refreshToken });
+      // Call the refresh token endpoint
+      const refreshResponse = await axiosPrivate.post("/jwt/access-token", {
+        refreshToken,
+      });
 
-      if (result && result.data?.accessToken) {
-        const newAccessToken = result.data?.accessToken;
+      if (refreshResponse.data?.accessToken) {
+        const newAccessToken = refreshResponse.data.accessToken;
         setAccessToken(newAccessToken);
         await AsyncStorage.setItem("accessToken", newAccessToken);
         return newAccessToken;
       } else {
-        if (result?.status === 401) {
-          console.log("Refresh token hết hạn hoặc không hợp lệ, đăng xuất...");
-          await logout();
-          return null;
-        }
-        console.log("Lỗi không xác định khi refresh token.");
+        console.log("Failed to refresh token, logging out...");
         await logout();
         return null;
       }
     } catch (error) {
-      console.error("Lỗi khi refresh access token:", error);
+      console.error("Error refreshing access token:", error);
       await logout();
       return null;
     }
   };
-
   const register = async (data: RegisterData) => {
     try {
       await authen.register(data);

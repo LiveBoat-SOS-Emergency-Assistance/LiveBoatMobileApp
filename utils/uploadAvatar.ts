@@ -1,7 +1,6 @@
 import { baseURL } from "../baseUrl";
-import ImageResizer from "react-native-image-resizer"; // ⬅️ import thêm
+import ImageResizer from "react-native-image-resizer";
 
-// Function: Convert file webp -> png
 async function convertWebpToPng(file: {
   uri: string;
   type: string;
@@ -19,7 +18,7 @@ async function convertWebpToPng(file: {
   return {
     uri: converted.uri,
     type: "image/png",
-    name: file.name.replace(/\.\w+$/, ".png"), // đổi đuôi thành .png
+    name: file.name.replace(/\.\w+$/, ".png"),
   };
 }
 export async function uploadFileToGCS(file: {
@@ -34,7 +33,6 @@ export async function uploadFileToGCS(file: {
       finalFile = await convertWebpToPng(file);
     }
 
-    // 1️⃣ Request signed URL
     const response = await fetch(`${baseURL}/gcp-storage/generate-signed-url`, {
       method: "POST",
       headers: {
@@ -49,13 +47,9 @@ export async function uploadFileToGCS(file: {
     });
 
     const data = await response.json();
-    // console.log("Backend response", data);
-    // console.log("Final File Name:", finalFile.name);
-    // console.log("Final File Type:", finalFile.type);
 
     const { signedUrl, fileUrl } = data[0];
 
-    // 2️⃣ Upload file
     const blob = await (await fetch(finalFile.uri)).blob();
     const uploadResponse = await fetch(signedUrl, {
       method: "PUT",

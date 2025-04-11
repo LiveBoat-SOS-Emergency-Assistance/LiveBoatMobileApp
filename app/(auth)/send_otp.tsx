@@ -77,14 +77,14 @@ const send_otp = () => {
       } else {
       }
     } catch (error: any) {
-      console.error(error.response);
+      const errorMessage =
+        error.response?.data?.error || error.message || "Something went wrong";
+
       setLoading(false);
       Toast.show({
         type: "error",
-        text1: "Thông báo",
-        text2: "Mã OTP không hợp lệ!",
-        position: "top",
-        visibilityTime: 2000,
+        text1: "Notification",
+        text2: errorMessage,
       });
     }
   };

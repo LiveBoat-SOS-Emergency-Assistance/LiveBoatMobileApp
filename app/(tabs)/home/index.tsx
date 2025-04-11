@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   Pressable,
   ScrollView,
   BackHandler,
+  PermissionsAndroid,
+  Dimensions,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { ChevronDown } from "lucide-react-native";
@@ -17,34 +19,199 @@ import { AnimatePresence } from "framer-motion";
 import BottomModal from "../../../components/Modal/BottomModal";
 import MemberCard from "../../../components/Card/MemberCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import CustomDialog from "../../../components/Dialog/DialogEditSOS";
-
+import Modal from "react-native-modal";
+import { sosService } from "../../../services/sos";
+import TopSheet, { TopSheetRef } from "../../../components/Modal/TopSheet";
+import ItemSquad from "../../../components/Squad/ItemSquad";
+import ModalCreateSquad from "../../../components/Modal/ModalCreateSquad";
+import { groupServices } from "../../../services/group";
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState(true);
-  const handleChangeTab = useCallback((choice: boolean) => {
-    console.log("choice", choice);
-    setActiveTab(choice);
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      const getAccessToken = async () => {
+  const [checkSOS, setCheckSOS] = useState(false);
+  const [currentSOS, setCurrentSOS] = useState<any>(null);
+  const topSheetRef = useRef<TopSheetRef>(null);
+  const [openModalCreateSquad, setOpenModalCreateSquad] = useState(false);
+  const [group, setGroup] = useState<
+    { id: string; name: string; description: string }[]
+  >([]);
+  const openSheet = () => {
+    topSheetRef.current?.open();
+  };
+  const { width, height } = Dimensions.get("window");
+  const handleClose = () => {
+    setOpenModalCreateSquad(false);
+    console.log("Clickkkk");
+  };
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        // check to direct
         const token = await AsyncStorage.getItem("accessToken");
         if (!token) {
+          console.log("No token, redirecting to login...");
           router.replace("/");
           return;
         }
-      };
-      getAccessToken();
-    }, [])
-  );
+      } catch (error: any) {
+        console.log("Fetch error:", {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        // Handle error gracefully
+      }
+    };
+    initialize();
+  }, []);
+  useEffect(() => {
+    const getSOS = async () => {
+      try {
+        const current = await sosService.getSOSCurrent();
+        // const result = await groupServices.getGroup();
+
+        console.log("current");
+        if (current && current.data) {
+          setCurrentSOS(current.data);
+          setCheckSOS(true);
+        } else {
+          console.log("khong co ");
+        }
+        // if (result && result.data) {
+        //   console.log("kkk", result.data);
+        // }
+      } catch (error: any) {
+        console.log(error);
+        setCurrentSOS(null);
+        setCheckSOS(false);
+      }
+    };
+    getSOS();
+  }, []);
+  useEffect(() => {
+    const getSOS = async () => {
+      try {
+        const result = await groupServices.getGroup();
+        if (result && result.data) {
+          console.log("kkk", result.data);
+          setGroup(result.data);
+        }
+      } catch (error: any) {
+        console.log("get squad", error);
+      }
+    };
+    getSOS();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
+
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
+        {checkSOS ? <Map sos={currentSOS}></Map> : <Map signal="normal"></Map>}
+        {openModalCreateSquad && <ModalCreateSquad onClose={handleClose} />}
+        {/* {openModalCreateSquad && <ModalCreateSquad onClose={handleClose} />} */}
+        {/* <Modal
+          isVisible={openModalCreateSquad}
+          onBackdropPress={() => setOpenModalCreateSquad(false)}
+          onBackButtonPress={() => setOpenModalCreateSquad(false)}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          useNativeDriver
+          statusBarTranslucent
+          backdropOpacity={0.5}
+          style={{
+            position: "absolute",
+            justifyContent: "center",
+            alignItems: "center",
+            margin: 0,
+          }}
+        >
+          <View
+            style={{
+              width: "100%",
+              backgroundColor: "white",
+              borderRadius: 16,
+              padding: 20,
+              alignItems: "center",
+              marginTop: height / 3,
+              marginLeft: 50,
+            }}
+          >
+            <ModalCreateSquad onClose={handleClose} />
+          </View>
+        </Modal> */}
+        <TopSheet ref={topSheetRef}>
+          <View className="flex flex-col pb-4 gap-3 justify-center items-center w-full">
+            <View
+              className="w-[50%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 5,
+              }}
+            >
+              <Text
+                className="text-white text-base font-bold"
+                style={{ fontFamily: "Poppins" }}
+              >
+                My family
+              </Text>
+            </View>
+            <ScrollView
+              className="w-full px-7"
+              contentContainerStyle={{ gap: 8 }} // Replace gap-2 with contentContainerStyle
+              showsVerticalScrollIndicator={true}
+            >
+              {group.map((squad) => (
+                <ItemSquad key={squad.id} name={squad.name} id={""} />
+              ))}
+            </ScrollView>
+            <View className="w-full justify-around flex flex-row">
+              <Pressable
+                // onPress={() => router.push("/(tabs)/home/add_group")}
+                onPress={() => setOpenModalCreateSquad(true)}
+                className="w-[40%] h-[43px] bg-white rounded-[40px] flex justify-center items-center relative border border-[#80C4E9]"
+                style={{
+                  shadowColor: "#80C4E9",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
+              >
+                <Text
+                  className="text-[#80C4E9] text-sm font-bold"
+                  style={{ fontFamily: "Poppins" }}
+                >
+                  Create a squad
+                </Text>
+              </Pressable>
+              <Pressable
+                className="w-[40%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative"
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
+              >
+                <Text
+                  className="text-white text-sm font-bold"
+                  style={{ fontFamily: "Poppins" }}
+                >
+                  Join a squad
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </TopSheet>
+        {/* {!checkSOS ? <Map signal="normal"></Map> : checkSOS ? <Map sos={currentSOS}></Map>} */}
 
-        <Map signal="normal"></Map>
+        {/* HEADER INCLUES AVATAR , MESSAGES*/}
         <View className="absolute top-[45px] w-full flex flex-col items-center px-2">
           <View className="w-full flex flex-row items-center justify-between px-2">
             {/* Avatar */}
@@ -58,7 +225,8 @@ export default function HomeScreen() {
             </View>
 
             {/* Button Cộng đồng */}
-            <View
+            <Pressable
+              onPress={openSheet}
               className="w-[200px] h-[43px] bg-[#EB4747] rounded-[30px] flex justify-center items-center relative"
               style={{
                 shadowColor: "#000",
@@ -79,7 +247,7 @@ export default function HomeScreen() {
                 color="white"
                 style={{ position: "absolute", right: 20 }}
               />
-            </View>
+            </Pressable>
 
             {/* Message */}
             <Pressable
@@ -127,7 +295,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
-
+        {/* Bottome Sheet for MEMBER AND PLACES */}
         <AnimatePresence>
           <BottomModal>
             <View className="w-full flex flex-col justify-center items-center">

@@ -10,7 +10,7 @@ import Map from "../../../components/Map/Map";
 import ImageCustom from "../../../components/Image/Image";
 import { ScrollView } from "react-native";
 import Information from "../../../components/Information/Information";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
 import { sosService } from "../../../services/sos";
 import { rescuerServices } from "../../../services/rescuer";
 import CustomButton from "../../../components/Button/CustomButton";
@@ -18,6 +18,7 @@ import { getCurrentLocation } from "../../../utils/location";
 import { userServices } from "../../../services/user";
 import Avatar from "../../../components/Image/Avatar";
 import Toast from "react-native-toast-message";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 interface SOSProfile {
   accuracy: string;
   created_at: string;
@@ -62,6 +63,7 @@ const profile_sos = () => {
       const resultUserProfile = await userServices.getUserByID(
         Number(result.data.user_id)
       );
+      console.log(result.data);
       const loc = await getCurrentLocation();
       if (loc) {
         setLocation({
@@ -86,6 +88,8 @@ const profile_sos = () => {
           text1: "Help on the way!",
           text2: "Thank you for responding to the SOS. Stay safe!",
         });
+        await AsyncStorage.setItem("SOSID", id.toString());
+        router.replace("/(tabs)/home");
       }
     } catch (error: any) {
       console.error("profile_sos error", error);

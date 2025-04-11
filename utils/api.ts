@@ -35,9 +35,11 @@ const getAccessToken = async (): Promise<string | null> => {
 axiosPrivate.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const customConfig = config as CustomAxiosRequestConfig;
+    // console.log("Request Config:", customConfig);
 
     if (customConfig.requiresAuth) {
       const accessToken = await getAccessToken();
+      // console.log("Access Token:", accessToken);
       if (accessToken && customConfig.headers) {
         customConfig.headers["Authorization"] = `Bearer ${accessToken}`;
       }
