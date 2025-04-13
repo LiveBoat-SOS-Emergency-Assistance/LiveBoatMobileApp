@@ -66,15 +66,26 @@ export class sosService {
   }
   static async getSOSCurrent() {
     try {
-      console.log("call");
+      // console.log("call");
       const result = await axiosPrivate.get("/sos/rescuer/current", {
         headers: {
           "Content-Type": "application/json",
         },
-
         requiresAuth: true,
       } as CustomAxiosRequestConfig);
-      console.log(result.data);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  static async updateSOS(userId: number, data: any) {
+    try {
+      const result = await axiosPrivate.put(`/sos/update/${userId}`, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        requiresAuth: true,
+      } as CustomAxiosRequestConfig);
       return result;
     } catch (error: any) {
       throw error;

@@ -1,103 +1,102 @@
-import React, { useEffect } from "react";
-import { View, StyleSheet, Image } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
+import React, { useEffect, useRef } from "react";
+import { Animated, View, StyleSheet, Image } from "react-native";
+import { Easing } from "react-native";
+import { useAuth } from "../../context/AuthContext";
+import MapboxGL from "@rnmapbox/maps";
 
-const UserLocation = () => {
-  const scale1 = useSharedValue(1);
-  const scale2 = useSharedValue(1);
-  const opacity1 = useSharedValue(1);
-  const opacity2 = useSharedValue(1);
+interface BreathingAvatarProps {
+  size?: number;
+  coordinate: [number, number]; // New prop for map coordinates
+}
+
+const UserLocation = ({ size = 60, coordinate }: BreathingAvatarProps) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+  const { profile } = useAuth();
 
   useEffect(() => {
-    scale1.value = withRepeat(
-      withSequence(
-        withTiming(1.5, { duration: 800, easing: Easing.ease }),
-        withTiming(1, { duration: 800, easing: Easing.ease })
-      ),
-      -1,
-      true
+    const breathingAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(scale, {
+            toValue: 1.2,
+            duration: 1500,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(scale, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      ])
     );
 
-    scale2.value = withRepeat(
-      withSequence(
-        withTiming(1.7, { duration: 900, easing: Easing.ease }),
-        withTiming(1, { duration: 900, easing: Easing.ease })
-      ),
-      -1,
-      true
-    );
+    breathingAnimation.start();
 
-    opacity1.value = withRepeat(
-      withSequence(
-        withTiming(0.4, { duration: 800, easing: Easing.ease }),
-        withTiming(1, { duration: 800, easing: Easing.ease })
-      ),
-      -1,
-      true
-    );
-
-    opacity2.value = withRepeat(
-      withSequence(
-        withTiming(0.3, { duration: 900, easing: Easing.ease }),
-        withTiming(1, { duration: 900, easing: Easing.ease })
-      ),
-      -1,
-      true
-    );
+    // Cleanup on unmount
+    return () => {
+      breathingAnimation.stop();
+    };
   }, []);
 
-  const pulseStyle1 = useAnimatedStyle(() => ({
-    transform: [{ scale: scale1.value }],
-    opacity: opacity1.value,
-  }));
-
-  const pulseStyle2 = useAnimatedStyle(() => ({
-    transform: [{ scale: scale2.value }],
-    opacity: opacity2.value,
-  }));
-
   return (
-    <View style={styles.container}>
-      {/* Vòng tròn ngoài tạo hiệu ứng mạnh hơn */}
-      <Animated.View style={[styles.pulseCircle, pulseStyle2]} />
-      <Animated.View style={[styles.pulseCircle, pulseStyle1]} />
-
-      {/* Ảnh đại diện */}
-      <Animated.Image
-        source={require("../../assets/images/ava.jpg")}
-        style={[styles.avatar, pulseStyle1]}
-      />
-    </View>
+    <MapboxGL.MarkerView
+      coordinate={coordinate}
+      id="user-location"
+      allowOverlap={true}
+      anchor={{ x: 0.5, y: 0.5 }}
+    >
+      <View style={[styles.container, { width: size * 2, height: size * 2 }]}>
+        <Animated.View
+          style={{
+            transform: [{ scale }],
+            opacity,
+          }}
+        >
+          <Image
+            source={
+              profile?.User?.avatar_url
+                ? { uri: profile?.User?.avatar_url }
+                : require("../../assets/images/ava1.png")
+            }
+            style={[
+              styles.avatar,
+              { width: size, height: size, borderRadius: size / 2 },
+            ]}
+            resizeMode="cover"
+            onError={() => console.log("Image failed to load")}
+          />
+        </Animated.View>
+      </View>
+    </MapboxGL.MarkerView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    width: 70,
-    height: 70,
     alignItems: "center",
     justifyContent: "center",
   },
-  pulseCircle: {
-    position: "absolute",
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(47, 128, 237, 0.3)",
-  },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     borderWidth: 2,
-    borderColor: "white",
+    borderColor: "#fff",
   },
 });
 

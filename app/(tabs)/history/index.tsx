@@ -148,15 +148,20 @@ export default function History() {
             horizontal
             showsHorizontalScrollIndicator={false}
             style={{ width: visibleWidth }}
-            contentContainerStyle={{ paddingLeft: 0 }}
+            contentContainerStyle={{
+              paddingLeft: 0,
+              flexDirection: "row",
+              alignItems: "flex-start",
+            }}
           >
             {[...Array(6)].map((_, index) => (
               <View
                 key={index}
                 style={{
                   width: cardWidth,
-                  marginRight: 12,
+                  marginRight: 0,
                 }}
+                className="bg-white w-full py-2 px-3 justify-start"
               >
                 <SOSCard />
               </View>

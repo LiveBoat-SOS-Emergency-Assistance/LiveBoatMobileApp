@@ -126,7 +126,9 @@ const profile_sos = () => {
                 </View>
               </View>
               <Text className="text-[#404040] font-bold text-[20px]">
-                {userProfile?.name || "Unknown name"}
+                {userProfile?.name === "Chưa điền" || !userProfile?.name
+                  ? "Unknown name"
+                  : userProfile?.name}
               </Text>
             </View>
             <View className="flex flex-row gap-2 h-[30px]">
@@ -173,7 +175,11 @@ const profile_sos = () => {
                 <View className="flex flex-col justify-start gap-2">
                   <Information
                     title="Date of birth:"
-                    content={userProfile?.birthday.toString()}
+                    content={
+                      userProfile?.birthday
+                        ? userProfile.birthday.toString()
+                        : "N/A"
+                    }
                     icon="https://img.icons8.com/?size=100&id=43503&format=png&color=000000"
                   />
                   <Information
@@ -185,7 +191,7 @@ const profile_sos = () => {
                 <View className="flex flex-col justify-start gap-2">
                   <Information
                     title="Gender:"
-                    content={userProfile?.gender}
+                    content={userProfile?.gender || "N/A"}
                     icon="https://img.icons8.com/?size=100&id=11780&format=png&color=000000"
                   />
                   <Information
@@ -198,7 +204,7 @@ const profile_sos = () => {
               <View className="flex justify-start">
                 <Information
                   title="Address:"
-                  content={userProfile?.address}
+                  content={userProfile?.address || "N/A"}
                   icon="https://img.icons8.com/?size=100&id=86457&format=png&color=000000"
                 />
               </View>

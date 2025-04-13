@@ -2,7 +2,9 @@ import React from "react";
 import { View, StyleSheet, Image } from "react-native";
 
 const UserSOS = () => {
-  return <View className="w-[50px] h-[50px] bg-[#EB4747] rounded-full"></View>;
+  return <View className="w-[50px] h-[50px] bg-[#EB4747] rounded-full relative">
+    <View className="w-[30px] h-[30px] bg-[#ef8585] rounded-full absolute"></View>
+  </View>;
 };
 
 const styles = StyleSheet.create({

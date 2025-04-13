@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   BackHandler,
-  PermissionsAndroid,
   Dimensions,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -14,17 +13,20 @@ import { ChevronDown } from "lucide-react-native";
 import Map from "../../../components/Map/Map";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useNavigation } from "expo-router";
 import { AnimatePresence } from "framer-motion";
 import BottomModal from "../../../components/Modal/BottomModal";
 import MemberCard from "../../../components/Card/MemberCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Modal from "react-native-modal";
 import { sosService } from "../../../services/sos";
 import TopSheet, { TopSheetRef } from "../../../components/Modal/TopSheet";
 import ItemSquad from "../../../components/Squad/ItemSquad";
 import ModalCreateSquad from "../../../components/Modal/ModalCreateSquad";
 import { groupServices } from "../../../services/group";
+import { useAuth } from "../../../context/AuthContext";
+import Avatar from "../../../components/Image/Avatar";
+import { Camera } from "@rnmapbox/maps";
+import { getCurrentLocation } from "../../../utils/location";
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState(true);
   const [checkSOS, setCheckSOS] = useState(false);
@@ -34,14 +36,54 @@ export default function HomeScreen() {
   const [group, setGroup] = useState<
     { id: string; name: string; description: string }[]
   >([]);
+  const { profile } = useAuth();
+  const cameraRef = useRef<Camera>(null);
+  const handleControl = async () => {
+    try {
+      const location = await getCurrentLocation();
+      if (location && cameraRef.current) {
+        const { latitude, longitude } = location;
+        cameraRef.current.moveTo([longitude, latitude], 1000);
+        setTimeout(() => {
+          cameraRef.current?.zoomTo(14, 500); // zoom về mức 14 trong 500ms
+        }, 1000);
+      }
+    } catch (error) {
+      console.log("Error getting location", error);
+    }
+  };
   const openSheet = () => {
     topSheetRef.current?.open();
   };
-  const { width, height } = Dimensions.get("window");
   const handleClose = () => {
     setOpenModalCreateSquad(false);
-    console.log("Clickkkk");
   };
+  const navigation = useNavigation();
+  useFocusEffect(
+    useCallback(() => {
+      // Block back with gesture or back button on header
+      const unsubscribe = navigation.addListener(
+        "beforeRemove",
+        (e: { preventDefault: () => void }) => {
+          e.preventDefault();
+        }
+      );
+
+      // Block back with Android physical button
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          return true;
+        }
+      );
+
+      return () => {
+        unsubscribe();
+        backHandler.remove();
+      };
+    }, [])
+  );
+
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -58,7 +100,6 @@ export default function HomeScreen() {
           status: error.response?.status,
           data: error.response?.data,
         });
-        // Handle error gracefully
       }
     };
     initialize();
@@ -67,20 +108,14 @@ export default function HomeScreen() {
     const getSOS = async () => {
       try {
         const current = await sosService.getSOSCurrent();
-        // const result = await groupServices.getGroup();
-
-        console.log("current");
         if (current && current.data) {
           setCurrentSOS(current.data);
           setCheckSOS(true);
         } else {
           console.log("khong co ");
         }
-        // if (result && result.data) {
-        //   console.log("kkk", result.data);
-        // }
       } catch (error: any) {
-        console.log(error);
+        console.error("Lỗi khi lấy SOS hiện tại:", error?.message || error);
         setCurrentSOS(null);
         setCheckSOS(false);
       }
@@ -88,18 +123,17 @@ export default function HomeScreen() {
     getSOS();
   }, []);
   useEffect(() => {
-    const getSOS = async () => {
+    const getGroup = async () => {
       try {
         const result = await groupServices.getGroup();
         if (result && result.data) {
-          console.log("kkk", result.data);
           setGroup(result.data);
         }
       } catch (error: any) {
         console.log("get squad", error);
       }
     };
-    getSOS();
+    getGroup();
   }, []);
 
   return (
@@ -108,41 +142,18 @@ export default function HomeScreen() {
 
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
-        {checkSOS ? <Map sos={currentSOS}></Map> : <Map signal="normal"></Map>}
-        {openModalCreateSquad && <ModalCreateSquad onClose={handleClose} />}
-        {/* {openModalCreateSquad && <ModalCreateSquad onClose={handleClose} />} */}
-        {/* <Modal
-          isVisible={openModalCreateSquad}
-          onBackdropPress={() => setOpenModalCreateSquad(false)}
-          onBackButtonPress={() => setOpenModalCreateSquad(false)}
-          animationIn="slideInUp"
-          animationOut="slideOutDown"
-          useNativeDriver
-          statusBarTranslucent
-          backdropOpacity={0.5}
-          style={{
-            position: "absolute",
-            justifyContent: "center",
-            alignItems: "center",
-            margin: 0,
-          }}
-        >
-          <View
-            style={{
-              width: "100%",
-              backgroundColor: "white",
-              borderRadius: 16,
-              padding: 20,
-              alignItems: "center",
-              marginTop: height / 3,
-              marginLeft: 50,
-            }}
-          >
+        {checkSOS ? (
+          <Map sos={currentSOS} cameraRef={cameraRef}></Map>
+        ) : (
+          <Map signal="normal" cameraRef={cameraRef}></Map>
+        )}
+        {openModalCreateSquad && (
+          <View className="absolute top-1/2 left-0">
             <ModalCreateSquad onClose={handleClose} />
           </View>
-        </Modal> */}
+        )}
         <TopSheet ref={topSheetRef}>
-          <View className="flex flex-col pb-4 gap-3 justify-center items-center w-full">
+          <View className="flex flex-col pb-10 gap-3 justify-center items-center w-full">
             <View
               className="w-[50%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative"
               style={{
@@ -217,10 +228,11 @@ export default function HomeScreen() {
             {/* Avatar */}
             <View className="w-[75px] h-[75px] rounded-full flex justify-center items-center border-[#EB4747] border-[3px]">
               <Pressable onPress={() => router.push("/(main)/profile")}>
-                <Image
-                  className="w-[65px] h-[65px] rounded-full object-cover"
-                  source={require("../../../assets/images/ava.jpg")}
-                />
+                <Avatar
+                  source={profile?.User?.avatar_url}
+                  width={65}
+                  height={65}
+                ></Avatar>
               </Pressable>
             </View>
 
@@ -272,8 +284,9 @@ export default function HomeScreen() {
             </Pressable>
           </View>
           <View className="w-full justify-end items-end px-2">
+            {/* Geoson Control */}
             <Pressable
-              // onPress={handleEditSOS}
+              onPress={handleControl}
               className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow "
               style={{
                 shadowColor: "#000",
@@ -283,7 +296,7 @@ export default function HomeScreen() {
             >
               <Image
                 source={{
-                  uri: "https://img.icons8.com/?size=100&id=112468&format=png&color=000000",
+                  uri: "https://img.icons8.com/?size=100&id=113259&format=png&color=000000",
                 }}
                 style={{
                   width: 24,
@@ -300,7 +313,7 @@ export default function HomeScreen() {
           <BottomModal>
             <View className="w-full flex flex-col justify-center items-center">
               <View
-                className="flex flex-row h-[50px] gap-4 w-[80%] rounded-[30px] px-1 bg-[#fdb1b1] justify-around items-center"
+                className="flex flex-row h-[50px] w-[80%] rounded-[30px] px-1 bg-[#fdb1b1] justify-around items-center"
                 style={{
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 4 },
@@ -310,9 +323,19 @@ export default function HomeScreen() {
                 }}
               >
                 <Pressable
+                  onPress={() => setActiveTab(true)}
                   className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
-                    activeTab ? "bg-white shadow-md" : "bg-transparent"
+                    activeTab ? "bg-white " : "bg-transparent"
                   }`}
+                  style={[
+                    activeTab && {
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 2,
+                    },
+                  ]}
                 >
                   <Text
                     className={`font-bold ${
@@ -323,11 +346,19 @@ export default function HomeScreen() {
                   </Text>
                 </Pressable>
                 <Pressable
+                  onPress={() => setActiveTab(false)}
                   className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
-                    activeTab === false
-                      ? "bg-white shadow-md"
-                      : "bg-transparent"
+                    activeTab === false ? "bg-white" : "bg-transparent"
                   }`}
+                  style={[
+                    !activeTab && {
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 2,
+                    },
+                  ]}
                 >
                   <Text
                     className={`font-bold ${
@@ -338,19 +369,20 @@ export default function HomeScreen() {
                   </Text>
                 </Pressable>
               </View>
-
-              <ScrollView
-                style={{ width: "100%", flexGrow: 1 }}
-                contentContainerStyle={{
-                  paddingVertical: 20,
-                  gap: 25,
-                }}
-                showsVerticalScrollIndicator={false}
-              >
-                <MemberCard active />
-                <MemberCard />
-                <MemberCard />
-              </ScrollView>
+              {activeTab && (
+                <ScrollView
+                  style={{ width: "100%", flexGrow: 1 }}
+                  contentContainerStyle={{
+                    paddingVertical: 20,
+                    gap: 25,
+                  }}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <MemberCard active />
+                  <MemberCard />
+                  <MemberCard />
+                </ScrollView>
+              )}
             </View>
           </BottomModal>
         </AnimatePresence>

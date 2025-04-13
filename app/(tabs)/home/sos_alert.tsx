@@ -21,13 +21,13 @@ export default function SOSAlert() {
 
         if (longitude && latitude && accuracy !== undefined) {
           setLocation([longitude, latitude, accuracy]);
-          console.log("SOS location:", [longitude, latitude, accuracy]);
+          // console.log("SOS location:", [longitude, latitude, accuracy]);
           const result = await sosService.sos_create({
             longitude: longitude,
             latitude: latitude,
             accuracy: accuracy,
           });
-          console.log("SOS result:", result);
+          // console.log("SOS result:", result);
           const sosId = result.data.id;
           await AsyncStorage.setItem("sosId", sosId);
           await AsyncStorage.setItem("longitudeSOS", longitude.toString());

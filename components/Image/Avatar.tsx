@@ -15,7 +15,7 @@ const Avatar = ({
 }: imageProps) => {
   const imageSource = source
     ? { uri: source }
-    : require("../../assets/images/ava.jpg");
+    : require("../../assets/images/ava1.png");
 
   return (
     <Image

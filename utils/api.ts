@@ -56,21 +56,25 @@ axiosPrivate.interceptors.response.use(
     const originalRequest = error.config as CustomAxiosRequestConfig;
 
     if (
-      (error.response?.status === 401 || error.response?.status === 403) &&
+      (error.response?.status === 401 ||
+        // error.response?.status === 500 ||
+        error.response?.status === 403) &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
 
       try {
-        const refreshResponse = await axios.post<{ accessToken: string }>(
+        const refreshToken = await AsyncStorage.getItem("refreshToken");
+        if (!refreshToken) throw new Error("No refresh token stored!");
+        // console.log(refreshToken);
+        const refreshResponse = await axios.post(
           `${baseURL}/jwt/access-token`,
-          {},
+          { refreshToken },
           {
             headers: { "Content-Type": "application/json" },
           }
         );
-
-        const newAccessToken = refreshResponse.data.accessToken;
+        const newAccessToken = refreshResponse?.data.accessToken;
         await AsyncStorage.setItem("accessToken", newAccessToken);
 
         if (originalRequest.headers) {

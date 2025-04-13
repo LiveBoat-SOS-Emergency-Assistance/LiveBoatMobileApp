@@ -131,3 +131,99 @@
 // });
 
 // export default Map;
+import React, { useEffect, useRef } from "react";
+import { Animated, View, StyleSheet, Image } from "react-native";
+import MapboxGL from "@rnmapbox/maps";
+
+interface RippleMarkerProps {
+  id: string;
+  coordinate: [number, number];
+  type?: string;
+}
+
+const RippleMarker = ({ id, coordinate, type }: RippleMarkerProps) => {
+  const rippleScale = useRef(new Animated.Value(0)).current;
+  const rippleOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const createRipple = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(rippleScale, {
+              toValue: 1,
+              duration: 1000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(rippleOpacity, {
+              toValue: 0,
+              duration: 1000,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.timing(rippleScale, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rippleOpacity, {
+            toValue: 1,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    };
+
+    createRipple();
+  }, []);
+
+  return (
+    <MapboxGL.MarkerView coordinate={coordinate} id={id}>
+      <View style={styles.container}>
+        <Animated.View
+          style={[
+            styles.ripple,
+            {
+              transform: [{ scale: rippleScale }],
+              opacity: rippleOpacity,
+            },
+          ]}
+        />
+        <View style={styles.centerDot}>
+          <Image
+            source={require("../../assets/images/ava.jpg")}
+            style={{ width: 40, height: 40 }}
+          />
+        </View>
+      </View>
+    </MapboxGL.MarkerView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    width: 150,
+    height: 150,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ripple: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255, 0, 0, 0.5)",
+  },
+  centerDot: {
+    width: 40,
+    height: 40,
+    borderRadius: 25,
+    backgroundColor: "red",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+});
+
+export default RippleMarker;

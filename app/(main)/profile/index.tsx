@@ -6,10 +6,11 @@ import { SettingsSection } from "../../../components/SettingSection/SettingSecti
 import CustomButton from "../../../components/Button/CustomButton";
 import { useAuth } from "../../../context/AuthContext";
 import { router, useRouter } from "expo-router";
+import Avatar from "../../../components/Image/Avatar";
 
 export default function Profile() {
   const [loading, setLoading] = useState(false);
-  const { logout } = useAuth();
+  const { logout, profile } = useAuth();
   const router = useRouter();
   const handlePress = () => {
     router.push("/(main)/profile/edit_profile");
@@ -33,10 +34,15 @@ export default function Profile() {
     <View className="flex-1 bg-white">
       <ScrollView>
         <View className="items-center ">
-          <Image
+          {/* <Image
             source={require("../../../assets/images/ava.jpg")}
             className="w-32 h-32 rounded-full mb-3"
-          />
+          /> */}
+          <Avatar
+            source={profile?.User.avatar_url}
+            width={128}
+            height={128}
+          ></Avatar>
           <Text className="text-xl font-semibold">Bạch Dương</Text>
           <TouchableOpacity
             onPress={handlePress}

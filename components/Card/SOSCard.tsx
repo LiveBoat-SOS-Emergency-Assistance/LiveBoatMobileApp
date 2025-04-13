@@ -2,7 +2,16 @@ import { Image, Text, View } from "react-native";
 import React from "react";
 export default function SOSCard() {
   return (
-    <View className="w-full max-w-[120px] h-[170px] bg-white rounded-[5px] flex justify-center items-center shadow-lg">
+    <View
+      style={{
+        shadowColor: "gray",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+      }}
+      className="w-fit h-[170px] bg-white rounded-[5px] py-1 flex justify-center items-center"
+    >
       <Image
         className="w-[90%] h-4/5 rounded-[5px] object-cover"
         source={require("../../assets/images/sos.png")}

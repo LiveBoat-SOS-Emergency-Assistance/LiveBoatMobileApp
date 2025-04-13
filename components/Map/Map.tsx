@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, PermissionsAndroid, Platform, StyleSheet } from "react-native";
 import MapboxGL, {
   MapView,
@@ -12,6 +12,7 @@ import UserSOS from "./UserSOS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import UserLocation from "./UserLocation";
 import { getCurrentLocation } from "../../utils/location";
+import RippleMarker from "./RippleMarker";
 MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN);
 MapboxGL.setTelemetryEnabled(false);
 interface SOS {
@@ -44,13 +45,14 @@ interface SOSItem {
 interface mapProps {
   signal?: string;
   sos?: SOSItem;
+  cameraRef?: React.RefObject<Camera>;
 }
-const Map = ({ signal, sos }: mapProps) => {
+const Map = ({ signal, sos, cameraRef }: mapProps) => {
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [sosLocation, setSOSLocation] = useState<SOSItem | null>(null);
   const [route, setRoute] = useState<any>(null); // State to store route geometry
-  // console.log("helo", sos);
+
   useEffect(() => {
     const fetchLocation = async () => {
       try {
@@ -74,18 +76,18 @@ const Map = ({ signal, sos }: mapProps) => {
   useEffect(() => {
     const fetchRoute = async () => {
       if (location && sosLocation) {
-        const origin = location; // [longitude, latitude]
+        const origin = location;
         const destination = [
           parseFloat(sosLocation.SOS.longitude),
           parseFloat(sosLocation.SOS.latitude),
         ];
-
-        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&access_token=${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`;
+        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]}%2C${origin[1]}%3B${destination[0]}%2C${destination[1]}?alternatives=true&geometries=geojson&language=en&overview=full&steps=true&access_token=${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`;
+        // const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&access_token=${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`;
 
         try {
           const response = await fetch(url);
           const data = await response.json();
-          console.log("Directions API Response:", data);
+          // console.log("Directions API Response:", data);
           if (data.routes && data.routes.length > 0) {
             setRoute(data.routes[0].geometry); // Store the route geometry
           }
@@ -104,34 +106,36 @@ const Map = ({ signal, sos }: mapProps) => {
         styleURL="mapbox://styles/mapbox/streets-v12"
         onDidFinishLoadingMap={() => setMapLoaded(true)}
         scaleBarEnabled={false}
+        zoomEnabled={true}
       >
         {mapLoaded && location && (
           <>
-            <Camera zoomLevel={14} centerCoordinate={location} />
-            <PointAnnotation id="current-location" coordinate={location}>
-              <View className="flex-1 justify-center items-center">
-                {/* <UserSOS></UserSOS> */}
-                {signal === "sos" ? <UserSOS /> : <UserLocation></UserLocation>}
-              </View>
-            </PointAnnotation>
+            <Camera
+              ref={cameraRef}
+              zoomLevel={10}
+              centerCoordinate={location}
+              animationDuration={500}
+            />
+            {signal === "sos" ? (
+              <RippleMarker id="my-sos-marker" coordinate={location} />
+            ) : (
+              <UserLocation coordinate={location} />
+            )}
             {sosLocation && (
-              <PointAnnotation
-                id="sos-location"
+              <RippleMarker
+                id="ripple-marker"
+                userIDSOS={Number(sosLocation.SOS.user_id)}
                 coordinate={[
                   parseFloat(sosLocation.SOS.longitude),
                   parseFloat(sosLocation.SOS.latitude),
                 ]}
-              >
-                <View className="flex-1 justify-center items-center">
-                  <UserSOS />
-                </View>
-              </PointAnnotation>
+              />
             )}
             {route && (
               <MapboxGL.ShapeSource id="routeSource" shape={route}>
                 <MapboxGL.LineLayer
                   id="routeLayer"
-                  style={{ lineColor: "#FF0000", lineWidth: 1 }}
+                  style={{ lineColor: "rgb(120,174,237)", lineWidth: 4 }}
                 />
               </MapboxGL.ShapeSource>
             )}

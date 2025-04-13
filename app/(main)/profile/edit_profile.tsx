@@ -20,30 +20,14 @@ import Avatar from "../../../components/Image/Avatar";
 import { uploadFileToGCS } from "../../../utils/uploadAvatar";
 import Toast from "react-native-toast-message";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useAuth } from "../../../context/AuthContext";
+import { Profile } from "../../../types/Profile";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-interface UserProfile {
-  id: string;
-  User: {
-    avatar_url: string;
-    phone: string;
-    email: string;
-  };
-  name: string;
-  address: string;
-  gender: string;
-  birthday: Date;
-  blood_type: string;
-  height: number;
-  weight: number;
-  extra_data: {
-    hobbies: string[];
-    occupation: string;
-  };
-}
 const EditProfile = () => {
   const [text, setText] = useState("");
-
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { profile, setProfile } = useAuth();
+  const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [imageUri, setImageUri] = useState<string | null | undefined>(null);
   const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState<boolean>(false);
@@ -55,7 +39,11 @@ const EditProfile = () => {
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-
+  // useEffect(() => {
+  //   if (myProfile?.User?.avatar_url) {
+  //     setImageUri(myProfile.User.avatar_url);
+  //   }
+  // }, [myProfile]);
   const openImagePicker = async () => {
     const result = await launchImageLibrary({
       mediaType: "photo",
@@ -73,9 +61,7 @@ const EditProfile = () => {
       const uploadResult = await uploadFileToGCS(file);
 
       if (uploadResult.success && uploadResult.fileUrl) {
-        // console.log("Uploaded URL:", uploadResult.fileUrl);
         setImageUri(uploadResult.fileUrl);
-        // 👉 Ở đây bạn có thể lưu `fileUrl` vào profile user hoặc hiện preview luôn
       } else {
         console.error("Upload failed");
       }
@@ -90,6 +76,15 @@ const EditProfile = () => {
           text1: "Notification",
           text2: "Updated Image Successful",
         });
+        const updatedProfile = {
+          ...profile,
+          User: {
+            ...profile.User,
+            avatar_url: imageUri,
+          },
+        };
+        setProfile(updatedProfile);
+        await AsyncStorage.setItem("profile", JSON.stringify(updatedProfile));
       } else {
         alert("❌ Failed to update avatar");
       }
@@ -98,7 +93,6 @@ const EditProfile = () => {
   const scrollToValueIndex = (value: string, options: string[]) => {
     const index = options.indexOf(value);
     if (index !== -1 && scrollViewRef.current) {
-      // Calculate the y position based on item height (assuming 48px per item)
       const itemHeight = 48;
       const yPosition = index * itemHeight;
       scrollViewRef.current.scrollTo({ y: yPosition, animated: true });
@@ -107,15 +101,11 @@ const EditProfile = () => {
   useEffect(() => {
     const getProfile = async () => {
       try {
-        const result = await userServices.getUserByID(1);
-        // console.log("Result of profile", result.data);
-        setProfile(result.data);
-        setImageUri(result.data.User.avatar_url);
+        setMyProfile(profile);
+        setImageUri(profile?.User.avatar_url);
       } catch (error: any) {
         console.error("error of profile", error);
       }
-
-      // setProfile(result.data);
     };
     getProfile();
   }, []);
@@ -176,9 +166,8 @@ const EditProfile = () => {
             </Text>
 
             {selectedField === "Date of Birth" ? (
-              // Nếu chọn Date of Birth -> show DatePicker trong Dialog luôn
               <DateTimePicker
-                value={selectedDate || new Date(2000, 0, 1)} // Default to January 1, 2000
+                value={selectedDate || new Date(2000, 0, 1)}
                 mode="date"
                 display="spinner"
                 onChange={(event, date) => {
@@ -186,14 +175,13 @@ const EditProfile = () => {
                     console.log("click");
                     setSelectedDate(date);
                     handleSelectValue(date.toISOString().split("T")[0]);
-                    setDialogVisible(false); // Close dialog after selecting
+                    setDialogVisible(false);
                   } else {
-                    setDialogVisible(false); // Close dialog on cancel
+                    setDialogVisible(false);
                   }
                 }}
               />
             ) : (
-              // Nếu không phải Date of Birth -> show ScrollView chọn option
               <ScrollView ref={scrollViewRef}>
                 {getOptions(selectedField).map((option) => (
                   <TouchableOpacity
@@ -250,7 +238,7 @@ const EditProfile = () => {
             <Text className="text-gray-500 font-semibold justify-start items-start text-start w-[90%]">
               Full name
             </Text>
-            <Input value={profile?.name}></Input>
+            <Input value={myProfile?.name}></Input>
           </View>
           <View className=" w-[100%] justify-center items-center gap-3 relative">
             <Text className="text-gray-500 font-semibold justify-start items-start text-start w-[90%]">
@@ -263,7 +251,7 @@ const EditProfile = () => {
                 height={24}
                 source="https://img.icons8.com/?size=100&id=12580&format=png&color=000000"
               ></ImageCustom>
-              <Text className="">{profile?.User.email || ""}</Text>
+              <Text className="">{myProfile?.User.email || ""}</Text>
               <Text className="text-[9px] text-green-500">Verified</Text>
               <View className="absolute right-2">
                 <Icon path="M9 6L15 12L9 18" />
@@ -276,7 +264,7 @@ const EditProfile = () => {
                 height={24}
                 source="https://img.icons8.com/?size=100&id=Iw5aeMT37fzK&format=png&color=000000"
               ></ImageCustom>
-              <Text className="">+ {profile?.User.phone || ""}</Text>
+              <Text className="">+ {myProfile?.User.phone || ""}</Text>
               <View className="absolute right-2">
                 <Icon path="M9 6L15 12L9 18" />
               </View>

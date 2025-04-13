@@ -11,17 +11,17 @@ import { authen } from "../services/authentication";
 import { router } from "expo-router";
 import { jwtDecode } from "jwt-decode";
 import axiosPrivate from "../utils/api";
+import { userServices } from "../services/user";
+import { Profile } from "../types/Profile";
 interface RegisterData {
   phone: string;
   password: string;
   email: string;
   code: string;
 }
-
 interface SendOtpData {
   email: string;
 }
-
 interface LoginData {
   phone: string;
   password: string;
@@ -33,8 +33,9 @@ type AuthProps = {
   logout: () => Promise<void>;
   send_otp: (data: SendOtpData) => Promise<void>;
   reset_password: (data: any) => Promise<void>;
-  get_access_token: () => Promise<string | null>;
   change_password: (data: any) => Promise<void>;
+  profile: Profile | null;
+  setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
 };
 
 export const AuthContext = createContext<AuthProps | undefined>(undefined);
@@ -53,6 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     const loadAccessToken = async () => {
@@ -80,49 +82,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     }
   }, [loading, accessToken]);
-
-  const get_access_token = async (): Promise<string | null> => {
-    try {
-      const token = await AsyncStorage.getItem("accessToken");
-      if (token) {
-        const decoded: any = jwtDecode(token);
-        const currentTime = Math.floor(Date.now() / 1000);
-
-        // Check if the token is still valid
-        if (decoded.exp > currentTime) {
-          return token;
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const profileString = await AsyncStorage.getItem("profile");
+        if (profileString) {
+          const profileData: Profile = JSON.parse(profileString);
+          setProfile(profileData);
         }
+      } catch (error) {
+        console.error("Error loading profile:", error);
       }
+    };
 
-      // If the token is expired, refresh it
-      const refreshToken = await AsyncStorage.getItem("refreshToken");
-      if (!refreshToken) {
-        console.log("No refresh token found, logging out...");
-        await logout();
-        return null;
-      }
+    loadProfile();
+  }, []);
 
-      // Call the refresh token endpoint
-      const refreshResponse = await axiosPrivate.post("/jwt/access-token", {
-        refreshToken,
-      });
-
-      if (refreshResponse.data?.accessToken) {
-        const newAccessToken = refreshResponse.data.accessToken;
-        setAccessToken(newAccessToken);
-        await AsyncStorage.setItem("accessToken", newAccessToken);
-        return newAccessToken;
-      } else {
-        console.log("Failed to refresh token, logging out...");
-        await logout();
-        return null;
-      }
-    } catch (error) {
-      console.error("Error refreshing access token:", error);
-      await logout();
-      return null;
-    }
-  };
   const register = async (data: RegisterData) => {
     try {
       await authen.register(data);
@@ -143,8 +118,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (result) {
         await AsyncStorage.setItem("accessToken", result.data?.accessToken);
         await AsyncStorage.setItem("refreshToken", result.data?.refreshToken);
-        const newAccessToken = await get_access_token();
-        setAccessToken(newAccessToken);
+        const userId = result.data.userId;
+        if (userId) {
+          const profileRes = await userServices.getUserByID(userId);
+          setProfile(profileRes.data);
+          await AsyncStorage.setItem(
+            "profile",
+            JSON.stringify(profileRes.data)
+          );
+        }
         return;
       }
     } catch (error: any) {
@@ -192,10 +174,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         register,
         send_otp,
         reset_password,
-        get_access_token,
         login,
         logout,
         change_password,
+        profile,
+        setProfile,
       }}
     >
       {!loading && children}

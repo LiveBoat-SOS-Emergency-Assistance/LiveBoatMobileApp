@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Image,
   Pressable,
   ScrollView,
+  BackHandler,
 } from "react-native";
 import { Video } from "lucide-react-native";
 import Map from "../../../components/Map/Map";
@@ -14,12 +15,14 @@ import { AnimatePresence } from "framer-motion";
 import BottomModal from "../../../components/Modal/BottomModal";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SlideToCancel from "../../../components/Button/SlideCancelButton";
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import CustomDialog from "../../../components/Dialog/DialogEditSOS";
 
 export default function SOSMap() {
   const [isDisable, setIsDisable] = useState(false);
   const [visible, setVisible] = useState(false);
+  const navigation = useNavigation();
+
   const handleDisableSOS = () => {
     setIsDisable(true);
   };
@@ -31,6 +34,28 @@ export default function SOSMap() {
   const handleEditSOS = () => {
     setVisible(true);
   };
+  useEffect(() => {
+    // Block back with gesture or back button on header
+    const unsubscribe = navigation.addListener(
+      "beforeRemove",
+      (e: { preventDefault: () => void }) => {
+        e.preventDefault();
+      }
+    );
+
+    // Block back with Android physical button
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        return true;
+      }
+    );
+
+    return () => {
+      unsubscribe();
+      backHandler.remove();
+    };
+  }, [navigation]);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 bg-white">
@@ -139,7 +164,14 @@ export default function SOSMap() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDisableSOS}
-                className="flex-row items-center bg-[#EB4747] px-4 py-2 rounded-full"
+                className="flex-row items-center bg-[#EB4747] px-4 py-2 rounded-full shadow"
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
               >
                 <ImageCustom
                   source="https://img.icons8.com/?size=100&id=AqDEb8mCIrk9&format=png&color=000000"

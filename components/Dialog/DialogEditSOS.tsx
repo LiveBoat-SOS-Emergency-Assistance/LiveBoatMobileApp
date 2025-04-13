@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   View,
@@ -11,6 +11,9 @@ import {
 } from "react-native";
 import Input from "../Input/Input";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
+import { getCurrentLocation, LocationResult } from "../../utils/location";
+import { sosService } from "../../services/sos";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface CustomDialogProps {
   title?: string;
@@ -29,6 +32,33 @@ const DialogEditSOS: React.FC<CustomDialogProps> = ({
   confirmText = "Confirm",
   cancelText = "Cancel",
 }) => {
+  const [currentLocation, setCurrentLocation] = useState<LocationResult | null>(
+    null
+  );
+  const [name, setName] = useState("");
+  useEffect(() => {
+    const fetchLocation = async () => {
+      const location = await getCurrentLocation();
+      if (location) {
+        setCurrentLocation(location);
+        console.log("Current Location:", location);
+      } else {
+        console.warn("Unable to get current location");
+      }
+    };
+
+    fetchLocation();
+  }, []);
+
+  const handleConfirm = async () => {
+    try {
+      const sosId = await AsyncStorage.getItem("sosId");
+      const result = sosService.updateSOS(Number(sosId), {});
+    } catch (error: any) {
+      console.log(error);
+    }
+  };
+
   return (
     <View className="absolute top-0 left-0 z-50 w-full h-full">
       {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}

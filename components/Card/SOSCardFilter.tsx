@@ -14,9 +14,11 @@ const SOSCardFilter = ({ data }: cardProps) => {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const result = await userServices.getUserByID(data.user_id);
-        // console.log(result.data);
-        setUser(result.data);
+        if (data) {
+          const result = await userServices.getUserByID(data.user_id);
+          // console.log(result.data);
+          setUser(result.data);
+        }
       } catch (error: any) {
         console.error("Error at SOSCardFilter", error);
       }
@@ -24,7 +26,7 @@ const SOSCardFilter = ({ data }: cardProps) => {
     if (data) {
       getUser();
     }
-  }, []);
+  }, [data]);
 
   useEffect(() => {
     const getLocationName = async () => {
@@ -58,8 +60,17 @@ const SOSCardFilter = ({ data }: cardProps) => {
     }
   };
   return (
-    <Pressable onPress={handlePress} className="w-full">
-      <View className="w-full bg-white rounded-[10px] border-gray-200 shadow-md border py-2 px-2 flex flex-row justify-start items-start">
+    <Pressable onPress={handlePress} className="w-full bg-white px-1">
+      <View
+        style={{
+          shadowColor: "#80C4E9",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 5,
+        }}
+        className="w-full bg-white rounded-[10px] border-gray-200 border py-2 px-2 flex flex-row justify-start items-start"
+      >
         <View className="flex flex-row gap-5  justify-center items-center">
           <ImageCustom
             source="https://img.icons8.com/?size=100&id=ptFAnHq1YxDk&format=png&color=000000"

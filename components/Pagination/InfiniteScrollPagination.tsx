@@ -7,17 +7,17 @@ import {
   TouchableOpacity,
 } from "react-native";
 
-interface PaginationProps {
-  data: string[];
+interface PaginationProps<T> {
+  data: T[];
   itemsPerPage: number;
-  renderItem: (item: string) => React.ReactNode;
+  renderItem: (item: T) => React.ReactNode;
 }
 
-const PaginatedScroll = ({
+const PaginatedScroll = <T,>({
   data,
   itemsPerPage,
   renderItem,
-}: PaginationProps) => {
+}: PaginationProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
