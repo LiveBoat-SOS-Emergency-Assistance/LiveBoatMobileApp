@@ -66,7 +66,11 @@ const TopSheet = forwardRef<TopSheetRef, TopSheetProps>(({ children }, ref) => {
       <Animated.View
         style={[
           styles.container,
-          { transform: [{ translateY }], height: height / 3 },
+          {
+            transform: [{ translateY }],
+            alignSelf: "stretch",
+            maxHeight: height / 3,
+          },
         ]}
       >
         {children}
@@ -93,6 +97,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     overflow: "hidden",
+    flexShrink: 1,
   },
 });
 

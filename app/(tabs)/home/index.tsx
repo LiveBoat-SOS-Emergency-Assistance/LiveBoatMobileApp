@@ -7,6 +7,8 @@ import {
   ScrollView,
   BackHandler,
   Dimensions,
+  Touchable,
+  TouchableOpacity,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { ChevronDown } from "lucide-react-native";
@@ -27,6 +29,9 @@ import { useAuth } from "../../../context/AuthContext";
 import Avatar from "../../../components/Image/Avatar";
 import { Camera } from "@rnmapbox/maps";
 import { getCurrentLocation } from "../../../utils/location";
+import ImageCustom from "../../../components/Image/Image";
+import Toast from "react-native-toast-message";
+import { rescuerServices } from "../../../services/rescuer";
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState(true);
   const [checkSOS, setCheckSOS] = useState(false);
@@ -38,6 +43,9 @@ export default function HomeScreen() {
   >([]);
   const { profile } = useAuth();
   const cameraRef = useRef<Camera>(null);
+  const [forceRender, setForceRender] = useState(false);
+
+  // Func to zoom to current location
   const handleControl = async () => {
     try {
       const location = await getCurrentLocation();
@@ -45,7 +53,7 @@ export default function HomeScreen() {
         const { latitude, longitude } = location;
         cameraRef.current.moveTo([longitude, latitude], 1000);
         setTimeout(() => {
-          cameraRef.current?.zoomTo(14, 500); // zoom về mức 14 trong 500ms
+          cameraRef.current?.zoomTo(14, 500);
         }, 1000);
       }
     } catch (error) {
@@ -58,6 +66,7 @@ export default function HomeScreen() {
   const handleClose = () => {
     setOpenModalCreateSquad(false);
   };
+
   const navigation = useNavigation();
   useFocusEffect(
     useCallback(() => {
@@ -94,6 +103,28 @@ export default function HomeScreen() {
           router.replace("/");
           return;
         }
+        // const sos = await sosService.getMySOSCurrent();
+        // console.log("sos", sos.data.name);
+        // if (sos && sos.data) {
+        //   await AsyncStorage.setItem("sosId", sos.data.id);
+        //   await AsyncStorage.setItem(
+        //     "longitudeSOS",
+        //     sos.data.longitude.toString()
+        //   );
+        //   await AsyncStorage.setItem(
+        //     "latitudeSOS",
+        //     sos.data.latitude.toString()
+        //   );
+        //   await AsyncStorage.setItem(
+        //     "accuracySOS",
+        //     sos.data.accuracy.toString()
+        //   );No
+        //   console.log("Before navigation...");
+        //   router.replace("/(tabs)/home/sos_map");
+        //   console.log("After navigation...");
+        // } else {
+        //   console.log("no data found");
+        // }
       } catch (error: any) {
         console.log("Fetch error:", {
           message: error.message,
@@ -104,24 +135,30 @@ export default function HomeScreen() {
     };
     initialize();
   }, []);
-  useEffect(() => {
-    const getSOS = async () => {
-      try {
-        const current = await sosService.getSOSCurrent();
-        if (current && current.data) {
-          setCurrentSOS(current.data);
-          setCheckSOS(true);
-        } else {
-          console.log("khong co ");
+  useFocusEffect(
+    useCallback(() => {
+      const getSOS = async () => {
+        try {
+          const current = await sosService.getSOSCurrent();
+          if (current && current.data) {
+            setCurrentSOS(current.data);
+            setCheckSOS(true);
+          }
+        } catch (error: any) {
+          console.error("Error when getting current SOS:", {
+            message: error?.message,
+            status: error?.response?.status,
+            data: error?.response?.data,
+            headers: error?.response?.headers,
+          });
+          setCurrentSOS(null);
+          setCheckSOS(false);
         }
-      } catch (error: any) {
-        console.error("Lỗi khi lấy SOS hiện tại:", error?.message || error);
-        setCurrentSOS(null);
-        setCheckSOS(false);
-      }
-    };
-    getSOS();
-  }, []);
+      };
+
+      getSOS();
+    }, [])
+  );
   useEffect(() => {
     const getGroup = async () => {
       try {
@@ -135,11 +172,37 @@ export default function HomeScreen() {
     };
     getGroup();
   }, []);
-
+  const handleCancelSOS = async () => {
+    try {
+      // console.log(currentSOS.SOS);
+      if (currentSOS) {
+        const result = await rescuerServices.updateRescuer({
+          longitude: currentSOS.SOS.longitude,
+          latitude: currentSOS.SOS.latitude,
+          accuracy: currentSOS.SOS.accuracy,
+          status: "CANCELED",
+        });
+      }
+      setCurrentSOS(null);
+      setCheckSOS(false);
+      setForceRender((prev) => !prev);
+      Toast.show({
+        type: "success",
+        text1: "SOS Cancelled",
+        text2: "You have canceled your request for emergency assistance.",
+      });
+    } catch (error: any) {
+      console.log("Error", error.response?.data);
+      Toast.show({
+        type: "error",
+        text1: "Notification!",
+        text2: "Error when cancel support!",
+      });
+    }
+  };
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
-
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
         {checkSOS ? (
@@ -153,7 +216,7 @@ export default function HomeScreen() {
           </View>
         )}
         <TopSheet ref={topSheetRef}>
-          <View className="flex flex-col pb-10 gap-3 justify-center items-center w-full">
+          <View className="flex flex-col  gap-3  justify-center items-center w-full">
             <View
               className="w-[50%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative"
               style={{
@@ -180,9 +243,8 @@ export default function HomeScreen() {
                 <ItemSquad key={squad.id} name={squad.name} id={""} />
               ))}
             </ScrollView>
-            <View className="w-full justify-around flex flex-row">
+            <View className="w-full justify-around flex flex-row ">
               <Pressable
-                // onPress={() => router.push("/(tabs)/home/add_group")}
                 onPress={() => setOpenModalCreateSquad(true)}
                 className="w-[40%] h-[43px] bg-white rounded-[40px] flex justify-center items-center relative border border-[#80C4E9]"
                 style={{
@@ -220,7 +282,6 @@ export default function HomeScreen() {
             </View>
           </View>
         </TopSheet>
-        {/* {!checkSOS ? <Map signal="normal"></Map> : checkSOS ? <Map sos={currentSOS}></Map>} */}
 
         {/* HEADER INCLUES AVATAR , MESSAGES*/}
         <View className="absolute top-[45px] w-full flex flex-col items-center px-2">
@@ -309,6 +370,54 @@ export default function HomeScreen() {
           </View>
         </View>
         {/* Bottome Sheet for MEMBER AND PLACES */}
+        {checkSOS && (
+          <View
+            className="absolute bottom-[100px] w-full flex flex-row gap-2"
+            style={{
+              position: "absolute",
+              bottom: 250,
+              left: 20,
+              zIndex: 0,
+            }}
+          >
+            <TouchableOpacity
+              onPress={handleCancelSOS}
+              activeOpacity={0.8}
+              className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow "
+              style={{
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 3,
+              }}
+            >
+              <ImageCustom
+                source="https://img.icons8.com/?size=100&id=83149&format=png&color=000000"
+                width={18}
+                height={18}
+                color="#EB4747"
+              ></ImageCustom>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              className=" h-[40px] px-4 bg-[#EB4747] rounded-full flex flex-row justify-center gap-2 items-center shadow "
+              style={{
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 3,
+              }}
+            >
+              <ImageCustom
+                source="https://img.icons8.com/?size=100&id=99921&format=png&color=000000"
+                width={18}
+                height={18}
+                color="white"
+              ></ImageCustom>
+              <Text className="text-white font-bold text-[13px]">
+                Detail SOS
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <AnimatePresence>
           <BottomModal>
             <View className="w-full flex flex-col justify-center items-center">
@@ -351,7 +460,7 @@ export default function HomeScreen() {
                     activeTab === false ? "bg-white" : "bg-transparent"
                   }`}
                   style={[
-                    !activeTab && {
+                    activeTab === false && {
                       shadowColor: "#000",
                       shadowOffset: { width: 0, height: 4 },
                       shadowOpacity: 0.3,

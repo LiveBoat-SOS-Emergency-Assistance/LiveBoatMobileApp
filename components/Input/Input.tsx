@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  DimensionValue,
   Text,
   TextInput,
   TextInputProps,
@@ -16,6 +17,7 @@ interface InputProps extends TextInputProps {
   error?: boolean;
   errorPassword?: string;
   keyboardType?: any;
+  width?: string;
 }
 
 const Input = ({
@@ -26,12 +28,13 @@ const Input = ({
   error,
   errorPassword,
   keyboardType,
+  width = "90%",
   ...rest
 }: InputProps) => {
   const [focused, setFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   return (
-    <View className="w-[90%]">
+    <View className={`w-[${width}]`}>
       <View
         className={`w-full border h-[48px] rounded-[5px] px-4 outline-none flex relative justify-center ${
           error

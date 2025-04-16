@@ -17,10 +17,7 @@ import "../global.css";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
 import * as SplashScreen from "expo-splash-screen";
-import {
-  configureReanimatedLogger,
-  ReanimatedLogLevel,
-} from "react-native-reanimated";
+
 SplashScreen.preventAutoHideAsync();
 LogBox.ignoreAllLogs();
 export default function home() {

@@ -84,10 +84,10 @@ const Layout = () => {
           }}
         />
         <Stack.Screen
-          name="(auth)/forgot_password"
+          name={SCREENS.FORGOT_PASSWORD.name}
           options={{
             headerShown: true,
-            title: "",
+            title: SCREENS.FORGOT_PASSWORD.title,
             headerRight: () => (
               <Image
                 source={require("../assets/images/liveboat.png")}
@@ -97,10 +97,10 @@ const Layout = () => {
           }}
         />
         <Stack.Screen
-          name="(auth)/change_password"
+          name={SCREENS.CHANGE_PASSWORD.name}
           options={{
             headerShown: true,
-            title: "",
+            title: SCREENS.CHANGE_PASSWORD.title,
             headerRight: () => (
               <Image
                 source={require("../assets/images/liveboat.png")}
@@ -110,10 +110,10 @@ const Layout = () => {
           }}
         />
         <Stack.Screen
-          name="(auth)/verify_email_phone"
+          name={SCREENS.VERIFY_EMAIL_PASSWORD.name}
           options={{
             headerShown: true,
-            title: "",
+            title: SCREENS.VERIFY_EMAIL_PASSWORD.title,
             headerRight: () => (
               <Image
                 source={require("../assets/images/liveboat.png")}

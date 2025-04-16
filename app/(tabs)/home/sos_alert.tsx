@@ -39,8 +39,13 @@ export default function SOSAlert() {
           console.error("Location data is missing.");
         }
       }
-    } catch (error) {
-      console.error("Lỗi lấy vị trí:", error);
+    } catch (error: any) {
+      console.log("Fetch error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      // console.error("Lỗi lấy vị trí:", error);
     }
   };
 

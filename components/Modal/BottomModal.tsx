@@ -28,10 +28,6 @@ const BottomModal = ({
   const height = useSharedValue(initialHeight);
   const isExpanded = useSharedValue(initialExpanded);
 
-  // const initialHeight = initialExpanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT;
-  // const height = useSharedValue(initialHeight);
-  // const isExpanded = useSharedValue(initialExpanded);
-
   const windowHeight = useSharedValue(Dimensions.get("window").height);
 
   useEffect(() => {

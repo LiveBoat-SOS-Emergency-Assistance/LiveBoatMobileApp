@@ -1,7 +1,6 @@
 import {
   View,
   Text,
-  Pressable,
   Image,
   TextInput,
   Dimensions,
@@ -12,11 +11,8 @@ import {
 import React, { useEffect, useState } from "react";
 import ImageCustom from "../../../components/Image/Image";
 import SOSCard from "../../../components/Card/SOSCard";
-import { Scroll } from "lucide-react-native";
-import SelectBox from "../../../components/SelectBox/SelectBox";
 import SOSCardFilter from "../../../components/Card/SOSCardFilter";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import { sosService } from "../../../services/sos";
 import InfiniteScrollPagination from "../../../components/Pagination/InfiniteScrollPagination";
 export default function History() {
@@ -63,7 +59,16 @@ export default function History() {
               />
             </View>
           </View>
-          <View className="w-[90%] h-[175px] rounded-[30px] bg-[#ffe4e4]  py-4">
+          <View
+            className="w-[90%] h-[175px] rounded-[30px] bg-[#FFD9D9]  py-4"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+          >
             <Text className="text-[#404040] font-bold px-5">
               Total emergencies
             </Text>

@@ -1,15 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, PermissionsAndroid, Platform, StyleSheet } from "react-native";
-import MapboxGL, {
-  MapView,
-  Camera,
-  PointAnnotation,
-  ShapeSource,
-  LineLayer,
-} from "@rnmapbox/maps";
+import MapboxGL, { MapView, Camera } from "@rnmapbox/maps";
 import { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "@env";
-import UserSOS from "./UserSOS";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import UserLocation from "./UserLocation";
 import { getCurrentLocation } from "../../utils/location";
 import RippleMarker from "./RippleMarker";
@@ -96,8 +88,9 @@ const Map = ({ signal, sos, cameraRef }: mapProps) => {
         }
       }
     };
-
-    fetchRoute();
+    if (location && sosLocation) {
+      fetchRoute();
+    }
   }, [location, sosLocation]);
   return (
     <View style={styles.container}>
@@ -112,7 +105,7 @@ const Map = ({ signal, sos, cameraRef }: mapProps) => {
           <>
             <Camera
               ref={cameraRef}
-              zoomLevel={10}
+              zoomLevel={11}
               centerCoordinate={location}
               animationDuration={500}
             />

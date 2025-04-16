@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 export default function BottomNavigation() {
   const segments = useSegments();
-  const hiddenScreens = ["sos_alert", "sos_map", "sos_diable"];
+  const hiddenScreens = ["sos_alert", "sos_map", "sos_disable"];
   const isHiddenScreen = hiddenScreens.some((screen) =>
     segments.includes(screen)
   );
@@ -62,7 +62,7 @@ export default function BottomNavigation() {
         name="home"
         options={{
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <View
               style={{
                 flex: 1,
@@ -86,7 +86,7 @@ export default function BottomNavigation() {
       <Tabs.Screen
         name="donation"
         options={{
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <Image
               source={{
                 uri: focused
@@ -110,7 +110,7 @@ export default function BottomNavigation() {
         name="history"
         options={{
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <Image
               source={{
                 uri: focused
@@ -127,7 +127,7 @@ export default function BottomNavigation() {
         name="chatbot"
         options={{
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <Image
               source={{
                 uri: focused

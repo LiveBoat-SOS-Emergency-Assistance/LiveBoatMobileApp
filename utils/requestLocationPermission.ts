@@ -1,6 +1,6 @@
 import Geolocation from "@react-native-community/geolocation";
 import { useEffect } from "react";
-import { AppState, PermissionsAndroid } from "react-native";
+import { Alert, AppState, PermissionsAndroid } from "react-native";
 
 async function requestLocationPermission() {
   try {
@@ -27,12 +27,10 @@ export function useWatchGPSStatus() {
       Geolocation.getCurrentPosition(
         (position) => {
           console.log("GPS OK", position.coords);
-          // GPS đang bật
         },
         async (error) => {
           console.log("GPS error:", error);
           if (error.code === 2) {
-            // code 2 = Location services disabled
             const granted = await requestLocationPermission();
             if (!granted) {
               Alert.alert(
@@ -46,15 +44,15 @@ export function useWatchGPSStatus() {
       );
     };
 
-    checkGPSStatus(); // Check ngay khi vào app
+    checkGPSStatus();
 
     const appStateListener = AppState.addEventListener("change", (state) => {
       if (state === "active") {
-        checkGPSStatus(); // Mỗi lần quay lại app thì kiểm tra lại
+        checkGPSStatus();
       }
     });
 
-    const interval = setInterval(checkGPSStatus, 5000); // Check mỗi 5s
+    const interval = setInterval(checkGPSStatus, 5000);
 
     return () => {
       clearInterval(interval);

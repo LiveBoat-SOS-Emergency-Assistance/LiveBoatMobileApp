@@ -14,6 +14,7 @@ import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import { getCurrentLocation, LocationResult } from "../../utils/location";
 import { sosService } from "../../services/sos";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 
 interface CustomDialogProps {
   title?: string;
@@ -36,6 +37,7 @@ const DialogEditSOS: React.FC<CustomDialogProps> = ({
     null
   );
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   useEffect(() => {
     const fetchLocation = async () => {
       const location = await getCurrentLocation();
@@ -53,7 +55,24 @@ const DialogEditSOS: React.FC<CustomDialogProps> = ({
   const handleConfirm = async () => {
     try {
       const sosId = await AsyncStorage.getItem("sosId");
-      const result = sosService.updateSOS(Number(sosId), {});
+      if (currentLocation) {
+        const result = await sosService.updateSOS(Number(sosId), {
+          name: name,
+          description: description,
+          longitude: currentLocation.longitude,
+          latitude: currentLocation.latitude,
+          status: "ONGOING",
+        });
+        Toast.show({
+          type: "success",
+          text1: "Notification",
+          text2: "Updated SOS successfully",
+        });
+        // console.log(result.data);
+        onConfirm();
+      } else {
+        console.warn("Current location is not available");
+      }
     } catch (error: any) {
       console.log(error);
     }
@@ -76,6 +95,8 @@ const DialogEditSOS: React.FC<CustomDialogProps> = ({
               <View className="flex flex-col gap-1">
                 <Text className="text-[#404040] font-bold">Name:</Text>
                 <TextInput
+                  value={name}
+                  onChangeText={setName}
                   placeholder="Name of emergency"
                   className="border py-2 border-gray-300 rounded-md px-2 text-sm"
                 ></TextInput>
@@ -83,6 +104,8 @@ const DialogEditSOS: React.FC<CustomDialogProps> = ({
               <View className="flex flex-col gap-1">
                 <Text className="text-[#404040] font-bold">Description:</Text>
                 <TextInput
+                  value={description}
+                  onChangeText={setDescription}
                   placeholder="Describe your emergency"
                   className="w-full h-[100px] border items-start border-[#d9d9d9] rounded-[5px] justify-start mt-3 p-2 text-sm"
                   // onChangeText={(text) => setText(text)}
@@ -102,7 +125,7 @@ const DialogEditSOS: React.FC<CustomDialogProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={onConfirm}
+                onPress={handleConfirm}
                 className="flex-1 bg-red-500 py-3 rounded-xl ml-2"
               >
                 <Text className="text-center text-white font-medium">

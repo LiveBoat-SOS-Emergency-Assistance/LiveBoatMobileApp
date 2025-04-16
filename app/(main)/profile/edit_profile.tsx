@@ -39,11 +39,7 @@ const EditProfile = () => {
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  // useEffect(() => {
-  //   if (myProfile?.User?.avatar_url) {
-  //     setImageUri(myProfile.User.avatar_url);
-  //   }
-  // }, [myProfile]);
+  // Function for open library
   const openImagePicker = async () => {
     const result = await launchImageLibrary({
       mediaType: "photo",
@@ -67,6 +63,7 @@ const EditProfile = () => {
       }
     }
   };
+  // Function for save avatar
   const handleConfirmAvatar = async () => {
     if (profile && imageUri) {
       const success = await userServices.updateImage({ avatarUrl: imageUri });
@@ -86,7 +83,7 @@ const EditProfile = () => {
         setProfile(updatedProfile);
         await AsyncStorage.setItem("profile", JSON.stringify(updatedProfile));
       } else {
-        alert("❌ Failed to update avatar");
+        alert("Failed to update avatar");
       }
     }
   };
@@ -125,7 +122,6 @@ const EditProfile = () => {
       }
     }
   };
-
   const handleSelectValue = (value: string) => {
     setSelectedValue((prev) => ({
       ...prev,
@@ -133,7 +129,22 @@ const EditProfile = () => {
     }));
     setDialogVisible(false);
   };
+  const handleDateChange = (event: any, date?: Date) => {
+    if (event.type === "set" && date) {
+      // Normalize the date to midnight UTC
+      const normalizedDate = new Date(date);
+      normalizedDate.setUTCHours(0, 0, 0, 0);
+      // Format the date as YYYY-MM-DD
+      const formattedDate = normalizedDate.toISOString().split("T")[0];
 
+      setSelectedDate(normalizedDate);
+      setSelectedValue((prev) => ({
+        ...prev,
+        "Date of Birth": formattedDate,
+      }));
+    }
+    setShowDatePicker(false);
+  };
   const getOptions = (field: string): string[] => {
     if (field === "Height") {
       const heights: string[] = [];
@@ -158,43 +169,31 @@ const EditProfile = () => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate || new Date(2000, 0, 1)}
+          mode="date"
+          display="spinner"
+          onChange={handleDateChange}
+        />
+      )}
       {dialogVisible && (
         <View className="absolute inset-0 top-0 bg-black/50 z-50 items-center justify-center">
           <View className="bg-white rounded-lg p-5 w-4/5 max-h-[60%]">
             <Text className="text-lg font-bold mb-4 text-center">
               Select {selectedField}
             </Text>
-
-            {selectedField === "Date of Birth" ? (
-              <DateTimePicker
-                value={selectedDate || new Date(2000, 0, 1)}
-                mode="date"
-                display="spinner"
-                onChange={(event, date) => {
-                  if (event.type === "set" && date) {
-                    console.log("click");
-                    setSelectedDate(date);
-                    handleSelectValue(date.toISOString().split("T")[0]);
-                    setDialogVisible(false);
-                  } else {
-                    setDialogVisible(false);
-                  }
-                }}
-              />
-            ) : (
-              <ScrollView ref={scrollViewRef}>
-                {getOptions(selectedField).map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    onPress={() => handleSelectValue(option)}
-                    className="p-3 border-b border-gray-200"
-                  >
-                    <Text className="text-base text-center">{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-
+            <ScrollView>
+              {getOptions(selectedField).map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  onPress={() => handleSelectValue(option)}
+                  className="p-3 border-b border-gray-200"
+                >
+                  <Text className="text-base text-center">{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
             <TouchableOpacity
               onPress={() => setDialogVisible(false)}
               className="mt-4 self-end"
@@ -274,8 +273,8 @@ const EditProfile = () => {
             <MenuItem title="Address" />
             <MenuItem
               title="Date of Birth"
-              value={selectedValue["Date of Birth"] || ""}
               onPress={() => handleOpenDialog("Date of Birth")}
+              value={selectedValue["Date of Birth"] || ""}
             />
             <MenuItem
               title="Height"

@@ -6,6 +6,7 @@ import axios, {
 } from "axios";
 import { baseURL } from "../baseUrl";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 // 1. Define custom request config interface
 export interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -66,7 +67,6 @@ axiosPrivate.interceptors.response.use(
       try {
         const refreshToken = await AsyncStorage.getItem("refreshToken");
         if (!refreshToken) throw new Error("No refresh token stored!");
-        // console.log(refreshToken);
         const refreshResponse = await axios.post(
           `${baseURL}/jwt/access-token`,
           { refreshToken },
@@ -83,6 +83,8 @@ axiosPrivate.interceptors.response.use(
 
         return axiosPrivate(originalRequest);
       } catch (refreshError) {
+        await AsyncStorage.clear();
+        router.replace("/");
         return Promise.reject(refreshError);
       }
     }

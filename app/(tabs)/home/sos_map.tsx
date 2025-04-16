@@ -17,6 +17,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SlideToCancel from "../../../components/Button/SlideCancelButton";
 import { router, useNavigation } from "expo-router";
 import CustomDialog from "../../../components/Dialog/DialogEditSOS";
+import AddressSOSCard from "../../../components/Card/AddressSOSCard";
+import Avatar from "../../../components/Image/Avatar";
 
 export default function SOSMap() {
   const [isDisable, setIsDisable] = useState(false);
@@ -29,7 +31,7 @@ export default function SOSMap() {
 
   const handleCancelSOS = () => {
     setIsDisable(false);
-    router.push("/(tabs)/home/sos_diable");
+    router.push("/(tabs)/home/sos_disable");
   };
   const handleEditSOS = () => {
     setVisible(true);
@@ -78,7 +80,35 @@ export default function SOSMap() {
           />
         )}
         <Map signal="sos" />
-
+        <View
+          className="absolute right-2 w-[30px] max-h-[135px] h-fit py-3 px-2 top-[130px] rounded-[90px]"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 5,
+          }}
+        >
+          <View className="w-[24px] h-[24px] rounded-full bg-[#EB4747] flex justify-start items-center gap-2 flex-col">
+            <ImageCustom
+              source="https://img.icons8.com/?size=100&id=pvGJuQWtxCiV&format=png&color=000000"
+              color="white"
+              width={15}
+              height={15}
+            ></ImageCustom>
+            <Avatar
+              source={require("../../../assets/images/ava2.png")}
+              width={24}
+              height={24}
+            ></Avatar>
+            <Avatar
+              source={require("../../../assets/images/ava3.png")}
+              width={24}
+              height={24}
+            ></Avatar>
+          </View>
+        </View>
         {/* Action Buttons */}
         <View className="absolute top-[100px] gap-5 left-0 right-0 flex-row justify-center space-x-4">
           <TouchableOpacity className="flex-row items-center bg-[#EB4747] px-4 py-2 rounded-full">
@@ -144,7 +174,9 @@ export default function SOSMap() {
                       gap: 25,
                     }}
                     showsVerticalScrollIndicator={false}
-                  ></ScrollView>
+                  >
+                    <AddressSOSCard></AddressSOSCard>
+                  </ScrollView>
                 </View>
               </BottomModal>
             </AnimatePresence>

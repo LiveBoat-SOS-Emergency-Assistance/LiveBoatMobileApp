@@ -92,7 +92,12 @@ const profile_sos = () => {
         router.replace("/(tabs)/home");
       }
     } catch (error: any) {
-      console.error("profile_sos error", error);
+      Toast.show({
+        type: "error",
+        text1: "Notification!",
+        text2: "You are already assisting another SOS request.",
+      });
+      console.log("Error", error.response?.data);
     }
   };
   return (

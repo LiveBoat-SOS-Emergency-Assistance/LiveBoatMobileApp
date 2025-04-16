@@ -1,12 +1,16 @@
-import { Modal, Pressable, Text, TouchableWithoutFeedback, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import React, { useState } from "react";
-import Avatar from "../Image/Avatar";
 import Input from "../Input/Input";
 import ImageCustom from "../Image/Image";
 import CustomButton from "../Button/CustomButton";
 import { groupServices } from "../../services/group";
 import Toast from "react-native-toast-message";
-import { router } from "expo-router";
 interface modalProps {
   onClose: () => void;
 }
@@ -52,7 +56,7 @@ const ModalCreateSquad = ({ onClose }: modalProps) => {
         margin: 0,
       }}
     >
-    <TouchableWithoutFeedback onPress={onClose}>
+      <TouchableWithoutFeedback onPress={onClose}>
         <View className="flex-1 justify-center items-center bg-black/50">
           <View
             style={{
@@ -80,11 +84,14 @@ const ModalCreateSquad = ({ onClose }: modalProps) => {
               <Text className="text-[#4A9FCE] text-[10px] font-bold">
                 Squad name:
               </Text>
-              <Input
-                value={name}
-                onChangeText={setName}
-                placeholder="Enter name squad"
-              ></Input>
+              <View className="w-full justify-center flex items-center">
+                <Input
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Enter name squad"
+                  width="100%"
+                ></Input>
+              </View>
               <View className="flex flex-col gap-3 pt-5">
                 <View className="flex flex-row gap-2 items-center">
                   <ImageCustom
@@ -136,7 +143,7 @@ const ModalCreateSquad = ({ onClose }: modalProps) => {
             </View>
           </View>
         </View>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
