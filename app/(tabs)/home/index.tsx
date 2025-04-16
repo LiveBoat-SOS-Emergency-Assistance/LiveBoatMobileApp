@@ -103,28 +103,6 @@ export default function HomeScreen() {
           router.replace("/");
           return;
         }
-        // const sos = await sosService.getMySOSCurrent();
-        // console.log("sos", sos.data.name);
-        // if (sos && sos.data) {
-        //   await AsyncStorage.setItem("sosId", sos.data.id);
-        //   await AsyncStorage.setItem(
-        //     "longitudeSOS",
-        //     sos.data.longitude.toString()
-        //   );
-        //   await AsyncStorage.setItem(
-        //     "latitudeSOS",
-        //     sos.data.latitude.toString()
-        //   );
-        //   await AsyncStorage.setItem(
-        //     "accuracySOS",
-        //     sos.data.accuracy.toString()
-        //   );No
-        //   console.log("Before navigation...");
-        //   router.replace("/(tabs)/home/sos_map");
-        //   console.log("After navigation...");
-        // } else {
-        //   console.log("no data found");
-        // }
       } catch (error: any) {
         console.log("Fetch error:", {
           message: error.message,
@@ -200,13 +178,33 @@ export default function HomeScreen() {
       });
     }
   };
+  useFocusEffect(
+    useCallback(() => {
+      const handleGetMySOS = async () => {
+        try {
+          const sos = await sosService.getMySOSCurrent();
+          if (sos && sos.data) {
+            await AsyncStorage.setItem("sosId", sos.data.id);
+            await AsyncStorage.setItem("longitudeSOS", sos.data.longitude);
+            await AsyncStorage.setItem("latitudeSOS", sos.data.latitude);
+            await AsyncStorage.setItem("accuracySOS", sos.data.accuracy);
+            router.push("/(tabs)/home/sos_map");
+          }
+        } catch (error: any) {
+          console.log("Error at get my sos", error);
+        }
+      };
+
+      handleGetMySOS();
+    }, [])
+  );
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
         {checkSOS ? (
-          <Map sos={currentSOS} cameraRef={cameraRef}></Map>
+          <Map checkSOS={checkSOS} sos={currentSOS} cameraRef={cameraRef}></Map>
         ) : (
           <Map signal="normal" cameraRef={cameraRef}></Map>
         )}
@@ -324,6 +322,7 @@ export default function HomeScreen() {
 
             {/* Message */}
             <Pressable
+              // onPress={handleClick}
               className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow"
               style={{
                 shadowColor: "#000",

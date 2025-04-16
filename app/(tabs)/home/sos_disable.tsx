@@ -8,8 +8,10 @@ import CustomButton from "../../../components/Button/CustomButton";
 import Toast from "react-native-toast-message";
 
 export default function SOSDiable() {
+  const [loading, setLoading] = useState(false);
   const handleOk = async () => {
     try {
+      setLoading(true);
       const longitude = await AsyncStorage.getItem("longitudeSOS");
       const latitude = await AsyncStorage.getItem("latitudeSOS");
       const accuracy = await AsyncStorage.getItem("accuracySOS");
@@ -29,8 +31,10 @@ export default function SOSDiable() {
         visibilityTime: 2000,
       });
       router.replace("/(tabs)/home");
+      setLoading(false);
     } catch (error: any) {
       console.error(error);
+      setLoading(false);
     }
   };
 
@@ -46,7 +50,12 @@ export default function SOSDiable() {
           assistance
         </Text>
       </View>
-      <CustomButton onPress={handleOk} title="OK" third></CustomButton>
+      <CustomButton
+        isLoading={loading}
+        onPress={handleOk}
+        title="OK"
+        third
+      ></CustomButton>
     </View>
   );
 }

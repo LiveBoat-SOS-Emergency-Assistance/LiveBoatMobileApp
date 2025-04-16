@@ -5,45 +5,25 @@ import { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "@env";
 import UserLocation from "./UserLocation";
 import { getCurrentLocation } from "../../utils/location";
 import RippleMarker from "./RippleMarker";
+import { RescuerItem } from "../../types/rescuerItem";
+import { SOSItem } from "../../types/sosItem";
+import { useAuth } from "../../context/AuthContext";
 MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN);
 MapboxGL.setTelemetryEnabled(false);
-interface SOS {
-  accuracy: string;
-  created_at: string;
-  credibility: number;
-  description: string;
-  group_id: string;
-  id: string;
-  latitude: string;
-  location_updated_at: string;
-  longitude: string;
-  name: string;
-  reported_count: number;
-  status: string;
-  user_id: string;
-}
-interface SOSItem {
-  SOS: SOS;
-  accepted_at: string;
-  accuracy: string;
-  id: string;
-  latitude: string;
-  location_updated_at: string;
-  longitude: string;
-  sos_id: string;
-  status: string;
-  user_id: string;
-}
+
 interface mapProps {
   signal?: string;
   sos?: SOSItem;
+  checkSOS?: boolean;
   cameraRef?: React.RefObject<Camera>;
+  listRescuer?: RescuerItem[];
 }
-const Map = ({ signal, sos, cameraRef }: mapProps) => {
+const Map = ({ signal, sos, cameraRef, checkSOS, listRescuer }: mapProps) => {
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [sosLocation, setSOSLocation] = useState<SOSItem | null>(null);
-  const [route, setRoute] = useState<any>(null); // State to store route geometry
+  const [route, setRoute] = useState<any>(null);
+  const { profile } = useAuth();
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -74,14 +54,12 @@ const Map = ({ signal, sos, cameraRef }: mapProps) => {
           parseFloat(sosLocation.SOS.latitude),
         ];
         const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]}%2C${origin[1]}%3B${destination[0]}%2C${destination[1]}?alternatives=true&geometries=geojson&language=en&overview=full&steps=true&access_token=${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`;
-        // const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&access_token=${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`;
 
         try {
           const response = await fetch(url);
           const data = await response.json();
-          // console.log("Directions API Response:", data);
           if (data.routes && data.routes.length > 0) {
-            setRoute(data.routes[0].geometry); // Store the route geometry
+            setRoute(data.routes[0].geometry);
           }
         } catch (error) {
           console.log("Error fetching route:", error);
@@ -109,12 +87,9 @@ const Map = ({ signal, sos, cameraRef }: mapProps) => {
               centerCoordinate={location}
               animationDuration={500}
             />
-            {signal === "sos" ? (
-              <RippleMarker id="my-sos-marker" coordinate={location} />
-            ) : (
-              <UserLocation coordinate={location} />
-            )}
-            {sosLocation && (
+
+            {/* When I support others this is the user's location */}
+            {sosLocation && checkSOS && (
               <RippleMarker
                 id="ripple-marker"
                 userIDSOS={Number(sosLocation.SOS.user_id)}
@@ -124,13 +99,35 @@ const Map = ({ signal, sos, cameraRef }: mapProps) => {
                 ]}
               />
             )}
-            {route && (
+            {/* When I support others, and this is my path to the SOS signal */}
+            {route && checkSOS && (
               <MapboxGL.ShapeSource id="routeSource" shape={route}>
                 <MapboxGL.LineLayer
                   id="routeLayer"
                   style={{ lineColor: "rgb(120,174,237)", lineWidth: 4 }}
                 />
               </MapboxGL.ShapeSource>
+            )}
+            {/* List Rescuer is supporting me */}
+            {listRescuer &&
+              listRescuer.map((rescuer) => (
+                <UserLocation
+                  key={rescuer.id}
+                  coordinate={[
+                    parseFloat(rescuer.longitude),
+                    parseFloat(rescuer.latitude),
+                  ]}
+                  avatarUrl={rescuer.User?.avatar_url}
+                />
+              ))}
+            {/* My location */}
+            {signal === "sos" ? (
+              <RippleMarker id="my-sos-marker" coordinate={location} />
+            ) : (
+              <UserLocation
+                coordinate={location}
+                avatarUrl={profile?.User?.avatar_url}
+              />
             )}
           </>
         )}

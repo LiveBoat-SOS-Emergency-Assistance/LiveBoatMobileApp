@@ -27,4 +27,16 @@ export class rescuerServices {
       throw error;
     }
   }
+  static async getRescuerBySOSId(sosId: number) {
+    try {
+      const result = await axiosPrivate.get(`/sos/rescuers/${sosId}`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
 }

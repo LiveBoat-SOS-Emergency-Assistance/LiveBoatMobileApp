@@ -43,7 +43,6 @@ const DialogEditSOS: React.FC<CustomDialogProps> = ({
       const location = await getCurrentLocation();
       if (location) {
         setCurrentLocation(location);
-        console.log("Current Location:", location);
       } else {
         console.warn("Unable to get current location");
       }
@@ -68,7 +67,6 @@ const DialogEditSOS: React.FC<CustomDialogProps> = ({
           text1: "Notification",
           text2: "Updated SOS successfully",
         });
-        // console.log(result.data);
         onConfirm();
       } else {
         console.warn("Current location is not available");
@@ -108,8 +106,6 @@ const DialogEditSOS: React.FC<CustomDialogProps> = ({
                   onChangeText={setDescription}
                   placeholder="Describe your emergency"
                   className="w-full h-[100px] border items-start border-[#d9d9d9] rounded-[5px] justify-start mt-3 p-2 text-sm"
-                  // onChangeText={(text) => setText(text)}
-                  // value={text}
                   numberOfLines={4}
                   multiline={true}
                   textAlignVertical="top"

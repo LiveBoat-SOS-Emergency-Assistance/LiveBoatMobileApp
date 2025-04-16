@@ -32,48 +32,38 @@ const PaginatedScroll = <T,>({
     if (page >= 1 && page <= totalPages) {
       setLoading(true);
       setCurrentPage(page);
-
-      // Simulate loading (remove this in production and replace with actual data fetching)
       setTimeout(() => {
         setLoading(false);
       }, 300);
     }
   };
 
-  // Generate pagination numbers with ellipsis
   const getPaginationNumbers = () => {
     const pages = [];
-
-    // Always show first page
     pages.push(1);
 
     // Calculate range of visible pages
     let rangeStart = Math.max(2, currentPage - 1);
     let rangeEnd = Math.min(totalPages - 1, currentPage + 1);
 
-    // Adjust range to always show 3 pages when possible
     if (currentPage <= 3) {
       rangeEnd = Math.min(4, totalPages - 1);
     } else if (currentPage >= totalPages - 2) {
       rangeStart = Math.max(totalPages - 3, 2);
     }
 
-    // Add ellipsis before range if needed
     if (rangeStart > 2) {
       pages.push("...");
     }
 
-    // Add range pages
     for (let i = rangeStart; i <= rangeEnd; i++) {
       pages.push(i);
     }
 
-    // Add ellipsis after range if needed
     if (rangeEnd < totalPages - 1) {
       pages.push("...");
     }
 
-    // Always show last page if there is more than one page
     if (totalPages > 1) {
       pages.push(totalPages);
     }

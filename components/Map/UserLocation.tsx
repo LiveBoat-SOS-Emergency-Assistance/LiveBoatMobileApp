@@ -6,10 +6,15 @@ import MapboxGL from "@rnmapbox/maps";
 
 interface BreathingAvatarProps {
   size?: number;
-  coordinate: [number, number]; // New prop for map coordinates
+  coordinate: [number, number];
+  avatarUrl?: string | null;
 }
 
-const UserLocation = ({ size = 60, coordinate }: BreathingAvatarProps) => {
+const UserLocation = ({
+  size = 60,
+  coordinate,
+  avatarUrl,
+}: BreathingAvatarProps) => {
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(1)).current;
   const { profile } = useAuth();
@@ -72,8 +77,8 @@ const UserLocation = ({ size = 60, coordinate }: BreathingAvatarProps) => {
         >
           <Image
             source={
-              profile?.User?.avatar_url
-                ? { uri: profile?.User?.avatar_url }
+              avatarUrl
+                ? { uri: avatarUrl }
                 : require("../../assets/images/ava1.png")
             }
             style={[

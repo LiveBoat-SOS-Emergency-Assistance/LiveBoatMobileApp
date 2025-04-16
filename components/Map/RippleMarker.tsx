@@ -23,6 +23,7 @@ const RippleMarker = ({
   const [sosProfile, setSOSProfile] = useState<Profile | null>(null);
   const { profile } = useAuth();
   // console.log(userIDSOS);
+
   useEffect(() => {
     const getSOSProfile = async () => {
       try {
