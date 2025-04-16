@@ -6,6 +6,7 @@ import Input from "../../components/Input/Input";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../context/AuthContext";
 import React from "react";
+import Toast from "react-native-toast-message";
 const verify_email_phone = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,8 +32,13 @@ const verify_email_phone = () => {
         params: { type: "register_email" },
       });
     } catch (error: any) {
-      console.error(error);
+      console.error(error.response.data.error);
       setLoading(false);
+      Toast.show({
+        type: "error",
+        text1: "Notification",
+        text2: error.response.data.error,
+      });
     }
   };
   return (

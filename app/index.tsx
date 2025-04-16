@@ -1,25 +1,27 @@
-import { View, Text, StyleSheet, Image, Button, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Button,
+  Pressable,
+  LogBox,
+  BackHandler,
+} from "react-native";
 import { FONTS } from "../constants/theme";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import CustomButton from "../components/Button/CustomButton";
 import tw from "twrnc";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import "../global.css";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
-import { jwtDecode } from "jwt-decode";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-import { baseURL } from "../baseUrl";
 import * as SplashScreen from "expo-splash-screen";
-import {
-  configureReanimatedLogger,
-  ReanimatedLogLevel,
-} from "react-native-reanimated";
+
 SplashScreen.preventAutoHideAsync();
+LogBox.ignoreAllLogs();
 export default function home() {
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
   const handleLoginViaGoogle = () => {
     Toast.show({
       type: "info",
@@ -27,79 +29,46 @@ export default function home() {
       text2: "The feature will coming soon!",
     });
   };
-  // Cấu hình logger
-  configureReanimatedLogger({
-    level: ReanimatedLogLevel.warn, // Mức độ log là warn
-    strict: true, // Kích hoạt chế độ strict
-  });
+
+  // configureReanimatedLogger({
+  //   level: ReanimatedLogLevel.warn,
+  //   strict: true,
+  // });
+
+  const navigation = useNavigation();
+  useFocusEffect(
+    useCallback(() => {
+      // Block back with gesture or back button on header
+      const unsubscribe = navigation.addListener(
+        "beforeRemove",
+        (e: { preventDefault: () => void }) => {
+          e.preventDefault();
+        }
+      );
+
+      // Block back with Android physical button
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          return true;
+        }
+      );
+
+      return () => {
+        unsubscribe();
+        backHandler.remove();
+      };
+    }, [])
+  );
 
   useEffect(() => {
     const loading = async () => {
       SplashScreen.preventAutoHideAsync();
-      await getHealthStatus();
-      await handleToken();
       SplashScreen.hideAsync();
     };
 
     loading();
   }, []);
-
-  const isTokenExpired = (token: string | null): boolean => {
-    if (!token) return true;
-
-    try {
-      const decoded: any = jwtDecode(token);
-      const currentTime = Math.floor(Date.now() / 1000);
-      return decoded.exp < currentTime;
-    } catch (error) {
-      return true;
-    }
-  };
-
-  const getHealthStatus = async () => {
-    const accessToken = await AsyncStorage.getItem("accessToken");
-    if (accessToken && !isTokenExpired(accessToken)) {
-      setIsChecking(false);
-      return accessToken;
-    }
-    const refreshToken = await AsyncStorage.getItem("refreshToken");
-    if (!refreshToken || isTokenExpired(refreshToken)) {
-      await AsyncStorage.removeItem("accessToken");
-      await AsyncStorage.removeItem("refreshToken");
-      setIsChecking(false);
-      return null;
-    }
-    try {
-      const response = await axios.post(`${baseURL}/jwt/access-token`, {
-        refreshToken,
-      });
-      const newAccessToken = response.data?.accessToken;
-      await AsyncStorage.setItem("accessToken", newAccessToken);
-      setIsChecking(false);
-      return newAccessToken;
-    } catch (error) {
-      console.log("Làm mới token thất bại, đăng xuất.");
-      await AsyncStorage.removeItem("accessToken");
-      await AsyncStorage.removeItem("refreshToken");
-      setIsChecking(false);
-      return null;
-    }
-  };
-  const handleToken = async () => {
-    if (!isChecking) {
-      const accessToken = await AsyncStorage.getItem("accessToken");
-      const refreshToken = await AsyncStorage.getItem("refreshToken");
-
-      if (accessToken && refreshToken) {
-        router.replace("/(tabs)/home");
-      } else {
-        router.replace("/");
-      }
-    }
-  };
-  if (isChecking) {
-    return null;
-  }
   return (
     <>
       <StatusBar style="dark"></StatusBar>

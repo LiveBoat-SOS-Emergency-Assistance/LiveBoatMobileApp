@@ -6,12 +6,12 @@ import { SettingsSection } from "../../../components/SettingSection/SettingSecti
 import CustomButton from "../../../components/Button/CustomButton";
 import { useAuth } from "../../../context/AuthContext";
 import { router, useRouter } from "expo-router";
+import Avatar from "../../../components/Image/Avatar";
 
 export default function Profile() {
   const [loading, setLoading] = useState(false);
-  const { logout } = useAuth();
+  const { logout, profile } = useAuth();
   const router = useRouter();
-
   const handlePress = () => {
     router.push("/(main)/profile/edit_profile");
   };
@@ -34,10 +34,15 @@ export default function Profile() {
     <View className="flex-1 bg-white">
       <ScrollView>
         <View className="items-center ">
-          <Image
+          {/* <Image
             source={require("../../../assets/images/ava.jpg")}
             className="w-32 h-32 rounded-full mb-3"
-          />
+          /> */}
+          <Avatar
+            source={profile?.User.avatar_url}
+            width={128}
+            height={128}
+          ></Avatar>
           <Text className="text-xl font-semibold">Bạch Dương</Text>
           <TouchableOpacity
             onPress={handlePress}
@@ -52,24 +57,6 @@ export default function Profile() {
             <Text className="ml-1 text-white font-bold">Edit Profile</Text>
           </TouchableOpacity>
         </View>
-        {/* <SettingsSection title="Tài khoản">
-          <View className="flex-row justify-between py-2 px-5">
-            <View className="flex flex-row gap-2  items-center w-full">
-              <ImageCustom
-                source="https://img.icons8.com/?size=100&id=Iw5aeMT37fzK&format=png&color=000000"
-                width={24}
-                height={24}
-                color="#404040"
-              ></ImageCustom>
-              <View className="flex flex-col">
-                <Text className="text-lg">Số điện thoại:</Text>
-                <Text className="font-bold text-[#404040] text-lg">
-                  + 0914136585
-                </Text>
-              </View>
-            </View>
-          </View>
-        </SettingsSection> */}
         <SettingsSection title="Group Settings">
           <MenuItem title="Manage Group" />
           <MenuItem title="Share Location" />

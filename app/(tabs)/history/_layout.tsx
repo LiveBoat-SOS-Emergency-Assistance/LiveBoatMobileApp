@@ -4,6 +4,17 @@ export default function Layout() {
   return (
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="profile_sos"
+        options={{
+          headerShown: true,
+          headerTitle: "",
+          headerTransparent: true,
+          headerStyle: {
+            backgroundColor: "transparent",
+          },
+        }}
+      />
     </Stack>
   );
 }

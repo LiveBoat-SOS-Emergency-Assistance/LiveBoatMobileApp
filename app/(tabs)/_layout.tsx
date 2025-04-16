@@ -1,21 +1,44 @@
 import { Tabs, useSegments } from "expo-router";
-import { View, Image } from "react-native";
-import React from "react";
+import { View, Image, Keyboard } from "react-native";
+import React, { useEffect, useState } from "react";
 import SOSButton from "../../components/Button/SOSButton";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 export default function BottomNavigation() {
   const segments = useSegments();
-  const hiddenScreens = ["sos_alert", "sos_map"];
+  const hiddenScreens = ["sos_alert", "sos_map", "sos_disable"];
   const isHiddenScreen = hiddenScreens.some((screen) =>
     segments.includes(screen)
   );
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    // Listeners to detect when keyboard is shown or hidden
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true); // Set to true when keyboard is shown
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false); // Set to false when keyboard is hidden
+      }
+    );
+
+    // Cleanup listeners on component unmount
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   return (
     <Tabs
       screenOptions={{
         tabBarStyle: {
-          display: isHiddenScreen ? "none" : "flex",
+          display: keyboardVisible || isHiddenScreen ? "none" : "flex",
           position: "absolute",
           bottom: 0,
           left: 0,
@@ -39,7 +62,7 @@ export default function BottomNavigation() {
         name="home"
         options={{
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <View
               style={{
                 flex: 1,
@@ -63,7 +86,7 @@ export default function BottomNavigation() {
       <Tabs.Screen
         name="donation"
         options={{
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <Image
               source={{
                 uri: focused
@@ -86,7 +109,8 @@ export default function BottomNavigation() {
       <Tabs.Screen
         name="history"
         options={{
-          tabBarIcon: ({ focused }) => (
+          headerShown: false,
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <Image
               source={{
                 uri: focused
@@ -103,7 +127,7 @@ export default function BottomNavigation() {
         name="chatbot"
         options={{
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <Image
               source={{
                 uri: focused

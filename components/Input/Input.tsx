@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  DimensionValue,
   Text,
   TextInput,
   TextInputProps,
@@ -16,6 +17,7 @@ interface InputProps extends TextInputProps {
   error?: boolean;
   errorPassword?: string;
   keyboardType?: any;
+  width?: string;
 }
 
 const Input = ({
@@ -26,14 +28,15 @@ const Input = ({
   error,
   errorPassword,
   keyboardType,
+  width = "90%",
   ...rest
 }: InputProps) => {
   const [focused, setFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   return (
-    <View className="w-[90%]">
+    <View className={`w-[${width}]`}>
       <View
-        className={`w-full border h-[54px] rounded-[5px] px-4 outline-none flex relative justify-center ${
+        className={`w-full border h-[48px] rounded-[5px] px-4 outline-none flex relative justify-center ${
           error
             ? "border-red-500"
             : focused
@@ -68,12 +71,12 @@ const Input = ({
       </View>
       {error && type === "email" && (
         <Text className="text-red-500 text-[12px] w-[90%] justify-start text-start pt-1">
-          Email không hợp lệ
+          Invalid email
         </Text>
       )}
       {error && type === "phone" && (
         <Text className="text-red-500 text-[12px] w-[90%] justify-start text-start pt-1">
-          Số điện thoại không hợp lệ
+          Invalid phone number
         </Text>
       )}
       {type === "password" && errorPassword && (

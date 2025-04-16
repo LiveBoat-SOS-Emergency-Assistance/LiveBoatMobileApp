@@ -1,16 +1,18 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { authentication, email } from "../utils/request";
 
+import axiosPrivate, { CustomAxiosRequestConfig } from "../utils/api";
 export class authen {
   static async register(data: any) {
     try {
-      const result = await authentication("/complete-register-flow", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify(data),
-      });
+      const result = await axiosPrivate.post(
+        "/auth/complete-register-flow",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
       return result;
     } catch (error: any) {
       throw error;
@@ -18,12 +20,10 @@ export class authen {
   }
   static async send_otp(data: any) {
     try {
-      const result = await email("/send-otp", {
-        method: "POST",
+      const result = await axiosPrivate.post("/email/send-otp", data, {
         headers: {
           "Content-Type": "application/json",
         },
-        data: JSON.stringify(data),
       });
       return result;
     } catch (error: any) {
@@ -32,12 +32,10 @@ export class authen {
   }
   static async login(data: any) {
     try {
-      const result = await authentication("/login", {
-        method: "POST",
+      const result = await axiosPrivate.post("/auth/login", data, {
         headers: {
           "Content-Type": "application/json",
         },
-        data: JSON.stringify(data),
       });
       return result;
     } catch (error: any) {
@@ -46,13 +44,15 @@ export class authen {
   }
   static async reset_password(data: any) {
     try {
-      const result = await authentication("/reset-password-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify(data),
-      });
+      const result = await axiosPrivate.post(
+        "/auth/reset-password-email",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
       return result;
     } catch (error: any) {
       throw error;
@@ -60,8 +60,7 @@ export class authen {
   }
   static async logout() {
     try {
-      const result = await authentication("/logout", {
-        method: "GET",
+      const result = await axiosPrivate.get("/auth/logout", {
         headers: {
           "Content-Type": "application/json",
         },
@@ -72,17 +71,14 @@ export class authen {
     }
   }
   static async change_password(data: any) {
-    const token = await AsyncStorage.getItem("accessToken");
-
     try {
-      const result = await authentication("/change-password", {
-        method: "PUT",
+      const result = await axiosPrivate.put("/auth/change-password", data, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        data: JSON.stringify(data),
-      });
+        requiresAuth: true,
+      } as CustomAxiosRequestConfig);
+
       return result;
     } catch (error: any) {
       throw error;

@@ -42,8 +42,8 @@ const forgot_password = () => {
       console.error(error);
       Toast.show({
         type: "info",
-        text1: "Thông báo",
-        text2: "Email này chưa được đăng ký!",
+        text1: "Notification",
+        text2: "This email is not registered!",
         position: "top",
         visibilityTime: 2000,
       });
@@ -56,12 +56,12 @@ const forgot_password = () => {
       <View className="flex flex-col bg-white w-full h-full min-h-dvh items-center py-5 gap-5">
         <View className="flex flex-col gap-3 w-full items-center">
           <Text className="font-bold text-[25px] text-[#404040] w-[90%]">
-            Nhập số điện thoại bạn đã sử dụng để đăng ký
+            Enter the phone number you used to register
           </Text>
         </View>
         <View className="flex flex-col w-full justify-center items-center gap-2 pt-5">
           <Text className="text-start justify-start w-[90%] font-bold">
-            Email/Số điện thoại
+            Email/Phone number
           </Text>
           <Input
             value={email}
@@ -76,12 +76,12 @@ const forgot_password = () => {
           <CustomButton
             onPress={handleSendSMS}
             primary={true}
-            title="Gửi SMS"
+            title="Send SMS"
             isLoading={loading}
           ></CustomButton>
         </View>
         <Text className="text-[#9A9898] text-[14px]">
-          Chúng tôi sẽ gửi cho bạn hướng dẫn đặt lại mật khẩu.
+          We'll send you password reset instructions.
         </Text>
       </View>
     </>
