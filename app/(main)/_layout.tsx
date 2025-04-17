@@ -4,6 +4,7 @@ export default function MainLayout() {
   return (
     <Stack>
       <Stack.Screen name="profile" options={{ headerShown: false }} />
+      <Stack.Screen name="chat" options={{ headerShown: false }} />
     </Stack>
   );
 }

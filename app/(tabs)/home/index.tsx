@@ -232,15 +232,17 @@ export default function HomeScreen() {
                 My family
               </Text>
             </View>
-            <ScrollView
-              className="w-full px-7"
-              contentContainerStyle={{ gap: 8 }} // Replace gap-2 with contentContainerStyle
-              showsVerticalScrollIndicator={true}
-            >
-              {group.map((squad) => (
-                <ItemSquad key={squad.id} name={squad.name} id={""} />
-              ))}
-            </ScrollView>
+            <View className="h-[120px] w-full pr-5">
+              <ScrollView
+                className="w-full px-7"
+                contentContainerStyle={{ gap: 8 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {group.map((squad) => (
+                  <ItemSquad key={squad.id} name={squad.name} id={""} />
+                ))}
+              </ScrollView>
+            </View>
             <View className="w-full justify-around flex flex-row ">
               <Pressable
                 onPress={() => setOpenModalCreateSquad(true)}
@@ -321,8 +323,9 @@ export default function HomeScreen() {
             </Pressable>
 
             {/* Message */}
-            <Pressable
-              // onPress={handleClick}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => router.push("/(main)/chat")}
               className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow"
               style={{
                 shadowColor: "#000",
@@ -341,11 +344,12 @@ export default function HomeScreen() {
                   tintColor: "#EB4747",
                 }}
               />
-            </Pressable>
+            </TouchableOpacity>
           </View>
           <View className="w-full justify-end items-end px-2">
             {/* Geoson Control */}
-            <Pressable
+            <TouchableOpacity
+              activeOpacity={0.8}
               onPress={handleControl}
               className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow "
               style={{
@@ -365,7 +369,7 @@ export default function HomeScreen() {
                   tintColor: "#EB4747",
                 }}
               />
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
         {/* Bottome Sheet for MEMBER AND PLACES */}
