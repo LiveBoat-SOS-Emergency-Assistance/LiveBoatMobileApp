@@ -20,7 +20,7 @@ import CustomDialog from "../../../components/Dialog/DialogEditSOS";
 import AddressSOSCard from "../../../components/Card/AddressSOSCard";
 import Avatar from "../../../components/Image/Avatar";
 import { Camera } from "@rnmapbox/maps";
-import { getCurrentLocation } from "../../../utils/location";
+import { getCurrentLocation, LocationResult } from "../../../utils/location";
 import { rescuerServices } from "../../../services/rescuer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -61,9 +61,16 @@ export default function SOSMap() {
       backHandler.remove();
     };
   }, [navigation, isDisable]);
-  const handleControl = async () => {
+  const handleControl = async (
+    targetLocation: LocationResult | null = null
+  ) => {
     try {
-      const location = await getCurrentLocation();
+      let location = targetLocation;
+
+      if (!location) {
+        location = await getCurrentLocation();
+      }
+
       if (location && cameraRef.current) {
         const { latitude, longitude } = location;
         cameraRef.current.moveTo([longitude, latitude], 1000);
@@ -75,6 +82,7 @@ export default function SOSMap() {
       console.log("Error getting location", error);
     }
   };
+
   useEffect(() => {
     const getListRescuer = async () => {
       try {
@@ -108,7 +116,7 @@ export default function SOSMap() {
             onCancel={() => setVisible(false)}
           />
         )}
-        <Map signal="sos" cameraRef={cameraRef} listRescuer={listRescuer}/>
+        <Map signal="sos" cameraRef={cameraRef} listRescuer={listRescuer} />
         <View
           className={`absolute right-2 ${
             isExpanded ? "w-[50px] h-[180px]" : "w-[30px] h-[135px]"
@@ -137,12 +145,22 @@ export default function SOSMap() {
           <ScrollView showsVerticalScrollIndicator={false}>
             <View className="flex-col space-y-2 gap-1">
               {listRescuer.map((rescuer, index) => (
-                <Avatar
+                <TouchableOpacity
                   key={index}
-                  source={rescuer.User.avatar_url}
-                  width={isExpanded ? 40 : 24}
-                  height={isExpanded ? 40 : 24}
-                ></Avatar>
+                  onPress={() => {
+                    handleControl({
+                      latitude: rescuer.latitude,
+                      longitude: rescuer.longitude,
+                    });
+                  }}
+                >
+                  <Avatar
+                    key={index}
+                    source={rescuer.User.avatar_url}
+                    width={isExpanded ? 40 : 24}
+                    height={isExpanded ? 40 : 24}
+                  ></Avatar>
+                </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
@@ -170,7 +188,7 @@ export default function SOSMap() {
           </TouchableOpacity>
         </View>
         <Pressable
-          onPress={handleControl}
+          onPress={() => handleControl()}
           className="w-[40px] absolute bottom-[250px] left-3 h-[40px] bg-white rounded-full flex justify-center items-center shadow "
           style={{
             shadowColor: "#000",

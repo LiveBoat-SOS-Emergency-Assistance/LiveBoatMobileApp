@@ -234,7 +234,7 @@ export default function HomeScreen() {
             </View>
             <ScrollView
               className="w-full px-7"
-              contentContainerStyle={{ gap: 8 }} // Replace gap-2 with contentContainerStyle
+              contentContainerStyle={{ gap: 8 }}
               showsVerticalScrollIndicator={true}
             >
               {group.map((squad) => (
