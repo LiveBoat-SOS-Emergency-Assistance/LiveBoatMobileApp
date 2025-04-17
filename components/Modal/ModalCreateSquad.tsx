@@ -2,6 +2,7 @@ import {
   Modal,
   Pressable,
   Text,
+  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
@@ -124,21 +125,19 @@ const ModalCreateSquad = ({ onClose }: modalProps) => {
                   </Text>
                 </View>
               </View>
-              <View className="w-full flex  justify-end">
-                <CustomButton
-                  primary
+              <View className="w-full   flex items-end justify-end">
+                <TouchableOpacity
                   onPress={handleAdd}
-                  title="Add"
-                  // className="flex justify-center items-center px-3 py-2 flex-row gap-2 bg-[#EB4747] rounded-[30px]"
+                  className="flex w-2/5 justify-center items-center px-2 py-2 flex-row gap-2 bg-[#EB4747] rounded-[30px]"
                 >
-                  {/* <ImageCustom
-                source="https://img.icons8.com/?size=100&id=r4ZoJ0KDic77&format=png&color=000000"
-                width={24}
-                height={24}
-                color="white"
-              ></ImageCustom> */}
-                  {/* <Text className="text-white font-bold text-[10px]">Add</Text> */}
-                </CustomButton>
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=r4ZoJ0KDic77&format=png&color=000000"
+                    width={24}
+                    height={24}
+                    color="white"
+                  ></ImageCustom>
+                  <Text className="text-white font-bold text-[10px]">Add</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
