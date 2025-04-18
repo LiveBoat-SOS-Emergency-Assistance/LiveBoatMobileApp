@@ -10,6 +10,7 @@ interface RippleMarkerProps {
   coordinate: [number, number];
   type?: string;
   userIDSOS?: number;
+  isRescuer?: boolean;
 }
 
 const RippleMarker = ({
@@ -17,6 +18,7 @@ const RippleMarker = ({
   coordinate,
   type,
   userIDSOS,
+  isRescuer,
 }: RippleMarkerProps) => {
   const rippleScale = useRef(new Animated.Value(0)).current;
   const rippleOpacity = useRef(new Animated.Value(1)).current;
@@ -31,7 +33,18 @@ const RippleMarker = ({
         const result = await userServices.getUserByID(userIDSOS);
         setSOSProfile(result.data);
       } catch (error: any) {
-        console.log(error);
+        if (error.response) {
+          console.error("Response data:", error.response.data);
+          console.error("Response status:", error.response.status);
+          console.error("Response headers:", error.response.headers);
+        } else if (error.request) {
+          console.error(
+            "No response received. Request details:",
+            error.request
+          );
+        } else {
+          console.error("Error message:", error.message);
+        }
       }
     };
     getSOSProfile();
@@ -77,6 +90,9 @@ const RippleMarker = ({
             {
               transform: [{ scale: rippleScale }],
               opacity: rippleOpacity,
+              backgroundColor: isRescuer
+                ? "rgba(0, 0, 255, 0.4)"
+                : "rgba(255, 0, 0, 0.4)",
             },
           ]}
         />
@@ -113,7 +129,7 @@ const styles = StyleSheet.create({
     width: 170,
     height: 170,
     borderRadius: 85,
-    backgroundColor: "rgba(255, 0, 0, 0.4)",
+    // backgroundColor: "rgba(255, 0, 0, 0.4)",
   },
   centerDot: {
     width: 50,

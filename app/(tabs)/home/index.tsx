@@ -68,6 +68,7 @@ export default function HomeScreen() {
   };
 
   const navigation = useNavigation();
+  // Prevent comeback the Home.
   useFocusEffect(
     useCallback(() => {
       // Block back with gesture or back button on header
@@ -92,7 +93,7 @@ export default function HomeScreen() {
       };
     }, [])
   );
-
+  // Check accessToken to direct
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -113,11 +114,12 @@ export default function HomeScreen() {
     };
     initialize();
   }, []);
+  // Func to check the User is supporting other?
   useFocusEffect(
     useCallback(() => {
       const getSOS = async () => {
         try {
-          const current = await sosService.getSOSCurrent();
+          const current = await rescuerServices.getSOSCurrent();
           if (current && current.data) {
             setCurrentSOS(current.data);
             setCheckSOS(true);
@@ -137,6 +139,7 @@ export default function HomeScreen() {
       getSOS();
     }, [])
   );
+  // Func to get SQUAD
   useEffect(() => {
     const getGroup = async () => {
       try {
@@ -150,6 +153,7 @@ export default function HomeScreen() {
     };
     getGroup();
   }, []);
+  // Func to cancel support
   const handleCancelSOS = async () => {
     try {
       // console.log(currentSOS.SOS);
@@ -178,6 +182,7 @@ export default function HomeScreen() {
       });
     }
   };
+  // Check if the user is creating the SOS signal
   useFocusEffect(
     useCallback(() => {
       const handleGetMySOS = async () => {
@@ -188,7 +193,7 @@ export default function HomeScreen() {
             await AsyncStorage.setItem("longitudeSOS", sos.data.longitude);
             await AsyncStorage.setItem("latitudeSOS", sos.data.latitude);
             await AsyncStorage.setItem("accuracySOS", sos.data.accuracy);
-            router.push("/(tabs)/home/sos_map");
+            router.push("/(tabs)/home/SOSMap");
           }
         } catch (error: any) {
           console.log("Error at get my sos", error);
@@ -401,6 +406,12 @@ export default function HomeScreen() {
               ></ImageCustom>
             </TouchableOpacity>
             <TouchableOpacity
+              onPress={() => {
+                router.push({
+                  pathname: "/(tabs)/history/ProfileSOS",
+                  params: { id: currentSOS.SOS.id },
+                });
+              }}
               activeOpacity={0.8}
               className=" h-[40px] px-4 bg-[#EB4747] rounded-full flex flex-row justify-center gap-2 items-center shadow "
               style={{

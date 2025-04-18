@@ -37,7 +37,7 @@ export default function SOSMap() {
 
   const handleCancelSOS = () => {
     setIsDisable(false);
-    router.push("/(tabs)/home/sos_disable");
+    router.push("/(tabs)/home/SOSDisable");
   };
   const handleEditSOS = () => {
     setVisible(true);
@@ -87,7 +87,10 @@ export default function SOSMap() {
     const getListRescuer = async () => {
       try {
         const sosId = await AsyncStorage.getItem("sosId");
-        const result = await rescuerServices.getRescuerBySOSId(Number(sosId));
+        const result = await rescuerServices.getRescuerBySOSId(
+          Number(sosId),
+          "ENROUTE"
+        );
         setListRescuer(result.data);
       } catch (error: any) {
         console.log("Error wheb get List Rescuer", error);

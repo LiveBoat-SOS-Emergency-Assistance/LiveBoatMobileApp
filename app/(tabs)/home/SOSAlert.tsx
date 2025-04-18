@@ -34,7 +34,7 @@ export default function SOSAlert() {
           await AsyncStorage.setItem("latitudeSOS", latitude.toString());
           await AsyncStorage.setItem("accuracySOS", accuracy.toString());
 
-          router.push("/(tabs)/home/sos_map");
+          router.push("/(tabs)/home/SOSMap");
         } else {
           console.error("Location data is missing.");
         }

@@ -39,7 +39,7 @@ const SOSCardFilter = ({ data }: cardProps) => {
 
           // Check if results are available and set the location name
           if (response.data.features && response.data.features.length > 0) {
-            const location = response.data.features[0].place_name; // Location name from Mapbox API
+            const location = response.data.features[0].place_name;
             setLocationName(location);
           }
         } catch (error) {
@@ -54,7 +54,7 @@ const SOSCardFilter = ({ data }: cardProps) => {
   const handlePress = () => {
     if (data) {
       router.push({
-        pathname: "/(tabs)/history/profile_sos",
+        pathname: "/(tabs)/history/ProfileSOS",
         params: { id: data.id },
       });
     }

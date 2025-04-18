@@ -17,7 +17,7 @@ interface modalProps {
 }
 
 const ModalCreateSquad = ({ onClose }: modalProps) => {
-  console.log("Click");
+  // console.log("Click");
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
   const [loading, setLoading] = useState(false);
