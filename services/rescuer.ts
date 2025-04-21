@@ -27,13 +27,29 @@ export class rescuerServices {
       throw error;
     }
   }
-  static async getRescuerBySOSId(sosId: number) {
+  static async getRescuerBySOSId(sosId: number, status: string) {
     try {
       const result = await axiosPrivate.get(`/sos/rescuers/${sosId}`, {
+        params: {
+          status: status,
+        },
         headers: {
           "Content-Type": "application/json",
         },
       });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  static async getSOSCurrent() {
+    try {
+      const result = await axiosPrivate.get("/sos/rescuer/current", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        requiresAuth: true,
+      } as CustomAxiosRequestConfig);
       return result;
     } catch (error: any) {
       throw error;

@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 export default function BottomNavigation() {
   const segments = useSegments();
-  const hiddenScreens = ["sos_alert", "sos_map", "sos_disable"];
+  const hiddenScreens = ["SOSAlert", "SOSMap", "SOSDisable", "DetailSOS"];
   const isHiddenScreen = hiddenScreens.some((screen) =>
     segments.includes(screen)
   );

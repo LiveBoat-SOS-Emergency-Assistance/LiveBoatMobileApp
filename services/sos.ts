@@ -64,19 +64,7 @@ export class sosService {
       throw error;
     }
   }
-  static async getSOSCurrent() {
-    try {
-      const result = await axiosPrivate.get("/sos/rescuer/current", {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        requiresAuth: true,
-      } as CustomAxiosRequestConfig);
-      return result;
-    } catch (error: any) {
-      throw error;
-    }
-  }
+ 
   static async getMySOSCurrent() {
     try {
       const result = await axiosPrivate.get("/sos/current", {

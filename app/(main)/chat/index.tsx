@@ -1,22 +1,41 @@
 import { View, Text, Dimensions } from "react-native";
 import React, { useState } from "react";
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
+import ChatItem from "../../../components/Card/ChatItem";
+import { Image } from "react-native";
 
 const AlertTab = () => (
-  <View className="flex-1 items-center justify-center bg-white">
-    <Text>Alert Tab</Text>
+  <View className="flex-1 pt-5 bg-white">
+    <View className="flex flex-col gap-1">
+      <ChatItem></ChatItem>
+      <ChatItem></ChatItem>
+    </View>
   </View>
 );
 
 const GroupTab = () => (
-  <View className="flex-1 items-center justify-center bg-white">
-    <Text>Group Tab</Text>
+  <View className="flex-1  items-center pt-20 bg-white">
+    <Image
+      style={{ width: 200, height: 200 }}
+      className="object-cover"
+      source={require("../../../assets/images/404.jpg")}
+    />
+    <Text className="font-semibold text-[#404040] ">
+      No messages... but we're thinking of you!
+    </Text>
   </View>
 );
 
 const ChatTab = () => (
-  <View className="flex-1 items-center justify-center bg-white">
-    <Text>Chat Tab</Text>
+  <View className="flex-1  items-center pt-20 bg-white">
+    <Image
+      style={{ width: 200, height: 200 }}
+      className="object-cover"
+      source={require("../../../assets/images/404.jpg")}
+    />
+    <Text className="font-semibold text-[#404040] ">
+      No messages... but we're thinking of you!
+    </Text>
   </View>
 );
 

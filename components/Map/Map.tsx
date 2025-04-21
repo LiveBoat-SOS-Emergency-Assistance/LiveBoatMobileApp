@@ -17,8 +17,20 @@ interface mapProps {
   checkSOS?: boolean;
   cameraRef?: React.RefObject<Camera>;
   listRescuer?: RescuerItem[];
+  otherSOS?: {
+    user_id: string;
+    longitude: string;
+    latitude: string;
+  };
 }
-const Map = ({ signal, sos, cameraRef, checkSOS, listRescuer }: mapProps) => {
+const Map = ({
+  signal,
+  sos,
+  cameraRef,
+  checkSOS,
+  listRescuer,
+  otherSOS,
+}: mapProps) => {
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [sosLocation, setSOSLocation] = useState<SOSItem | null>(null);
@@ -70,6 +82,7 @@ const Map = ({ signal, sos, cameraRef, checkSOS, listRescuer }: mapProps) => {
       fetchRoute();
     }
   }, [location, sosLocation]);
+  // console.log("listRescuer", listRescuer)
   return (
     <View style={styles.container}>
       <MapView
@@ -99,27 +112,34 @@ const Map = ({ signal, sos, cameraRef, checkSOS, listRescuer }: mapProps) => {
                 ]}
               />
             )}
+
             {/* When I support others, and this is my path to the SOS signal */}
             {route && checkSOS && (
               <MapboxGL.ShapeSource id="routeSource" shape={route}>
                 <MapboxGL.LineLayer
                   id="routeLayer"
-                  style={{ lineColor: "rgb(120,174,237)", lineWidth: 4 }}
+                  style={{ lineColor: "rgb(48,125,247)", lineWidth: 4 }}
                 />
               </MapboxGL.ShapeSource>
             )}
             {/* List Rescuer is supporting me */}
             {listRescuer &&
-              listRescuer.map((rescuer) => (
-                <UserLocation
-                  key={rescuer.id}
-                  coordinate={[
-                    parseFloat(rescuer.longitude),
-                    parseFloat(rescuer.latitude),
-                  ]}
-                  avatarUrl={rescuer.User?.avatar_url}
-                />
-              ))}
+              listRescuer
+                .filter(
+                  (rescuer) =>
+                    rescuer.longitude !== otherSOS?.longitude ||
+                    rescuer.latitude !== otherSOS?.latitude
+                )
+                .map((rescuer) => (
+                  <UserLocation
+                    key={rescuer.id}
+                    coordinate={[
+                      parseFloat(rescuer.longitude),
+                      parseFloat(rescuer.latitude),
+                    ]}
+                    avatarUrl={rescuer.User?.avatar_url}
+                  />
+                ))}
             {/* My location */}
             {signal === "sos" ? (
               <RippleMarker id="my-sos-marker" coordinate={location} />
@@ -127,6 +147,16 @@ const Map = ({ signal, sos, cameraRef, checkSOS, listRescuer }: mapProps) => {
               <UserLocation
                 coordinate={location}
                 avatarUrl={profile?.User?.avatar_url}
+              />
+            )}
+            {otherSOS && (
+              <RippleMarker
+                id={`ripple-marker-${otherSOS.user_id}-${otherSOS.longitude}-${otherSOS.latitude}`}
+                userIDSOS={Number(otherSOS.user_id)}
+                coordinate={[
+                  parseFloat(otherSOS.longitude),
+                  parseFloat(otherSOS.latitude),
+                ]}
               />
             )}
           </>

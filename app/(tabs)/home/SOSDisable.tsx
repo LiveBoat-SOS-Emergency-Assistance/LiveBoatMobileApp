@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomButton from "../../../components/Button/CustomButton";
 import Toast from "react-native-toast-message";
 
-export default function SOSDiable() {
+export default function SOSDisable() {
   const [loading, setLoading] = useState(false);
   const handleOk = async () => {
     try {

@@ -1,5 +1,6 @@
 import {
   Image,
+  Pressable,
   SafeAreaView,
   Text,
   TouchableOpacity,
@@ -19,6 +20,7 @@ import { userServices } from "../../../services/user";
 import Avatar from "../../../components/Image/Avatar";
 import Toast from "react-native-toast-message";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { RescuerItem } from "../../../types/rescuerItem";
 interface SOSProfile {
   accuracy: string;
   created_at: string;
@@ -34,7 +36,7 @@ interface SOSProfile {
   status: string;
   user_id: string;
 }
-interface userProfile {
+interface UserProfile {
   name: string;
   address: string;
   gender: string;
@@ -48,22 +50,45 @@ interface userProfile {
     avatar_url: string;
   };
 }
-const profile_sos = () => {
+const ProfileSOS = () => {
   const { id } = useLocalSearchParams();
   const [profile, setProfile] = useState<SOSProfile | null>(null);
-  const [userProfile, setUserProfile] = useState<userProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [checkHelping, setCheckHelping] = useState(true);
+  const [currentMyRescuer, setCurrentMyRescuer] = useState<RescuerItem | null>(
+    null
+  );
   const [location, setLocation] = useState<{
     longitude: number;
     latitude: number;
     accuracy?: number;
   } | null>(null);
+
+  useEffect(() => {
+    const getMyRescuerCurrent = async () => {
+      try {
+        const result = await rescuerServices.getSOSCurrent();
+        if (result && result.data && result.data.sos_id === id) {
+          setCheckHelping(true);
+          setCurrentMyRescuer(result.data);
+        } else {
+          setCheckHelping(false);
+          setCurrentMyRescuer(null);
+        }
+      } catch (error: any) {
+        console.log("Error", error);
+        setCheckHelping(false);
+        setCurrentMyRescuer(null);
+      }
+    };
+    getMyRescuerCurrent();
+  }, [id]);
   useEffect(() => {
     const getProfileSOS = async () => {
       const result = await sosService.getSOSById(Number(id));
       const resultUserProfile = await userServices.getUserByID(
         Number(result.data.user_id)
       );
-      console.log(result.data);
       const loc = await getCurrentLocation();
       if (loc) {
         setLocation({
@@ -100,6 +125,33 @@ const profile_sos = () => {
       console.log("Error", error.response?.data);
     }
   };
+  const handleCancelSOS = async () => {
+    try {
+      // console.log(currentSOS.SOS);
+      if (profile) {
+        const result = await rescuerServices.updateRescuer({
+          longitude: profile.longitude,
+          latitude: profile.latitude,
+          accuracy: profile.accuracy,
+          status: "CANCELED",
+        });
+      }
+
+      Toast.show({
+        type: "success",
+        text1: "SOS Cancelled",
+        text2: "You have canceled your request for emergency assistance.",
+      });
+      setCheckHelping(false);
+    } catch (error: any) {
+      console.log("Error", error.response?.data);
+      Toast.show({
+        type: "error",
+        text1: "Notification!",
+        text2: "Error when cancel support!",
+      });
+    }
+  };
   return (
     <SafeAreaView className="flex-1">
       <ScrollView
@@ -107,9 +159,20 @@ const profile_sos = () => {
         className="w-full bg-white"
       >
         {/* Map Section */}
-        <View className="w-full h-[200px] bg-red-300">
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/(tabs)/history/DetailSOS",
+              params: {
+                profile: JSON.stringify(profile),
+                userProfile: JSON.stringify(userProfile),
+              },
+            })
+          }
+          className="w-full h-[200px] bg-red-300"
+        >
           <Map />
-        </View>
+        </Pressable>
 
         {/* Profile Section */}
         <View className="w-full relative flex flex-col items-center py-4">
@@ -142,12 +205,24 @@ const profile_sos = () => {
                   Join Live Stream
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleGiveSupport}
-                className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"
-              >
-                <Text className="text-[11px] text-white font-bold">Help</Text>
-              </TouchableOpacity>
+              {checkHelping && currentMyRescuer && (
+                <TouchableOpacity
+                  onPress={handleCancelSOS}
+                  className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"
+                >
+                  <Text className="text-[11px] text-white font-bold">
+                    No Help
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {!checkHelping && !currentMyRescuer && (
+                <TouchableOpacity
+                  onPress={handleGiveSupport}
+                  className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"
+                >
+                  <Text className="text-[11px] text-white font-bold">Help</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -253,4 +328,4 @@ const profile_sos = () => {
   );
 };
 
-export default profile_sos;
+export default ProfileSOS;
