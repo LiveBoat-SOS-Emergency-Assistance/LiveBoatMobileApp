@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, PermissionsAndroid, Platform, StyleSheet } from "react-native";
+import {
+  View,
+  PermissionsAndroid,
+  Platform,
+  StyleSheet,
+  Image,
+  Text,
+} from "react-native";
 import MapboxGL, { MapView, Camera } from "@rnmapbox/maps";
 import { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "@env";
 import UserLocation from "./UserLocation";
@@ -8,6 +15,7 @@ import RippleMarker from "./RippleMarker";
 import { RescuerItem } from "../../types/rescuerItem";
 import { SOSItem } from "../../types/sosItem";
 import { useAuth } from "../../context/AuthContext";
+import RescuerMarker from "./RescuerMarker";
 MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN);
 MapboxGL.setTelemetryEnabled(false);
 
@@ -36,6 +44,9 @@ const Map = ({
   const [sosLocation, setSOSLocation] = useState<SOSItem | null>(null);
   const [route, setRoute] = useState<any>(null);
   const { profile } = useAuth();
+  const [selectedRescuer, setSelectedRescuer] = useState<RescuerItem | null>(
+    null
+  );
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -131,15 +142,43 @@ const Map = ({
                     rescuer.latitude !== otherSOS?.latitude
                 )
                 .map((rescuer) => (
-                  <UserLocation
+                  <MapboxGL.PointAnnotation
+                    id={`rescuer-marker-${rescuer.id}`}
                     key={rescuer.id}
+                    style={{ position: "relative" }}
                     coordinate={[
                       parseFloat(rescuer.longitude),
                       parseFloat(rescuer.latitude),
                     ]}
-                    avatarUrl={rescuer.User?.avatar_url}
-                  />
+                    onSelected={() => {
+                      if (selectedRescuer?.id === rescuer.id) {
+                        setSelectedRescuer(null);
+                      } else {
+                        setSelectedRescuer(rescuer);
+                      }
+                    }}
+                  >
+                    <View style={styles.rescuerMarker} />
+                    <View
+                      style={[
+                        styles.popupBoard,
+                        {
+                          display:
+                            selectedRescuer?.id === rescuer.id
+                              ? "flex"
+                              : "none",
+                        },
+                      ]}
+                    >
+                      <View style={styles.popupContent}>
+                        <View style={styles.infoContainer}>
+                          <Text style={styles.phone}>{rescuer.User.phone}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </MapboxGL.PointAnnotation>
                 ))}
+
             {/* My location */}
             {signal === "sos" ? (
               <RippleMarker id="my-sos-marker" coordinate={location} />
@@ -175,6 +214,51 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  rescuerMarker: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "blue", // You can change the color
+    borderWidth: 2,
+    borderColor: "white",
+  },
+  popupBoard: {
+    position: "absolute",
+    bottom: 0,
+    left: "50%",
+    transform: [{ translateX: -75 }],
+    width: 100,
+    padding: 10,
+    backgroundColor: "white",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  popupContent: {
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  avatarContainer: {
+    marginBottom: 5,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  infoContainer: {
+    alignItems: "center",
+  },
+  name: {
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  phone: {
+    fontSize: 12,
+    color: "gray",
   },
 });
 
