@@ -1,11 +1,4 @@
-import {
-  BackHandler,
-  Image,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Input from "../../components/Input/Input";
 import CustomButton from "../../components/Button/CustomButton";
 import { router } from "expo-router";
@@ -14,6 +7,7 @@ import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../../context/AuthContext";
 import React from "react";
+import { Keyboard } from "react-native";
 const Login = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -25,15 +19,6 @@ const Login = () => {
     const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
     return phoneRegex.test(phone);
   };
-  // useEffect(() => {
-  //   const backHandler = BackHandler.addEventListener(
-  //     "hardwareBackPress",
-  //     () => {
-  //       return false;
-  //     }
-  //   );
-  //   return () => backHandler.remove();
-  // }, []);
   const handleLogin = async () => {
     setLoading(true);
     if (!validatePhoneNumber(phone)) {
@@ -58,6 +43,7 @@ const Login = () => {
         position: "top",
         visibilityTime: 2000,
       });
+      Keyboard.dismiss();
       router.replace("/(tabs)/home");
     } catch (error: any) {
       Toast.show({

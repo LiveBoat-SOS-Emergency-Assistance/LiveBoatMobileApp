@@ -29,6 +29,7 @@ const Layout = () => {
           name={SCREENS.MAIN.name}
           options={{ title: SCREENS.MAIN.title }}
         />
+
         {/* <Stack.Screen name="(main)" />
         <Stack.Screen name="(main)/chat/chatbot" /> */}
         <Stack.Screen

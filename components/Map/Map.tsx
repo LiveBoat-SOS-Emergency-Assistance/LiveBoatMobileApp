@@ -145,36 +145,27 @@ const Map = ({
                   <MapboxGL.PointAnnotation
                     id={`rescuer-marker-${rescuer.id}`}
                     key={rescuer.id}
-                    style={{ position: "relative" }}
                     coordinate={[
                       parseFloat(rescuer.longitude),
                       parseFloat(rescuer.latitude),
                     ]}
-                    onSelected={() => {
-                      if (selectedRescuer?.id === rescuer.id) {
-                        setSelectedRescuer(null);
-                      } else {
-                        setSelectedRescuer(rescuer);
-                      }
-                    }}
+                    // onSelected={() => {
+                    //   if (selectedRescuer?.id === rescuer.id) {
+                    //     setSelectedRescuer(null);
+                    //   } else {
+                    //     setSelectedRescuer(rescuer);
+                    //   }
+                    // }}
                   >
-                    <View style={styles.rescuerMarker} />
-                    <View
-                      style={[
-                        styles.popupBoard,
-                        {
-                          display:
-                            selectedRescuer?.id === rescuer.id
-                              ? "flex"
-                              : "none",
-                        },
-                      ]}
-                    >
-                      <View style={styles.popupContent}>
-                        <View style={styles.infoContainer}>
-                          <Text style={styles.phone}>{rescuer.User.phone}</Text>
+                    <View style={{ alignItems: "center" }}>
+                      {selectedRescuer?.id === rescuer.id && (
+                        <View style={{ marginBottom: 4 }}>
+                          <View style={styles.popupBoard}>
+                            <Text>{rescuer.User.phone}</Text>
+                          </View>
                         </View>
-                      </View>
+                      )}
+                      <View style={styles.rescuerMarker} />
                     </View>
                   </MapboxGL.PointAnnotation>
                 ))}

@@ -23,6 +23,8 @@ import { Camera } from "@rnmapbox/maps";
 import { getCurrentLocation, LocationResult } from "../../../utils/location";
 import { rescuerServices } from "../../../services/rescuer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { sosService } from "../../../services/sos";
+import Toast from "react-native-toast-message";
 
 export default function SOSMap() {
   const [isDisable, setIsDisable] = useState(false);
@@ -93,11 +95,38 @@ export default function SOSMap() {
         );
         setListRescuer(result.data);
       } catch (error: any) {
-        console.log("Error wheb get List Rescuer", error);
+        console.log("Error when get List Rescuer", error);
       }
     };
     getListRescuer();
   }, []);
+  const handleResolve = async () => {
+    try {
+      // setLoading(true);
+      const longitude = await AsyncStorage.getItem("longitudeSOS");
+      const latitude = await AsyncStorage.getItem("latitudeSOS");
+      const accuracy = await AsyncStorage.getItem("accuracySOS");
+      const sosId = await AsyncStorage.getItem("sosId");
+
+      const result = await sosService.sos_edit(sosId!, {
+        longitude: longitude,
+        latitude: latitude,
+        accuracy: accuracy,
+        status: "RESOLVED",
+      });
+      Toast.show({
+        type: "info",
+        text1: "Notification",
+        text2: "SOS has been resolved successfully!",
+        position: "top",
+        visibilityTime: 2000,
+      });
+      console.log("Result", result);
+      router.push("/(tabs)/home");
+    } catch (error: any) {
+      console.error(error);
+    }
+  };
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 bg-white">
@@ -190,6 +219,18 @@ export default function SOSMap() {
             <Text className="text-white ml-2">Group Chat</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          onPress={handleResolve}
+          activeOpacity={0.8}
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 3,
+          }}
+          className="flex-row absolute  bottom-[255px] left-16 items-center bg-[#EB4747] px-4 py-2 rounded-full"
+        >
+          <Text className="text-white font-bold">Mark Safe</Text>
+        </TouchableOpacity>
         <Pressable
           onPress={() => handleControl()}
           className="w-[40px] absolute bottom-[250px] left-3 h-[40px] bg-white rounded-full flex justify-center items-center shadow "

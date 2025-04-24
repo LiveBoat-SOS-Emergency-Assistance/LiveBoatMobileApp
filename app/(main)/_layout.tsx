@@ -5,6 +5,7 @@ export default function MainLayout() {
     <Stack>
       <Stack.Screen name="profile" options={{ headerShown: false }} />
       <Stack.Screen name="chat" options={{ headerShown: false }} />
+      <Stack.Screen name="squad" options={{ headerShown: false }} />
     </Stack>
   );
 }

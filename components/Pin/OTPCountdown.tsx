@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, Text, Pressable } from "react-native";
-
+import React from "react";
 const OTPCountdown = () => {
   const [countdown, setCountdown] = useState(30);
   const [canResend, setCanResend] = useState(false);
@@ -26,7 +26,7 @@ const OTPCountdown = () => {
   return (
     <View className="flex flex-row gap-1 items-center">
       <Text className="text-[#404040] text-[12px]">
-        {canResend ? "Bạn có thể gửi lại mã!" : "Gửi lại mã sau:"}
+        {canResend ? "You can resend the code!" : "Resend code after:"}
       </Text>
       <Pressable onPress={handleResendOTP} disabled={!canResend}>
         <Text
@@ -35,7 +35,7 @@ const OTPCountdown = () => {
           }`}
         >
           {canResend
-            ? "Gửi lại mã"
+            ? "Resend Code"
             : `00:${countdown.toString().padStart(2, "0")}`}
         </Text>
       </Pressable>

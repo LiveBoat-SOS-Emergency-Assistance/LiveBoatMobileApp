@@ -6,8 +6,6 @@ import {
   Pressable,
   ScrollView,
   BackHandler,
-  Dimensions,
-  Touchable,
   TouchableOpacity,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -43,8 +41,9 @@ export default function HomeScreen() {
   >([]);
   const { profile } = useAuth();
   const cameraRef = useRef<Camera>(null);
-  const [forceRender, setForceRender] = useState(false);
-
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectSquad, setSelectSquad] = useState<string | null>(null);
+  const [selectNamesquad, setSelectNameSquad] = useState<string | null>(null);
   // Func to zoom to current location
   const handleControl = async () => {
     try {
@@ -140,19 +139,23 @@ export default function HomeScreen() {
     }, [])
   );
   // Func to get SQUAD
-  useEffect(() => {
-    const getGroup = async () => {
-      try {
-        const result = await groupServices.getGroup();
-        if (result && result.data) {
-          setGroup(result.data);
+  useFocusEffect(
+    useCallback(() => {
+      const getGroup = async () => {
+        try {
+          const result = await groupServices.getGroup();
+          if (result && result.data) {
+            setGroup(result.data);
+            setSelectNameSquad(result.data[0]?.name);
+          }
+        } catch (error: any) {
+          console.log("Error fetching groups:", error);
         }
-      } catch (error: any) {
-        console.log("get squad", error);
-      }
-    };
-    getGroup();
-  }, []);
+      };
+
+      getGroup();
+    }, [isRefreshing])
+  );
   // Func to cancel support
   const handleCancelSOS = async () => {
     try {
@@ -167,7 +170,6 @@ export default function HomeScreen() {
       }
       setCurrentSOS(null);
       setCheckSOS(false);
-      setForceRender((prev) => !prev);
       Toast.show({
         type: "success",
         text1: "SOS Cancelled",
@@ -215,9 +217,13 @@ export default function HomeScreen() {
         )}
         {openModalCreateSquad && (
           <View className="absolute top-1/2 left-0">
-            <ModalCreateSquad onClose={handleClose} />
+            <ModalCreateSquad
+              onClose={handleClose}
+              onRefresh={() => setIsRefreshing((prev) => !prev)}
+            />
           </View>
         )}
+
         <TopSheet ref={topSheetRef}>
           <View className="flex flex-col  gap-3  justify-center items-center w-full">
             <View
@@ -234,7 +240,7 @@ export default function HomeScreen() {
                 className="text-white text-base font-bold"
                 style={{ fontFamily: "Poppins" }}
               >
-                My family
+                {selectNamesquad}
               </Text>
             </View>
             <View className="h-[120px] w-full pr-5">
@@ -244,7 +250,18 @@ export default function HomeScreen() {
                 showsVerticalScrollIndicator={false}
               >
                 {group.map((squad) => (
-                  <ItemSquad key={squad.id} name={squad.name} id={""} />
+                  <ItemSquad
+                    key={squad.id}
+                    name={squad.name}
+                    id={""}
+                    onPress={() => {
+                      router.push({
+                        pathname: "/(main)/squad",
+                        params: { id: squad.id, name: squad.name },
+                      });
+                      setSelectSquad(squad.id);
+                    }}
+                  />
                 ))}
               </ScrollView>
             </View>

@@ -14,9 +14,10 @@ import { groupServices } from "../../services/group";
 import Toast from "react-native-toast-message";
 interface modalProps {
   onClose: () => void;
+  onRefresh?: () => void;
 }
 
-const ModalCreateSquad = ({ onClose }: modalProps) => {
+const ModalCreateSquad = ({ onClose, onRefresh }: modalProps) => {
   // console.log("Click");
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
@@ -33,13 +34,14 @@ const ModalCreateSquad = ({ onClose }: modalProps) => {
     try {
       setLoading(true);
       const result = await groupServices.createGroup({ name: name });
+      onRefresh?.();
       Toast.show({
         type: "success",
         text1: "Notification",
         text2: "Add squad successfully",
       });
       setLoading(false);
-      // router.back();
+      onClose();
     } catch (error: any) {
       console.error("Error adding group:", error);
       setLoading(false);
