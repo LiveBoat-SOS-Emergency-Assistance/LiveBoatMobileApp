@@ -18,6 +18,9 @@ export default function Profile() {
   const handleChangePassword = () => {
     router.push("/(auth)/change_password");
   };
+  const handleSmartNotification = () => {
+    router.push("/(main)/profile/SmartNotification");
+  };
 
   const handleLogout = async () => {
     setLoading(true);
@@ -60,7 +63,10 @@ export default function Profile() {
         <SettingsSection title="Group Settings">
           <MenuItem title="Manage Group" />
           <MenuItem title="Share Location" />
-          <MenuItem title="Smart Notifications" />
+          <MenuItem
+            title="Smart Notifications"
+            onPress={handleSmartNotification}
+          />
         </SettingsSection>
 
         <SettingsSection title="General Settings">

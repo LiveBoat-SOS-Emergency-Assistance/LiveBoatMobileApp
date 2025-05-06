@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "760519335248",
+    "project_id": "webpushnotification-e4c38",
+    "storage_bucket": "webpushnotification-e4c38.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760519335248:android:311d8a312662b64e99a055",
+        "android_client_info": {
+          "package_name": "com.anonymous.liveboatapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAGLbZoOpBdq4MtNFhA0pLY7YkKsaYaiQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760519335248:android:e86cbf6698e8ea2d99a055",
+        "android_client_info": {
+          "package_name": "liveboat.fcm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAGLbZoOpBdq4MtNFhA0pLY7YkKsaYaiQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

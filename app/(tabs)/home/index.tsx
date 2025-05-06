@@ -30,6 +30,7 @@ import { getCurrentLocation } from "../../../utils/location";
 import ImageCustom from "../../../components/Image/Image";
 import Toast from "react-native-toast-message";
 import { rescuerServices } from "../../../services/rescuer";
+import messaging from "@react-native-firebase/messaging";
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState(true);
   const [checkSOS, setCheckSOS] = useState(false);
@@ -154,6 +155,7 @@ export default function HomeScreen() {
       };
 
       getGroup();
+      setIsRefreshing(false);
     }, [isRefreshing])
   );
   // Func to cancel support
@@ -253,13 +255,17 @@ export default function HomeScreen() {
                   <ItemSquad
                     key={squad.id}
                     name={squad.name}
-                    id={""}
+                    id={squad.id}
                     onPress={() => {
                       router.push({
                         pathname: "/(main)/squad",
                         params: { id: squad.id, name: squad.name },
                       });
                       setSelectSquad(squad.id);
+                    }}
+                    onSelectId={() => {
+                      setSelectNameSquad(squad.name);
+                      topSheetRef.current?.close();
                     }}
                   />
                 ))}
@@ -335,7 +341,7 @@ export default function HomeScreen() {
                 className="text-white text-base font-bold"
                 style={{ fontFamily: "Poppins" }}
               >
-                My family
+                {selectNamesquad}
               </Text>
               <ChevronDown
                 size={20}
@@ -450,7 +456,7 @@ export default function HomeScreen() {
           </View>
         )}
         <AnimatePresence>
-          <BottomModal>
+          {/* <BottomModal>
             <View className="w-full flex flex-col justify-center items-center">
               <View
                 className="flex flex-row h-[50px] w-[80%] rounded-[30px] px-1 bg-[#fdb1b1] justify-around items-center"
@@ -524,7 +530,7 @@ export default function HomeScreen() {
                 </ScrollView>
               )}
             </View>
-          </BottomModal>
+          </BottomModal> */}
         </AnimatePresence>
       </View>
     </GestureHandlerRootView>

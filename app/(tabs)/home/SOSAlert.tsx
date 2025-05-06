@@ -3,15 +3,17 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { AlertTriangle } from "lucide-react-native";
 import { router } from "expo-router";
 import MapboxGL, { MapView, Camera, PointAnnotation } from "@rnmapbox/maps";
-
 import { sosService } from "../../../services/sos";
+import { notifcationService } from "../../../services/notification";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "../../../context/AuthContext";
 export default function SOSAlert() {
   const [countdown, setCountdown] = useState(3);
   const [isActive, setIsActive] = useState(true);
   const [location, setLocation] = useState<[number, number, number] | null>(
     null
   );
+  const { profile } = useAuth();
   const getCurrentLocation = async () => {
     try {
       const userLocation =
@@ -21,13 +23,13 @@ export default function SOSAlert() {
 
         if (longitude && latitude && accuracy !== undefined) {
           setLocation([longitude, latitude, accuracy]);
-          // console.log("SOS location:", [longitude, latitude, accuracy]);
+
           const result = await sosService.sos_create({
             longitude: longitude,
             latitude: latitude,
             accuracy: accuracy,
           });
-          // console.log("SOS result:", result);
+
           const sosId = result.data.id;
           await AsyncStorage.setItem("sosId", sosId);
           await AsyncStorage.setItem("longitudeSOS", longitude.toString());
@@ -35,6 +37,7 @@ export default function SOSAlert() {
           await AsyncStorage.setItem("accuracySOS", accuracy.toString());
 
           router.push("/(tabs)/home/SOSMap");
+          handleSendNotification();
         } else {
           console.error("Location data is missing.");
         }
@@ -46,6 +49,17 @@ export default function SOSAlert() {
         data: error.response?.data,
       });
       // console.error("Lỗi lấy vị trí:", error);
+    }
+  };
+  const handleSendNotification = async () => {
+    try {
+      const result = await notifcationService.create_notification({
+        title: `${profile?.name} is in Danger!`,
+        content: `SOS from ${profile?.name} – Please check their location and respond ASAP.`,
+      });
+      console.log("Notification result:", result.data);
+    } catch (error: any) {
+      console.log("Error sending notification:", error.response?.data);
     }
   };
 

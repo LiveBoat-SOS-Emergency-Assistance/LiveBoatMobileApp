@@ -5,11 +5,15 @@ interface itemSquadProps {
   id: string;
   name: string;
   onPress?: () => void;
+  onSelectId?: (id: string) => void;
 }
-const ItemSquad = ({ id, name, onPress }: itemSquadProps) => {
+const ItemSquad = ({ id, name, onPress, onSelectId }: itemSquadProps) => {
   return (
     <View className=" flex flex-row justify-between w-full items-center">
-      <Pressable className="flex flex-row w-full gap-3">
+      <Pressable
+        onPress={() => onSelectId?.(id)}
+        className="flex flex-row w-full gap-3"
+      >
         <Avatar
           width={50}
           height={50}

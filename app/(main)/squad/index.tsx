@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import ImageCustom from "../../../components/Image/Image";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { groupServices } from "../../../services/group";
 import InfiniteScrollPagination from "../../../components/Pagination/InfiniteScrollPagination";
 import MemberGroup from "../../../components/Card/MemberGroup";
@@ -20,6 +20,7 @@ const SquadDetail = () => {
   const [listMember, setListMember] = useState<
     { id: number; [key: string]: any }[]
   >([]);
+
   const [nameGroup, setNameGroup] = useState(name);
   const [phone, setPhone] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -83,6 +84,28 @@ const SquadDetail = () => {
       }
     } catch (error: any) {
       console.error("Error leave group", error);
+    }
+  };
+  const handleEdit = async () => {
+    try {
+      const result = await groupServices.updateGroups(Number(id), {
+        name: nameGroup,
+      });
+      if (result) {
+        Toast.show({
+          type: "success",
+          text1: "Notification",
+          text2: "Update group successfully",
+        });
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error || "An unexpected error occurred";
+      Toast.show({
+        type: "error",
+        text1: "Notification",
+        text2: errorMessage,
+      });
     }
   };
   const handeleDeleteGroup = async () => {
@@ -167,6 +190,7 @@ const SquadDetail = () => {
             <View className="flex flex-row gap-3">
               {isAdmin && (
                 <TouchableOpacity
+                  onPress={handleEdit}
                   activeOpacity={0.8}
                   style={{
                     shadowColor: "#000",
@@ -222,6 +246,7 @@ const SquadDetail = () => {
               }}
               onChangeText={setNameGroup}
               value={nameGroup}
+              editable={isAdmin}
               className="w-full rounded-[30px] border border-[#80C4E9] h-[40px] px-7 bg-white text-[#559CC3] font-bold"
             ></TextInput>
           </View>

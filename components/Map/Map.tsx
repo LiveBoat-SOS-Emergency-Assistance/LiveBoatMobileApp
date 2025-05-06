@@ -149,13 +149,6 @@ const Map = ({
                       parseFloat(rescuer.longitude),
                       parseFloat(rescuer.latitude),
                     ]}
-                    // onSelected={() => {
-                    //   if (selectedRescuer?.id === rescuer.id) {
-                    //     setSelectedRescuer(null);
-                    //   } else {
-                    //     setSelectedRescuer(rescuer);
-                    //   }
-                    // }}
                   >
                     <View style={{ alignItems: "center" }}>
                       {selectedRescuer?.id === rescuer.id && (
