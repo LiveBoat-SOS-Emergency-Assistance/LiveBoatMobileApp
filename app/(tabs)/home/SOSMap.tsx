@@ -25,7 +25,11 @@ import { rescuerServices } from "../../../services/rescuer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sosService } from "../../../services/sos";
 import Toast from "react-native-toast-message";
-
+import { useSocket } from "../../../hooks/useLikeLocation";
+interface SocketEvents {
+  TOCLIENT_HELPER_LOCATIONS: string;
+  TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
+}
 export default function SOSMap() {
   const [isDisable, setIsDisable] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -36,7 +40,20 @@ export default function SOSMap() {
   const handleDisableSOS = () => {
     setIsDisable(true);
   };
-
+  const {
+    socket,
+    setUserInfo,
+    updateLocation,
+    otherUserMarkers,
+    socketEvents,
+    displayOrUpdateMarkers,
+    registerCommonSocketEvents,
+  } = useSocket();
+  const SOCKET_EVENTS: SocketEvents = {
+    TOCLIENT_HELPER_LOCATIONS: "TOCLIENT_HELPER_LOCATIONS",
+    TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP:
+      "TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP",
+  };
   const handleCancelSOS = () => {
     setIsDisable(false);
     router.push("/(tabs)/home/SOSDisable");
@@ -44,6 +61,45 @@ export default function SOSMap() {
   const handleEditSOS = () => {
     setVisible(true);
   };
+  useEffect(() => {
+    if (!socket.current) return;
+    registerCommonSocketEvents();
+    socket.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
+      console.log("The Helper locations:", data);
+      displayOrUpdateMarkers(data);
+    });
+    const userType = "SENDER";
+    setUserInfo(userType);
+    setTimeout(() => {
+      socket?.current?.emit(
+        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+      );
+    }, 1000);
+    const timeout2 = setTimeout(async () => {
+      const location = await getCurrentLocation();
+      if (location) {
+        updateLocation(
+          location.latitude,
+          location.longitude,
+          location.accuracy ?? 0
+        );
+      }
+    }, 4000);
+    const locationInterval = setInterval(async () => {
+      const location = await getCurrentLocation();
+      if (location) {
+        updateLocation(
+          location.latitude,
+          location.longitude,
+          location.accuracy ?? 0
+        );
+      }
+    }, 10000);
+    return () => {
+      clearTimeout(timeout2);
+      clearInterval(locationInterval);
+    };
+  }, []);
   useEffect(() => {
     const unsubscribe = navigation.addListener(
       "beforeRemove",
@@ -148,7 +204,12 @@ export default function SOSMap() {
             onCancel={() => setVisible(false)}
           />
         )}
-        <Map signal="sos" cameraRef={cameraRef} listRescuer={listRescuer} />
+        <Map
+          signal="sos"
+          cameraRef={cameraRef}
+          listRescuer={listRescuer}
+          otherUserMarkers={otherUserMarkers}
+        />
         <View
           className={`absolute right-2 ${
             isExpanded ? "w-[50px] h-[180px]" : "w-[30px] h-[135px]"

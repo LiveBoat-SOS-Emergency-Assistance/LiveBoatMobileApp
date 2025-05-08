@@ -78,15 +78,15 @@ const RescuerMarker = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: 200,
-    height: 200,
+    width: 100,
+    height: 100,
     alignItems: "center",
     justifyContent: "center",
   },
   ripple: {
     position: "absolute",
-    width: 170,
-    height: 170,
+    width: 80,
+    height: 80,
     borderRadius: 85,
   },
   centerDot: {

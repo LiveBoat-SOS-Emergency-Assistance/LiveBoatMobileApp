@@ -13,6 +13,7 @@ import { jwtDecode } from "jwt-decode";
 import axiosPrivate from "../utils/api";
 import { userServices } from "../services/user";
 import { Profile } from "../types/Profile";
+import { groupServices } from "../services/group";
 interface RegisterData {
   phone: string;
   password: string;
@@ -35,6 +36,7 @@ type AuthProps = {
   reset_password: (data: any) => Promise<void>;
   change_password: (data: any) => Promise<void>;
   profile: Profile | null;
+  groupIds: number[];
   setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
 };
 
@@ -55,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
-
+  const [groupIds, setGroupIds] = useState<number[]>([]);
   useEffect(() => {
     const loadAccessToken = async () => {
       try {
@@ -97,6 +99,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     loadProfile();
   }, []);
+  useEffect(() => {
+    const loadGroupIds = async () => {
+      try {
+        const groupIdsString = await AsyncStorage.getItem("groupIds");
+        if (groupIdsString) {
+          const groupIdsData: number[] = JSON.parse(groupIdsString);
+          setGroupIds(groupIdsData);
+        }
+      } catch (error) {
+        console.error("Error loading group IDs:", error);
+      }
+    };
+
+    loadGroupIds();
+  }, []);
 
   const register = async (data: RegisterData) => {
     try {
@@ -121,6 +138,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userId = result.data.userId;
         if (userId) {
           const profileRes = await userServices.getUserByID(userId);
+          const groupIds = await groupServices.getGroup();
+          console.log("Group data", groupIds.data);
+          const ids = groupIds.data.map((group: { id: string | number }) =>
+            Number(group.id)
+          ); // Convert to numbers
+          await AsyncStorage.setItem("groupIds", JSON.stringify(ids)); // Store as a stringified array of numbers
+          setGroupIds(ids);
           setProfile(profileRes.data);
           await AsyncStorage.setItem(
             "profile",
@@ -178,6 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logout,
         change_password,
         profile,
+        groupIds,
         setProfile,
       }}
     >

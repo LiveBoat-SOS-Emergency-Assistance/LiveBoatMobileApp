@@ -15,8 +15,6 @@ import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { router, useFocusEffect, useNavigation } from "expo-router";
 import { AnimatePresence } from "framer-motion";
-import BottomModal from "../../../components/Modal/BottomModal";
-import MemberCard from "../../../components/Card/MemberCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sosService } from "../../../services/sos";
 import TopSheet, { TopSheetRef } from "../../../components/Modal/TopSheet";
@@ -30,9 +28,14 @@ import { getCurrentLocation } from "../../../utils/location";
 import ImageCustom from "../../../components/Image/Image";
 import Toast from "react-native-toast-message";
 import { rescuerServices } from "../../../services/rescuer";
-import messaging from "@react-native-firebase/messaging";
+import { useSocket } from "../../../hooks/useLikeLocation";
+
+interface SocketEvents {
+  TOCLIENT_SOS_LOCATIONS: string;
+  TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
+}
+
 export default function HomeScreen() {
-  const [activeTab, setActiveTab] = useState(true);
   const [checkSOS, setCheckSOS] = useState(false);
   const [currentSOS, setCurrentSOS] = useState<any>(null);
   const topSheetRef = useRef<TopSheetRef>(null);
@@ -45,6 +48,67 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectSquad, setSelectSquad] = useState<string | null>(null);
   const [selectNamesquad, setSelectNameSquad] = useState<string | null>(null);
+
+  const {
+    socket,
+    setUserInfo,
+    updateLocation,
+    otherUserMarkers,
+    socketEvents,
+  } = useSocket();
+
+  const SOCKET_EVENTS: SocketEvents = {
+    TOCLIENT_SOS_LOCATIONS: "TOCLIENT_SOS_LOCATIONS",
+    TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP:
+      socketEvents.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP,
+  };
+  useEffect(() => {
+    if (!socket.current) return;
+    socket?.current?.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
+      if (!data || data.length === 0) {
+        console.log("No SOS locations received");
+        return;
+      }
+      console.log("SOS locations:", data);
+    });
+
+    console.log("Socket events:");
+    setUserInfo("NORMAL");
+
+    const timeout1 = setTimeout(() => {
+      socket.current?.emit(
+        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+      );
+    }, 3000);
+    const timeout2 = setTimeout(async () => {
+      const location = await getCurrentLocation();
+      if (location) {
+        updateLocation(
+          location.latitude,
+          location.longitude,
+          location.accuracy ?? 0
+        );
+      }
+    }, 4000);
+    const locationInterval = setInterval(async () => {
+      const location = await getCurrentLocation();
+      if (location) {
+        updateLocation(
+          location.latitude,
+          location.longitude,
+          location.accuracy ?? 0
+        );
+      }
+    }, 10000);
+
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+      clearInterval(locationInterval);
+      socket.current?.off(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS);
+    };
+  }, []);
+
   // Func to zoom to current location
   const handleControl = async () => {
     try {
@@ -207,6 +271,7 @@ export default function HomeScreen() {
       handleGetMySOS();
     }, [])
   );
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
@@ -215,7 +280,11 @@ export default function HomeScreen() {
         {checkSOS ? (
           <Map checkSOS={checkSOS} sos={currentSOS} cameraRef={cameraRef}></Map>
         ) : (
-          <Map signal="normal" cameraRef={cameraRef}></Map>
+          <Map
+            signal="normal"
+            cameraRef={cameraRef}
+            otherUserMarkers={otherUserMarkers}
+          ></Map>
         )}
         {openModalCreateSquad && (
           <View className="absolute top-1/2 left-0">

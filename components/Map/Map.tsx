@@ -19,6 +19,13 @@ import RescuerMarker from "./RescuerMarker";
 MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN);
 MapboxGL.setTelemetryEnabled(false);
 
+interface otherUserMarkersProps {
+  id: string;
+  coordinate: [number, number];
+  avatarUrl: string | null;
+  userType: "SENDER" | "HELPER" | "NORMAL";
+}
+
 interface mapProps {
   signal?: string;
   sos?: SOSItem;
@@ -30,6 +37,7 @@ interface mapProps {
     longitude: string;
     latitude: string;
   };
+  otherUserMarkers?: Record<number, otherUserMarkersProps>;
 }
 const Map = ({
   signal,
@@ -38,6 +46,7 @@ const Map = ({
   checkSOS,
   listRescuer,
   otherSOS,
+  otherUserMarkers,
 }: mapProps) => {
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -59,7 +68,6 @@ const Map = ({
         console.log(error);
       }
     };
-
     fetchLocation();
   }, []);
 
@@ -111,7 +119,24 @@ const Map = ({
               centerCoordinate={location}
               animationDuration={500}
             />
-
+            {/* {signal === "sos" ? (
+              <RippleMarker id="my-sos-marker" coordinate={location} />
+            ) : (
+              <UserLocation
+                coordinate={location}
+                avatarUrl={profile?.User?.avatar_url}
+              />
+            )} */}
+            {signal === "sos" && (
+              <RippleMarker id="my-sos-marker" coordinate={location} />
+            )}
+            {signal === "normal" && (
+              <UserLocation
+                coordinate={location}
+                avatarUrl={profile?.User?.avatar_url}
+                userType="NORMAL"
+              />
+            )}
             {/* When I support others this is the user's location */}
             {sosLocation && checkSOS && (
               <RippleMarker
@@ -124,6 +149,31 @@ const Map = ({
               />
             )}
 
+            {/* {otherUserMarkers &&
+              Object.values(otherUserMarkers).map((marker) => {
+                if (marker.userType === "NORMAL") {
+                  return (
+                    <UserLocation
+                      key={marker.id}
+                      coordinate={marker.coordinate}
+                      avatarUrl={marker.avatarUrl}
+                      userType={marker.userType}
+                      size={50}
+                    />
+                  );
+                } else if (marker.userType === "HELPER") {
+                  return (
+                    <RescuerMarker
+                      key={marker.id}
+                      coordinate={marker.coordinate}
+                      id={marker.id}
+                      type={marker.userType}
+                      zoomLevel={11}
+                    />
+                  );
+                }
+                return null;
+              })} */}
             {/* When I support others, and this is my path to the SOS signal */}
             {route && checkSOS && (
               <MapboxGL.ShapeSource id="routeSource" shape={route}>
@@ -134,7 +184,7 @@ const Map = ({
               </MapboxGL.ShapeSource>
             )}
             {/* List Rescuer is supporting me */}
-            {listRescuer &&
+            {/* {listRescuer &&
               listRescuer
                 .filter(
                   (rescuer) =>
@@ -161,17 +211,10 @@ const Map = ({
                       <View style={styles.rescuerMarker} />
                     </View>
                   </MapboxGL.PointAnnotation>
-                ))}
+                ))} */}
 
             {/* My location */}
-            {signal === "sos" ? (
-              <RippleMarker id="my-sos-marker" coordinate={location} />
-            ) : (
-              <UserLocation
-                coordinate={location}
-                avatarUrl={profile?.User?.avatar_url}
-              />
-            )}
+
             {otherSOS && (
               <RippleMarker
                 id={`ripple-marker-${otherSOS.user_id}-${otherSOS.longitude}-${otherSOS.latitude}`}

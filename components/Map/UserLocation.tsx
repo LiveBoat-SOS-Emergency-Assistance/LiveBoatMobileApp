@@ -8,12 +8,14 @@ interface BreathingAvatarProps {
   size?: number;
   coordinate: [number, number];
   avatarUrl?: string | null;
+  userType?: "SENDER" | "HELPER" | "NORMAL";
 }
 
 const UserLocation = ({
   size = 60,
   coordinate,
   avatarUrl,
+  userType = "NORMAL",
 }: BreathingAvatarProps) => {
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(1)).current;
