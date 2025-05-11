@@ -58,7 +58,7 @@ const RescuerMarker = ({
     createRipple();
   }, []);
   return (
-    <MapboxGL.MarkerView coordinate={coordinate} id={id}>
+    <MapboxGL.MarkerView coordinate={coordinate} id={id} allowOverlap={true}>
       <View style={styles.container}>
         <Animated.View
           style={[

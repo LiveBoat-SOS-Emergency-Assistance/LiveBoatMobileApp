@@ -26,7 +26,7 @@ const ModalCreateSquad = ({ onClose, onRefresh }: modalProps) => {
     if (!name.trim()) {
       Toast.show({
         type: "error",
-        text1: "Notification",
+        text1: "Error",
         text2: "Please enter a squad name",
       });
       return;
@@ -37,7 +37,7 @@ const ModalCreateSquad = ({ onClose, onRefresh }: modalProps) => {
       onRefresh?.();
       Toast.show({
         type: "success",
-        text1: "Notification",
+        text1: "Successful",
         text2: "Add squad successfully",
       });
       setLoading(false);

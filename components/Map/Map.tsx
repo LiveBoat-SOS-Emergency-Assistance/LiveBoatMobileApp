@@ -16,14 +16,17 @@ import { RescuerItem } from "../../types/rescuerItem";
 import { SOSItem } from "../../types/sosItem";
 import { useAuth } from "../../context/AuthContext";
 import RescuerMarker from "./RescuerMarker";
+import { m } from "framer-motion";
 MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN);
 MapboxGL.setTelemetryEnabled(false);
 
-interface otherUserMarkersProps {
-  id: string;
-  coordinate: [number, number];
-  avatarUrl: string | null;
+interface Marker {
+  userId: number;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
   userType: "SENDER" | "HELPER" | "NORMAL";
+  avatarUrl: string;
 }
 
 interface mapProps {
@@ -37,7 +40,7 @@ interface mapProps {
     longitude: string;
     latitude: string;
   };
-  otherUserMarkers?: Record<number, otherUserMarkersProps>;
+  otherUserMarkers?: Record<number, Marker>;
 }
 const Map = ({
   signal,
@@ -56,6 +59,7 @@ const Map = ({
   const [selectedRescuer, setSelectedRescuer] = useState<RescuerItem | null>(
     null
   );
+  console.log("Markers being passed to Map:", otherUserMarkers);
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -115,28 +119,19 @@ const Map = ({
           <>
             <Camera
               ref={cameraRef}
-              zoomLevel={11}
+              zoomLevel={signal === "sos" ? 15 : 14}
               centerCoordinate={location}
               animationDuration={500}
             />
-            {/* {signal === "sos" ? (
+            {signal === "sos" ? (
               <RippleMarker id="my-sos-marker" coordinate={location} />
             ) : (
               <UserLocation
                 coordinate={location}
                 avatarUrl={profile?.User?.avatar_url}
               />
-            )} */}
-            {signal === "sos" && (
-              <RippleMarker id="my-sos-marker" coordinate={location} />
             )}
-            {signal === "normal" && (
-              <UserLocation
-                coordinate={location}
-                avatarUrl={profile?.User?.avatar_url}
-                userType="NORMAL"
-              />
-            )}
+
             {/* When I support others this is the user's location */}
             {sosLocation && checkSOS && (
               <RippleMarker
@@ -149,13 +144,14 @@ const Map = ({
               />
             )}
 
-            {/* {otherUserMarkers &&
+            {otherUserMarkers &&
               Object.values(otherUserMarkers).map((marker) => {
+                // const uniqueKey = `${marker.userId}-${marker.latitude}-${marker.longitude}`; // Tạo key duy nhất
                 if (marker.userType === "NORMAL") {
                   return (
                     <UserLocation
-                      key={marker.id}
-                      coordinate={marker.coordinate}
+                      key={marker.userId}
+                      coordinate={[marker.longitude, marker.latitude]}
                       avatarUrl={marker.avatarUrl}
                       userType={marker.userType}
                       size={50}
@@ -164,16 +160,25 @@ const Map = ({
                 } else if (marker.userType === "HELPER") {
                   return (
                     <RescuerMarker
-                      key={marker.id}
-                      coordinate={marker.coordinate}
-                      id={marker.id}
+                      key={marker.userId}
+                      coordinate={[marker.longitude, marker.latitude]}
+                      id={String(marker.userId)}
                       type={marker.userType}
                       zoomLevel={11}
                     />
                   );
+                } else if (marker.userType === "SENDER") {
+                  return (
+                    <RippleMarker
+                      // id="ripple-marker"
+                      id={String(marker.userId)}
+                      coordinate={[marker.longitude, marker.latitude]}
+                      userIDSOS={marker.userId}
+                    ></RippleMarker>
+                  );
                 }
                 return null;
-              })} */}
+              })}
             {/* When I support others, and this is my path to the SOS signal */}
             {route && checkSOS && (
               <MapboxGL.ShapeSource id="routeSource" shape={route}>

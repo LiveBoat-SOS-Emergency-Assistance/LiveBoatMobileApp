@@ -6,7 +6,7 @@ import Avatar from "../Image/Avatar";
 import { userServices } from "../../services/user";
 import { Profile } from "../../types/Profile";
 interface RippleMarkerProps {
-  id: string;
+  id?: string;
   coordinate: [number, number];
   type?: string;
   userIDSOS?: number;
@@ -82,7 +82,7 @@ const RippleMarker = ({
     createRipple();
   }, []);
   return (
-    <MapboxGL.MarkerView coordinate={coordinate} id={id}>
+    <MapboxGL.MarkerView coordinate={coordinate} id={id} allowOverlap={true}>
       <View style={styles.container}>
         <Animated.View
           style={[

@@ -7,16 +7,30 @@ import { groupServices } from "../../../services/group";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import ImageCustom from "../../../components/Image/Image";
 import Toast from "react-native-toast-message";
+import { notifcationService } from "../../../services/notification";
 
-const AlertTab = () => (
-  <View className="flex-1 pt-5 bg-white">
-    <View className="flex flex-col gap-1">
-      <ChatItem></ChatItem>
-      <ChatItem></ChatItem>
+const AlertTab = ({ listSOS }: { listSOS: any[] }) => {
+  return (
+    <View className="flex-1 pt-16 bg-white">
+      <View className="flex flex-col gap-1">
+        {listSOS.length > 0 ? (
+          listSOS.map((item) => <ChatItem notification={item} key={item.id} />)
+        ) : (
+          <View className="pt-5 justify-center items-center">
+            <Image
+              style={{ width: 200, height: 200 }}
+              className="object-cover"
+              source={require("../../../assets/images/404.jpg")}
+            />
+            <Text className="font-semibold text-[#404040] ">
+              No messages... but we're thinking of you!
+            </Text>
+          </View>
+        )}
+      </View>
     </View>
-  </View>
-);
-
+  );
+};
 const GroupTab = () => (
   <View className="flex-1  items-center pt-20 bg-white">
     <Image
@@ -162,12 +176,25 @@ const ChatTab = () => (
 export default function ChatScreen() {
   const [index, setIndex] = useState(0);
   const [listInvite, setListInvite] = useState<any[]>([]);
+  const [listSOSNotification, setListSOSNotification] = useState<any[]>([]);
   const [routes] = useState([
     { key: "alert", title: "Alert" },
     { key: "group", title: "Group" },
     { key: "invite", title: "Invite" },
     { key: "chat", title: "Chat" },
   ]);
+  const getNotificationSOS = async () => {
+    try {
+      const result = await notifcationService.get_notification();
+      // console.log("hihi", result.data);
+      setListSOSNotification(result.data);
+    } catch (error: any) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
+    getNotificationSOS();
+  }, []);
   // const renderScene = SceneMap({
   //   alert: AlertTab,
   //   group: GroupTab,
@@ -177,7 +204,7 @@ export default function ChatScreen() {
   const renderScene = ({ route }: { route: any }) => {
     switch (route.key) {
       case "alert":
-        return <AlertTab />;
+        return <AlertTab listSOS={listSOSNotification} />;
       case "group":
         return <GroupTab />;
       case "invite":

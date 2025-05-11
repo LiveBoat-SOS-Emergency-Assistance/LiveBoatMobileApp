@@ -147,7 +147,7 @@ const ProfileSOS = () => {
       console.log("Error", error.response?.data);
       Toast.show({
         type: "error",
-        text1: "Notification!",
+        text1: "Error!",
         text2: "Error when cancel support!",
       });
     }

@@ -1,8 +1,19 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import React, { useState } from "react";
 import Avatar from "../Image/Avatar";
-const ChatItem = () => {
+interface ChatItemProps {
+  id: string;
+  content: string;
+  created_at: string;
+  title: string;
+  type: string;
+}
+interface ChatProps {
+  notification: ChatItemProps;
+}
+const ChatItem = ({ notification }: ChatProps) => {
   const [isPressed, setIsPressed] = useState(false);
+  // console.log(notification);
   return (
     <TouchableOpacity
       activeOpacity={0.8}

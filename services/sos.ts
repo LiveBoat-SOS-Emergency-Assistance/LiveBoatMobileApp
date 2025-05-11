@@ -52,9 +52,17 @@ export class sosService {
       throw error;
     }
   }
-  static async getSOSByStatus(status: string) {
+  static async getSOSByStatus(
+    status: string,
+    limit: number = 10,
+    offset: number = 0
+  ) {
     try {
       const result = await axiosPrivate.get(`/sos/all?status=${status}`, {
+        params: {
+          limit: limit,
+          offset: offset,
+        },
         headers: {
           "Content-Type": "application/json",
         },
@@ -64,7 +72,7 @@ export class sosService {
       throw error;
     }
   }
- 
+
   static async getMySOSCurrent() {
     try {
       const result = await axiosPrivate.get("/sos/current", {
