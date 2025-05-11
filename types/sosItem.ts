@@ -25,3 +25,11 @@ export interface SOSItem {
   status: string;
   user_id: string;
 }
+export interface InfiniteScrollPaginationProps<T> {
+  data: T[];
+  itemsPerPage: number;
+  renderItem: (item: T) => JSX.Element;
+  onLoadMore: () => void;
+  isLoading: boolean;
+  hasMore: boolean;
+}

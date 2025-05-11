@@ -15,24 +15,58 @@ import SOSCardFilter from "../../../components/Card/SOSCardFilter";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { sosService } from "../../../services/sos";
 import InfiniteScrollPagination from "../../../components/Pagination/InfiniteScrollPagination";
+import ScrollPagination from "../../../components/Pagination/ScrollPagination";
+import { SOSItem } from "../../../types/sosItem";
 export default function History() {
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth / 3;
   const visibleWidth = cardWidth * 2.5;
-  const [listSOS, setListSOS] = useState([]);
+  const [listSOS, setListSOS] = useState<SOSItem[]>([]);
+  const [page, setPage] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const itemsPerPage = 4;
+
+  const loadSOS = async (pageNum: number = 1) => {
+    if (isLoading || !hasMore) return;
+
+    setIsLoading(true);
+    try {
+      const offset = (pageNum - 1) * itemsPerPage;
+      const result = await sosService.getSOSByStatus(
+        "ONGOING",
+        itemsPerPage,
+        offset
+      );
+      const newData: SOSItem[] = result.data || [];
+
+      if (newData.length < itemsPerPage) {
+        setHasMore(false);
+      }
+
+      setListSOS((prev: SOSItem[]) =>
+        pageNum === 1 ? newData : [...prev, ...newData]
+      );
+    } catch (error) {
+      console.error("Error loading SOS:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const getListSOS = async () => {
-      try {
-        const result = await sosService.getSOSByStatus("ONGOING");
-        setListSOS(result.data);
-        // console.log(result.data);
-      } catch (error: any) {
-        console.error(error);
-      }
-    };
-    getListSOS();
+    loadSOS(1);
   }, []);
+
+  const handleLoadMore = () => {
+    if (!isLoading && hasMore) {
+      setPage((prev) => {
+        const nextPage = prev + 1;
+        loadSOS(nextPage);
+        return nextPage;
+      });
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -216,10 +250,13 @@ export default function History() {
               ></ImageCustom>
             </View>
           </View>
-          <InfiniteScrollPagination
+          <ScrollPagination<SOSItem>
             data={listSOS}
-            itemsPerPage={4}
-            renderItem={(item) => <SOSCardFilter data={item} />}
+            itemsPerPage={itemsPerPage}
+            renderItem={(item: SOSItem) => <SOSCardFilter data={item} />}
+            onLoadMore={handleLoadMore}
+            isLoading={isLoading}
+            hasMore={hasMore}
           />
         </ScrollView>
       </KeyboardAvoidingView>

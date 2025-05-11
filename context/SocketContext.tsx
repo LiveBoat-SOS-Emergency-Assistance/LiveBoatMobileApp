@@ -1,0 +1,218 @@
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import io, { Socket } from "socket.io-client";
+import Toast from "react-native-toast-message";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+interface Marker {
+  userId: number;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  userType: "SENDER" | "HELPER" | "NORMAL";
+  avatarUrl: string;
+}
+
+interface SocketContextType {
+  socket: React.MutableRefObject<Socket | null>;
+  userId: number;
+  myLocation: [number, number] | null;
+  otherUserMarkers: Record<number, Marker>;
+  updateLocation: (
+    latitude: number,
+    longitude: number,
+    accuracy: number
+  ) => void;
+  setUserInfo: (userType: string) => void;
+  displayOrUpdateMarkers: (data: Marker[]) => void;
+  registerCommonSocketEvents: () => void;
+  displayOfflineMarker: (userId: number) => void;
+}
+
+const SocketContext = createContext<SocketContextType | undefined>(undefined);
+
+const SOCKET_EVENTS = {
+  TOCLIENT_USER_DISCONNECTED: "TOCLIENT_USER_DISCONNECTED",
+  TOCLIENT_COMMON_GROUPS_LOCATIONS: "TOCLIENT_COMMON_GROUPS_LOCATIONS",
+  TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP:
+    "TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP",
+  TOSERVER_HEARTBEAT: "TOSERVER_HEARTBEAT",
+  TOSERVER_UPDATE_USER_LOCATION: "TOSERVER_UPDATE_USER_LOCATION",
+  TOSERVER_SET_USER_INFO: "TOSERVER_SET_USER_INFO",
+  TOCLIENT_SOS_FINISHED: "TOCLIENT_SOS_FINISHED",
+  TOCLIENT_HELPER_LOCATIONS: "TOCLIENT_HELPER_LOCATIONS",
+};
+
+const serverUrl = "https://liveboat-backend.onrender.com";
+
+export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [userId, setUserId] = useState<number>(0);
+  const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
+  const [otherUserMarkers, setOtherUserMarkers] = useState<
+    Record<number, Marker>
+  >({});
+  const socketRef = useRef<Socket | null>(null);
+
+  const initializeSocket = () => {
+    if (!socketRef.current) {
+      socketRef.current = io(serverUrl);
+
+      socketRef.current.on("connect", () => {
+        console.log(`✅ Connected to server: ${socketRef.current?.id}`);
+        registerCommonSocketEvents();
+      });
+
+      socketRef.current.on("disconnect", () => {
+        console.log("❌ Disconnected from server");
+      });
+
+      socketRef.current.on("connect_error", (error: Error) => {
+        console.error("❌ Connection error:", error.message);
+        Toast.show({
+          type: "error",
+          text1: "Connection Error",
+          text2: error.message,
+        });
+      });
+    }
+  };
+
+  const registerCommonSocketEvents = async () => {
+    if (!socketRef.current) return;
+
+    socketRef.current.on(
+      SOCKET_EVENTS.TOCLIENT_COMMON_GROUPS_LOCATIONS,
+      (data: Marker[]) => {
+        console.log("Common groups locations:", data);
+        displayOrUpdateMarkers(data);
+      }
+    );
+
+    socketRef.current.on(
+      SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED,
+      (data: any) => {
+        console.log("User disconnected:", data.userId);
+        setOtherUserMarkers((prevMarkers) => {
+          const updatedMarkers = { ...prevMarkers };
+          delete updatedMarkers[data.userId];
+          return updatedMarkers;
+        });
+      }
+    );
+  };
+
+  const displayOrUpdateMarkers = (data: Marker[]) => {
+    setOtherUserMarkers((prevMarkers) => {
+      const updatedMarkers = { ...prevMarkers };
+      data.forEach((user) => {
+        updatedMarkers[user.userId] = {
+          userId: user.userId,
+          latitude: user.latitude,
+          longitude: user.longitude,
+          accuracy: user.accuracy,
+          userType: user.userType,
+          avatarUrl: user.avatarUrl,
+        };
+      });
+      return updatedMarkers;
+    });
+  };
+
+  const setUserInfo = async (userType: string) => {
+    if (socketRef.current) {
+      const groupIds = JSON.parse(
+        (await AsyncStorage.getItem("groupIds")) || "[]"
+      );
+      const profileData = await AsyncStorage.getItem("profile");
+      const parsedProfile = JSON.parse(profileData || "{}");
+      const userId = Number(parsedProfile?.user_id) || 0;
+      const avatarUrl =
+        parsedProfile?.User?.avatar_url || "https://i.pravatar.cc/150";
+
+      socketRef.current.emit(SOCKET_EVENTS.TOSERVER_SET_USER_INFO, {
+        userId,
+        avatarUrl,
+        groupIds,
+        userType,
+        timestamp: Date.now(),
+        accuracy: 0,
+      });
+    }
+  };
+
+  const updateLocation = (
+    latitude: number,
+    longitude: number,
+    accuracy: number
+  ) => {
+    if (!latitude || !longitude) return;
+    setMyLocation([latitude, longitude]);
+    socketRef.current?.emit(SOCKET_EVENTS.TOSERVER_UPDATE_USER_LOCATION, {
+      latitude,
+      longitude,
+      accuracy,
+    });
+  };
+  const displayOfflineMarker = (userId: number) => {
+    setOtherUserMarkers((prev) => ({
+      ...prev,
+      [userId]: {
+        ...prev[userId],
+        accuracy: 0,
+        latitude: 0,
+        longitude: 0,
+        userType: "NORMAL",
+        avatarUrl: prev[userId]?.avatarUrl || "https://i.pravatar.cc/150",
+      },
+    }));
+  };
+
+  useEffect(() => {
+    initializeSocket();
+
+    const interval = setInterval(() => {
+      if (socketRef.current) {
+        socketRef.current.emit(SOCKET_EVENTS.TOSERVER_HEARTBEAT);
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+    };
+  }, []);
+
+  return (
+    <SocketContext.Provider
+      value={{
+        socket: socketRef,
+        userId,
+        myLocation,
+        otherUserMarkers,
+        updateLocation,
+        setUserInfo,
+        displayOrUpdateMarkers,
+        registerCommonSocketEvents,
+        displayOfflineMarker,
+      }}
+    >
+      {children}
+    </SocketContext.Provider>
+  );
+};
+
+export const useSocketContext = () => {
+  const context = useContext(SocketContext);
+  if (!context) {
+    throw new Error("useSocketContext must be used within a SocketProvider");
+  }
+  return context;
+};

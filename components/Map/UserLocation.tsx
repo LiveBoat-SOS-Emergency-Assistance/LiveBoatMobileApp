@@ -5,15 +5,19 @@ import { useAuth } from "../../context/AuthContext";
 import MapboxGL from "@rnmapbox/maps";
 
 interface BreathingAvatarProps {
+  id?: string;
   size?: number;
   coordinate: [number, number];
   avatarUrl?: string | null;
+  userType?: "SENDER" | "HELPER" | "NORMAL";
 }
 
 const UserLocation = ({
+  id,
   size = 60,
   coordinate,
   avatarUrl,
+  userType = "NORMAL",
 }: BreathingAvatarProps) => {
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(1)).current;
@@ -64,7 +68,7 @@ const UserLocation = ({
   return (
     <MapboxGL.MarkerView
       coordinate={coordinate}
-      id="user-location"
+      id={id}
       allowOverlap={true}
       anchor={{ x: 0.5, y: 0.5 }}
     >

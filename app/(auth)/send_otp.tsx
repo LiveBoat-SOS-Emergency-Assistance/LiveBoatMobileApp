@@ -10,46 +10,35 @@ import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
 import Toast from "react-native-toast-message";
 import React from "react";
+
 const send_otp = () => {
   const [otp, setOtp] = useState("");
   const { send_otp, register } = useAuth();
   const { type } = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
+
   const handleResetOTP = async () => {
-    if (type === "register_email") {
-      const email = await AsyncStorage.getItem("email");
-      if (email) {
-        await send_otp({ email });
-        Toast.show({
-          type: "success",
-          text1: "Thông báo",
-          text2: "Mã OTP đã được gửi đến email của bạn!",
-          position: "top",
-          visibilityTime: 2000,
-        });
-      }
-    } else if (type === "forgot_password") {
-      const email = await AsyncStorage.getItem("email");
-      if (email) {
-        await send_otp({ email });
-        Toast.show({
-          type: "success",
-          text1: "Thông báo",
-          text2: "Mã OTP đã được gửi đến email của bạn!",
-          position: "top",
-          visibilityTime: 2000,
-        });
-      }
+    const email = await AsyncStorage.getItem("email");
+    if (email) {
+      await send_otp({ email });
+      Toast.show({
+        type: "success",
+        text1: "Notification",
+        text2: "OTP code has been sent to your email!",
+        position: "top",
+        visibilityTime: 2000,
+      });
     }
   };
+
   const handleCompleteRegister = async () => {
     try {
       setLoading(true);
       if (!otp) {
         Toast.show({
           type: "error",
-          text1: "Thông báo",
-          text2: "Vui lòng nhập mã OTP!",
+          text1: "Notification",
+          text2: "Please enter the OTP code!",
           position: "top",
           visibilityTime: 2000,
         });
@@ -68,13 +57,14 @@ const send_otp = () => {
           setLoading(false);
           Toast.show({
             type: "success",
-            text1: "Thông báo",
-            text2: "Bạn đã đăng ký thành công!",
+            text1: "Notification",
+            text2: "You have successfully registered!",
             position: "top",
             visibilityTime: 2000,
           });
         }
       } else {
+        // Handle other types if needed
       }
     } catch (error: any) {
       const errorMessage =
@@ -88,36 +78,37 @@ const send_otp = () => {
       });
     }
   };
+
   return (
     <>
       <View className="flex flex-col bg-white w-full h-full min-h-dvh items-center py-2 gap-5">
         <View className="flex flex-col gap-3 w-full items-center">
-          <Logo></Logo>
+          <Logo />
           <Text className="font-bold text-[25px] text-[#404040]">
             {type === "register_email"
-              ? "Xác minh tài khoản"
+              ? "Verify Account"
               : type === "register_phone"
-              ? "Xác minh số điện thoại"
-              : "Quên mật khẩu"}
+              ? "Verify Phone Number"
+              : "Forgot Password"}
           </Text>
           <Text className="text-[#9A9898] text-[14px]">
             {type === "register_email"
-              ? "Nhập mã OTP để hoàn tất đăng ký."
+              ? "Enter the OTP code to complete registration."
               : type === "register_phone"
-              ? "Nhập mã OTP để xác minh số điện thoại của bạn."
-              : "Nhập mã OTP để đặt lại mật khẩu."}
+              ? "Enter the OTP code to verify your phone number."
+              : "Enter the OTP code to reset your password."}
           </Text>
         </View>
         <View className="w-full">
-          <PinInput onComplete={(pin) => setOtp(pin)}></PinInput>
+          <PinInput onComplete={(pin) => setOtp(pin)} />
         </View>
         <View className="w-[90%] pt-10 justify-center items-center gap-8">
           <CustomButton
             onPress={handleCompleteRegister}
             primary={true}
-            title="Tiếp tục"
-          ></CustomButton>
-          <OTPCountdown></OTPCountdown>
+            title="Continue"
+          />
+          <OTPCountdown />
 
           <Pressable
             className="flex gap-2 flex-row"
@@ -128,14 +119,13 @@ const send_otp = () => {
               width={20}
               height={20}
               color="#404040"
-            ></ImageCustom>
-            <Text className="text-[#404040] text-[12px]">
-              Quay lại đăng nhập
-            </Text>
+            />
+            <Text className="text-[#404040] text-[12px]">Back to login</Text>
           </Pressable>
         </View>
       </View>
     </>
   );
 };
+
 export default send_otp;

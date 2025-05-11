@@ -11,7 +11,7 @@ import {
 import { Video } from "lucide-react-native";
 import Map from "../../../components/Map/Map";
 import ImageCustom from "../../../components/Image/Image";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, time } from "framer-motion";
 import BottomModal from "../../../components/Modal/BottomModal";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SlideToCancel from "../../../components/Button/SlideCancelButton";
@@ -20,10 +20,17 @@ import CustomDialog from "../../../components/Dialog/DialogEditSOS";
 import AddressSOSCard from "../../../components/Card/AddressSOSCard";
 import Avatar from "../../../components/Image/Avatar";
 import { Camera } from "@rnmapbox/maps";
-import { getCurrentLocation } from "../../../utils/location";
+import { getCurrentLocation, LocationResult } from "../../../utils/location";
 import { rescuerServices } from "../../../services/rescuer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { sosService } from "../../../services/sos";
+import Toast from "react-native-toast-message";
+import { useSocketContext } from "../../../context/SocketContext";
+interface SocketEvents {
+  TOCLIENT_HELPER_LOCATIONS: string;
+  TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
+  TOSERVER_SOS_FINISHED: string;
+}
 export default function SOSMap() {
   const [isDisable, setIsDisable] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -31,17 +38,81 @@ export default function SOSMap() {
   const cameraRef = useRef<Camera>(null);
   const [listRescuer, setListRescuer] = useState<any[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+
   const handleDisableSOS = () => {
     setIsDisable(true);
   };
-
+  const {
+    socket,
+    userId,
+    setUserInfo,
+    updateLocation,
+    otherUserMarkers,
+    displayOrUpdateMarkers,
+    registerCommonSocketEvents,
+  } = useSocketContext();
+  const SOCKET_EVENTS: SocketEvents = {
+    TOCLIENT_HELPER_LOCATIONS: "TOCLIENT_HELPER_LOCATIONS",
+    TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP:
+      "TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP",
+    TOSERVER_SOS_FINISHED: "TOSERVER_SOS_FINISHED",
+  };
   const handleCancelSOS = () => {
     setIsDisable(false);
-    router.push("/(tabs)/home/sos_disable");
+    router.push("/(tabs)/home/SOSDisable");
   };
   const handleEditSOS = () => {
     setVisible(true);
   };
+  useEffect(() => {
+    console.log("Socket at sos", socket);
+    // if (!socket.current) return;
+    registerCommonSocketEvents();
+
+    socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
+      console.log("The Helper locations:", data);
+      displayOrUpdateMarkers(data);
+    });
+    const userType = "SENDER";
+    setUserInfo(userType);
+    const timeout1 = setTimeout(() => {
+      socket.current?.emit(
+        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+      );
+    }, 3000);
+
+    socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
+    const timeout2 = setTimeout(async () => {
+      const location = await getCurrentLocation();
+      if (location) {
+        updateLocation(
+          location.latitude,
+          location.longitude,
+          location.accuracy ?? 0
+        );
+      }
+    }, 5000);
+    const locationInterval = setInterval(async () => {
+      const location = await getCurrentLocation();
+      if (location) {
+        updateLocation(
+          location.latitude,
+          location.longitude,
+          location.accuracy ?? 0
+        );
+      }
+    }, 10000);
+    return () => {
+      clearInterval(timeout1);
+      clearTimeout(timeout2);
+      clearInterval(locationInterval);
+
+      socket.current?.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
+      socket.current?.off(
+        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+      );
+    };
+  }, []);
   useEffect(() => {
     const unsubscribe = navigation.addListener(
       "beforeRemove",
@@ -61,9 +132,16 @@ export default function SOSMap() {
       backHandler.remove();
     };
   }, [navigation, isDisable]);
-  const handleControl = async () => {
+  const handleControl = async (
+    targetLocation: LocationResult | null = null
+  ) => {
     try {
-      const location = await getCurrentLocation();
+      let location = targetLocation;
+
+      if (!location) {
+        location = await getCurrentLocation();
+      }
+
       if (location && cameraRef.current) {
         const { latitude, longitude } = location;
         cameraRef.current.moveTo([longitude, latitude], 1000);
@@ -75,18 +153,50 @@ export default function SOSMap() {
       console.log("Error getting location", error);
     }
   };
+
   useEffect(() => {
     const getListRescuer = async () => {
       try {
         const sosId = await AsyncStorage.getItem("sosId");
-        const result = await rescuerServices.getRescuerBySOSId(Number(sosId));
+        const result = await rescuerServices.getRescuerBySOSId(
+          Number(sosId),
+          "ENROUTE"
+        );
         setListRescuer(result.data);
       } catch (error: any) {
-        console.log("Error wheb get List Rescuer", error);
+        console.log("Error when get List Rescuer", error);
       }
     };
     getListRescuer();
   }, []);
+  const handleResolve = async () => {
+    try {
+      // setLoading(true);
+      const longitude = await AsyncStorage.getItem("longitudeSOS");
+      const latitude = await AsyncStorage.getItem("latitudeSOS");
+      const accuracy = await AsyncStorage.getItem("accuracySOS");
+      const sosId = await AsyncStorage.getItem("sosId");
+      socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
+      const result = await sosService.sos_edit(sosId!, {
+        longitude: longitude,
+        latitude: latitude,
+        accuracy: accuracy,
+        status: "RESOLVED",
+      });
+      displayOrUpdateMarkers([]);
+      Toast.show({
+        type: "info",
+        text1: "Notification",
+        text2: "SOS has been resolved successfully!",
+        position: "top",
+        visibilityTime: 2000,
+      });
+      console.log("Result", result);
+      router.push("/(tabs)/home");
+    } catch (error: any) {
+      console.error(error);
+    }
+  };
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 bg-white">
@@ -108,7 +218,12 @@ export default function SOSMap() {
             onCancel={() => setVisible(false)}
           />
         )}
-        <Map signal="sos" cameraRef={cameraRef} listRescuer={listRescuer}/>
+        <Map
+          signal="sos"
+          cameraRef={cameraRef}
+          listRescuer={listRescuer}
+          otherUserMarkers={otherUserMarkers}
+        />
         <View
           className={`absolute right-2 ${
             isExpanded ? "w-[50px] h-[180px]" : "w-[30px] h-[135px]"
@@ -137,12 +252,22 @@ export default function SOSMap() {
           <ScrollView showsVerticalScrollIndicator={false}>
             <View className="flex-col space-y-2 gap-1">
               {listRescuer.map((rescuer, index) => (
-                <Avatar
+                <TouchableOpacity
                   key={index}
-                  source={rescuer.User.avatar_url}
-                  width={isExpanded ? 40 : 24}
-                  height={isExpanded ? 40 : 24}
-                ></Avatar>
+                  onPress={() => {
+                    handleControl({
+                      latitude: rescuer.latitude,
+                      longitude: rescuer.longitude,
+                    });
+                  }}
+                >
+                  <Avatar
+                    key={index}
+                    source={rescuer.User.avatar_url}
+                    width={isExpanded ? 40 : 24}
+                    height={isExpanded ? 40 : 24}
+                  ></Avatar>
+                </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
@@ -169,9 +294,21 @@ export default function SOSMap() {
             <Text className="text-white ml-2">Group Chat</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          onPress={handleResolve}
+          activeOpacity={0.8}
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 3,
+          }}
+          className="flex-row absolute  bottom-[240px] left-16 items-center bg-[#EB4747] px-4 py-2 rounded-full"
+        >
+          <Text className="text-white font-bold">Mark Safe</Text>
+        </TouchableOpacity>
         <Pressable
-          onPress={handleControl}
-          className="w-[40px] absolute bottom-[250px] left-3 h-[40px] bg-white rounded-full flex justify-center items-center shadow "
+          onPress={() => handleControl()}
+          className="w-[40px] absolute bottom-[235px] left-3 h-[40px] bg-white rounded-full flex justify-center items-center shadow "
           style={{
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },

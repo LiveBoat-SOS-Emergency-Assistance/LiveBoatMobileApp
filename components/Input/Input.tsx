@@ -36,7 +36,7 @@ const Input = ({
   return (
     <View className={`w-[${width}]`}>
       <View
-        className={`w-full border h-[48px] rounded-[5px] px-4 outline-none flex relative justify-center ${
+        className={`w-full border h-[48px] rounded-[5px] px-4 outline-none flex relative justify-center  ${
           error
             ? "border-red-500"
             : focused
@@ -54,6 +54,7 @@ const Input = ({
           // autoCapitalize={type === "email" ? "none" : "sentences"}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          className="w-full h-full"
           {...rest}
         />
         {type === "password" && (

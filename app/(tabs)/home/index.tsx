@@ -6,19 +6,16 @@ import {
   Pressable,
   ScrollView,
   BackHandler,
-  Dimensions,
-  Touchable,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { ChevronDown } from "lucide-react-native";
+import { ChevronDown, ChevronUp, Minus, Plus } from "lucide-react-native";
 import Map from "../../../components/Map/Map";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { router, useFocusEffect, useNavigation } from "expo-router";
 import { AnimatePresence } from "framer-motion";
-import BottomModal from "../../../components/Modal/BottomModal";
-import MemberCard from "../../../components/Card/MemberCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sosService } from "../../../services/sos";
 import TopSheet, { TopSheetRef } from "../../../components/Modal/TopSheet";
@@ -32,8 +29,24 @@ import { getCurrentLocation } from "../../../utils/location";
 import ImageCustom from "../../../components/Image/Image";
 import Toast from "react-native-toast-message";
 import { rescuerServices } from "../../../services/rescuer";
+// import { useSocket } from "../../../hooks/useLiveLocation";
+import BottomModal from "../../../components/Modal/BottomModal";
+import MemberCard from "../../../components/Card/MemberCard";
+import * as Animatable from "react-native-animatable";
+import { useSocketContext } from "../../../context/SocketContext";
+import CustomAlert from "../../../components/Toast/CustomAlert";
+interface SocketEvents {
+  TOCLIENT_SOS_LOCATIONS: string;
+  TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
+  TOCLIENT_SOS_FINISHED: string;
+  TOCLIENT_THE_SENDER_LOCATION: string;
+  TOCLIENT_HELPER_LOCATIONS: string;
+  TOCLIENT_USER_DISCONNECTED: string;
+  TOSERVER_REGISTER_SOS_SENDER: string;
+  TOSERVER_GET_THE_SENDER_LOCATION: string;
+}
+
 export default function HomeScreen() {
-  const [activeTab, setActiveTab] = useState(true);
   const [checkSOS, setCheckSOS] = useState(false);
   const [currentSOS, setCurrentSOS] = useState<any>(null);
   const topSheetRef = useRef<TopSheetRef>(null);
@@ -43,7 +56,134 @@ export default function HomeScreen() {
   >([]);
   const { profile } = useAuth();
   const cameraRef = useRef<Camera>(null);
-  const [forceRender, setForceRender] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectSquad, setSelectSquad] = useState<string | null>(null);
+  const [selectNamesquad, setSelectNameSquad] = useState<string | null>(null);
+  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false); // State để quản lý BottomSheet
+  const [activeTab, setActiveTab] = useState<boolean>(true); // State to manage active tab
+  const [helpingUserId, setHelpingTheUserId] = useState<number | null>(null);
+  const [isAlertVisible, setAlertVisible] = useState(false);
+  const toggleBottomSheet = () => {
+    setIsBottomSheetVisible((prev) => !prev); // Đóng/mở BottomSheet
+  };
+  const {
+    socket,
+    setUserInfo,
+    updateLocation,
+    otherUserMarkers,
+    displayOfflineMarker,
+    displayOrUpdateMarkers,
+  } = useSocketContext();
+  const SOCKET_EVENTS: SocketEvents = {
+    TOCLIENT_SOS_LOCATIONS: "TOCLIENT_SOS_LOCATIONS",
+    TOCLIENT_SOS_FINISHED: "TOCLIENT_SOS_FINISHED",
+    TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP:
+      "TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP",
+    TOCLIENT_THE_SENDER_LOCATION: "TOCLIENT_THE_SENDER_LOCATION",
+    TOCLIENT_HELPER_LOCATIONS: "TOCLIENT_HELPER_LOCATIONS",
+    TOCLIENT_USER_DISCONNECTED: "TOCLIENT_USER_DISCONNECTED",
+    TOSERVER_REGISTER_SOS_SENDER: "TOSERVER_REGISTER_SOS_SENDER",
+    TOSERVER_GET_THE_SENDER_LOCATION: "TOSERVER_GET_THE_SENDER_LOCATION",
+  };
+
+  // useEffect này chạy một lần khi HomeScreen mount
+  useEffect(() => {
+    if (!socket.current) return;
+
+    console.log("Socket at home", socket);
+
+    socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
+      if (!data || data.length === 0) {
+        console.log("No SOS locations received");
+        return;
+      }
+      console.log("SOS locations:", data);
+      displayOrUpdateMarkers(data);
+    });
+
+    setUserInfo("NORMAL");
+
+    const timeout1 = setTimeout(() => {
+      socket.current?.emit(
+        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+      );
+    }, 3000);
+
+    const timeout2 = setTimeout(async () => {
+      const location = await getCurrentLocation();
+      if (location) {
+        updateLocation(
+          location.latitude,
+          location.longitude,
+          location.accuracy ?? 0
+        );
+      }
+    }, 5000);
+
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!socket.current || !currentSOS) return;
+
+    console.log("Rescuer mode active");
+
+    socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
+      console.log("The Sender location:", data);
+      displayOrUpdateMarkers(data);
+    });
+
+    socket.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
+      console.log("Other helper locations:", data);
+      displayOrUpdateMarkers(data);
+    });
+
+    socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
+      if (data.userId === helpingUserId) {
+        console.log("Sender disconnected, display offline marker");
+        displayOfflineMarker(data.userId);
+      }
+    });
+    socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
+      if (data.userId === helpingUserId) {
+        console.log("Sender finished SOS, complete rescuing");
+        setAlertVisible(true);
+        setHelpingTheUserId(null);
+        setCheckSOS(false);
+        setCurrentSOS(null);
+      }
+    });
+    setUserInfo("HELPER");
+
+    const timeout1 = setTimeout(() => {
+      socket?.current?.emit(
+        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+      );
+      socket?.current?.emit(SOCKET_EVENTS.TOSERVER_REGISTER_SOS_SENDER, {
+        helpingUserId,
+      });
+    }, 1000);
+
+    const timeout2 = setTimeout(() => {
+      socket?.current?.emit(
+        SOCKET_EVENTS.TOSERVER_GET_THE_SENDER_LOCATION,
+        (response: any) => {
+          console.log("Server responded:", response);
+          if (response?.status === false && helpingUserId !== null) {
+            displayOfflineMarker(helpingUserId);
+          }
+        }
+      );
+    }, 2000);
+
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+    };
+  }, [currentSOS]);
 
   // Func to zoom to current location
   const handleControl = async () => {
@@ -68,6 +208,7 @@ export default function HomeScreen() {
   };
 
   const navigation = useNavigation();
+  // Prevent comeback the Home.
   useFocusEffect(
     useCallback(() => {
       // Block back with gesture or back button on header
@@ -92,7 +233,7 @@ export default function HomeScreen() {
       };
     }, [])
   );
-
+  // Check accessToken to direct
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -113,11 +254,12 @@ export default function HomeScreen() {
     };
     initialize();
   }, []);
+  // Func to check the User is supporting other?
   useFocusEffect(
     useCallback(() => {
       const getSOS = async () => {
         try {
-          const current = await sosService.getSOSCurrent();
+          const current = await rescuerServices.getSOSCurrent();
           if (current && current.data) {
             setCurrentSOS(current.data);
             setCheckSOS(true);
@@ -137,19 +279,26 @@ export default function HomeScreen() {
       getSOS();
     }, [])
   );
-  useEffect(() => {
-    const getGroup = async () => {
-      try {
-        const result = await groupServices.getGroup();
-        if (result && result.data) {
-          setGroup(result.data);
+  // Func to get SQUAD
+  useFocusEffect(
+    useCallback(() => {
+      const getGroup = async () => {
+        try {
+          const result = await groupServices.getGroup();
+          if (result && result.data) {
+            setGroup(result.data);
+            setSelectNameSquad(result.data[0]?.name);
+          }
+        } catch (error: any) {
+          console.log("Error fetching groups:", error);
         }
-      } catch (error: any) {
-        console.log("get squad", error);
-      }
-    };
-    getGroup();
-  }, []);
+      };
+
+      getGroup();
+      setIsRefreshing(false);
+    }, [isRefreshing])
+  );
+  // Func to cancel support
   const handleCancelSOS = async () => {
     try {
       // console.log(currentSOS.SOS);
@@ -163,7 +312,6 @@ export default function HomeScreen() {
       }
       setCurrentSOS(null);
       setCheckSOS(false);
-      setForceRender((prev) => !prev);
       Toast.show({
         type: "success",
         text1: "SOS Cancelled",
@@ -173,11 +321,13 @@ export default function HomeScreen() {
       console.log("Error", error.response?.data);
       Toast.show({
         type: "error",
-        text1: "Notification!",
+        text1: "Error!",
         text2: "Error when cancel support!",
       });
     }
   };
+
+  // Check if the user is creating the SOS signal
   useFocusEffect(
     useCallback(() => {
       const handleGetMySOS = async () => {
@@ -188,7 +338,7 @@ export default function HomeScreen() {
             await AsyncStorage.setItem("longitudeSOS", sos.data.longitude);
             await AsyncStorage.setItem("latitudeSOS", sos.data.latitude);
             await AsyncStorage.setItem("accuracySOS", sos.data.accuracy);
-            router.push("/(tabs)/home/sos_map");
+            router.push("/(tabs)/home/SOSMap");
           }
         } catch (error: any) {
           console.log("Error at get my sos", error);
@@ -198,25 +348,73 @@ export default function HomeScreen() {
       handleGetMySOS();
     }, [])
   );
+  const [zoomLevel, setZoomLevel] = useState<number>(14);
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => {
+      const newZoom = Math.min(prev + 1, 20);
+      if (cameraRef.current) {
+        cameraRef.current.zoomTo(newZoom, 500);
+      }
+      return newZoom;
+    });
+  };
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => {
+      const newZoom = Math.max(prev - 1, 1);
+      if (cameraRef.current) {
+        cameraRef.current.zoomTo(newZoom, 500);
+      }
+      return newZoom;
+    });
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
         {checkSOS ? (
-          <Map checkSOS={checkSOS} sos={currentSOS} cameraRef={cameraRef}></Map>
+          <Map
+            checkSOS={checkSOS}
+            sos={currentSOS}
+            cameraRef={cameraRef}
+            otherUserMarkers={otherUserMarkers}
+          ></Map>
         ) : (
-          <Map signal="normal" cameraRef={cameraRef}></Map>
+          <Map
+            signal="normal"
+            cameraRef={cameraRef}
+            otherUserMarkers={otherUserMarkers}
+          ></Map>
         )}
+        <CustomAlert
+          visible={isAlertVisible}
+          title="SOS Completed"
+          message="The SOS you were helping has been completed."
+          onConfirm={() => {
+            console.log("Confirmed!");
+            setAlertVisible(false);
+          }}
+          confirmText="OK"
+          onCancel={() => {
+            console.log("Cancelled!");
+            setAlertVisible(false);
+          }}
+          cancelText="Cancel"
+        />
+        ;
         {openModalCreateSquad && (
           <View className="absolute top-1/2 left-0">
-            <ModalCreateSquad onClose={handleClose} />
+            <ModalCreateSquad
+              onClose={handleClose}
+              onRefresh={() => setIsRefreshing((prev) => !prev)}
+            />
           </View>
         )}
         <TopSheet ref={topSheetRef}>
-          <View className="flex flex-col  gap-3  justify-center items-center w-full">
+          <View className="flex flex-col pt-3 pb-5 gap-3  justify-center items-center w-full">
             <View
-              className="w-[50%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative"
+              className="w-[50%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative "
               style={{
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 4 },
@@ -229,7 +427,7 @@ export default function HomeScreen() {
                 className="text-white text-base font-bold"
                 style={{ fontFamily: "Poppins" }}
               >
-                My family
+                {selectNamesquad}
               </Text>
             </View>
             <View className="h-[120px] w-full pr-5">
@@ -239,11 +437,26 @@ export default function HomeScreen() {
                 showsVerticalScrollIndicator={false}
               >
                 {group.map((squad) => (
-                  <ItemSquad key={squad.id} name={squad.name} id={""} />
+                  <ItemSquad
+                    key={squad.id}
+                    name={squad.name}
+                    id={squad.id}
+                    onPress={() => {
+                      router.push({
+                        pathname: "/(main)/squad",
+                        params: { id: squad.id, name: squad.name },
+                      });
+                      setSelectSquad(squad.id);
+                    }}
+                    onSelectId={() => {
+                      setSelectNameSquad(squad.name);
+                      topSheetRef.current?.close();
+                    }}
+                  />
                 ))}
               </ScrollView>
             </View>
-            <View className="w-full justify-around flex flex-row ">
+            <View className="w-full justify-around flex flex-row  pb-2">
               <Pressable
                 onPress={() => setOpenModalCreateSquad(true)}
                 className="w-[40%] h-[43px] bg-white rounded-[40px] flex justify-center items-center relative border border-[#80C4E9]"
@@ -282,7 +495,6 @@ export default function HomeScreen() {
             </View>
           </View>
         </TopSheet>
-
         {/* HEADER INCLUES AVATAR , MESSAGES*/}
         <View className="absolute top-[45px] w-full flex flex-col items-center px-2">
           <View className="w-full flex flex-row items-center justify-between px-2">
@@ -313,7 +525,7 @@ export default function HomeScreen() {
                 className="text-white text-base font-bold"
                 style={{ fontFamily: "Poppins" }}
               >
-                My family
+                {selectNamesquad}
               </Text>
               <ChevronDown
                 size={20}
@@ -372,14 +584,97 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        {/* Footer */}
+        <View
+          style={{
+            position: "absolute",
+            bottom: isBottomSheetVisible ? 230 : 80,
+            right: isBottomSheetVisible ? 10 : 10,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          {/* Zoom In Button*/}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={handleZoomIn}
+            style={{
+              width: 35,
+              height: 35,
+              backgroundColor: "white",
+              borderRadius: 20,
+              justifyContent: "center",
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+          >
+            <Plus size={20} color="#EB4747" />
+          </TouchableOpacity>
+
+          {/* Zoom out button */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={handleZoomOut}
+            style={{
+              width: 35,
+              height: 35,
+              backgroundColor: "white",
+              borderRadius: 20,
+              justifyContent: "center",
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+          >
+            <Minus size={20} color="#EB4747" />
+          </TouchableOpacity>
+
+          {/* Click to open Bottom Sheet */}
+          {!checkSOS && (
+            <TouchableOpacity activeOpacity={0.8} onPress={toggleBottomSheet}>
+              <Animatable.View
+                animation="rubberBand"
+                iterationCount="infinite"
+                duration={1500}
+                style={{
+                  width: 35,
+                  height: 35,
+                  backgroundColor: "#EB4747",
+                  borderRadius: 20,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
+              >
+                {isBottomSheetVisible ? (
+                  <ChevronDown size={20} color="white" />
+                ) : (
+                  <ChevronUp size={20} color="white" />
+                )}
+              </Animatable.View>
+            </TouchableOpacity>
+          )}
+        </View>
         {/* Bottome Sheet for MEMBER AND PLACES */}
         {checkSOS && (
           <View
             className="absolute bottom-[100px] w-full flex flex-row gap-2"
             style={{
               position: "absolute",
-              bottom: 250,
-              left: 20,
+              bottom: isBottomSheetVisible ? 230 : 80,
+              left: 10,
               zIndex: 0,
             }}
           >
@@ -401,6 +696,12 @@ export default function HomeScreen() {
               ></ImageCustom>
             </TouchableOpacity>
             <TouchableOpacity
+              onPress={() => {
+                router.push({
+                  pathname: "/(tabs)/history/ProfileSOS",
+                  params: { id: currentSOS.SOS.id },
+                });
+              }}
               activeOpacity={0.8}
               className=" h-[40px] px-4 bg-[#EB4747] rounded-full flex flex-row justify-center gap-2 items-center shadow "
               style={{
@@ -415,88 +716,88 @@ export default function HomeScreen() {
                 height={18}
                 color="white"
               ></ImageCustom>
-              <Text className="text-white font-bold text-[13px]">
-                Detail SOS
-              </Text>
+              <Text className="text-white font-bold text-[13px]">Detail</Text>
             </TouchableOpacity>
           </View>
         )}
         <AnimatePresence>
-          <BottomModal>
-            <View className="w-full flex flex-col justify-center items-center">
-              <View
-                className="flex flex-row h-[50px] w-[80%] rounded-[30px] px-1 bg-[#fdb1b1] justify-around items-center"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 5,
-                }}
-              >
-                <Pressable
-                  onPress={() => setActiveTab(true)}
-                  className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
-                    activeTab ? "bg-white " : "bg-transparent"
-                  }`}
-                  style={[
-                    activeTab && {
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 4,
-                      elevation: 2,
-                    },
-                  ]}
-                >
-                  <Text
-                    className={`font-bold ${
-                      activeTab ? "text-[#EB4747]" : "text-white"
-                    }`}
-                  >
-                    Member
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setActiveTab(false)}
-                  className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
-                    activeTab === false ? "bg-white" : "bg-transparent"
-                  }`}
-                  style={[
-                    activeTab === false && {
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 4,
-                      elevation: 2,
-                    },
-                  ]}
-                >
-                  <Text
-                    className={`font-bold ${
-                      activeTab === false ? "text-[#EB4747]" : "text-white"
-                    }`}
-                  >
-                    Places
-                  </Text>
-                </Pressable>
-              </View>
-              {activeTab && (
-                <ScrollView
-                  style={{ width: "100%", flexGrow: 1 }}
-                  contentContainerStyle={{
-                    paddingVertical: 20,
-                    gap: 25,
+          {isBottomSheetVisible && (
+            <BottomModal>
+              <View className="w-full flex flex-col justify-center items-center">
+                <View
+                  className="flex flex-row h-[50px] w-[80%] rounded-[30px] px-1 bg-[#fdb1b1] justify-around items-center"
+                  style={{
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 5,
                   }}
-                  showsVerticalScrollIndicator={false}
                 >
-                  <MemberCard active />
-                  <MemberCard />
-                  <MemberCard />
-                </ScrollView>
-              )}
-            </View>
-          </BottomModal>
+                  <Pressable
+                    onPress={() => setActiveTab(true)}
+                    className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
+                      activeTab ? "bg-white " : "bg-transparent"
+                    }`}
+                    style={[
+                      activeTab && {
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      },
+                    ]}
+                  >
+                    <Text
+                      className={`font-bold ${
+                        activeTab ? "text-[#EB4747]" : "text-white"
+                      }`}
+                    >
+                      Member
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setActiveTab(false)}
+                    className={`w-1/2 h-[85%] rounded-[30px] flex justify-center items-center ${
+                      activeTab === false ? "bg-white" : "bg-transparent"
+                    }`}
+                    style={[
+                      activeTab === false && {
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      },
+                    ]}
+                  >
+                    <Text
+                      className={`font-bold ${
+                        activeTab === false ? "text-[#EB4747]" : "text-white"
+                      }`}
+                    >
+                      Places
+                    </Text>
+                  </Pressable>
+                </View>
+                {activeTab && (
+                  <ScrollView
+                    style={{ width: "100%", flexGrow: 1 }}
+                    contentContainerStyle={{
+                      paddingVertical: 20,
+                      gap: 25,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <MemberCard active />
+                    <MemberCard />
+                    <MemberCard />
+                  </ScrollView>
+                )}
+              </View>
+            </BottomModal>
+          )}
         </AnimatePresence>
       </View>
     </GestureHandlerRootView>

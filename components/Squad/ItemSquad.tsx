@@ -4,11 +4,16 @@ import Avatar from "../Image/Avatar";
 interface itemSquadProps {
   id: string;
   name: string;
+  onPress?: () => void;
+  onSelectId?: (id: string) => void;
 }
-const ItemSquad = ({ id, name }: itemSquadProps) => {
+const ItemSquad = ({ id, name, onPress, onSelectId }: itemSquadProps) => {
   return (
     <View className=" flex flex-row justify-between w-full items-center">
-      <View className="flex flex-row w-full gap-3">
+      <Pressable
+        onPress={() => onSelectId?.(id)}
+        className="flex flex-row w-full gap-3"
+      >
         <Avatar
           width={50}
           height={50}
@@ -18,8 +23,13 @@ const ItemSquad = ({ id, name }: itemSquadProps) => {
           <Text className="font-bold text-[#404040] text-[15px] ">{name}</Text>
           <Text>(2 members)</Text>
         </View>
-      </View>
-      <Pressable>
+      </Pressable>
+      <Pressable
+        onPress={() => {
+          onPress?.();
+        }}
+        style={{ pointerEvents: "auto", width: 30, height: 30 }}
+      >
         <Image
           source={{
             uri: "https://img.icons8.com/?size=100&id=4511GGVppfIx&format=png&color=000000",

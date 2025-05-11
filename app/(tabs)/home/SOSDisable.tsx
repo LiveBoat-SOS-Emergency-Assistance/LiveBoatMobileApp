@@ -6,9 +6,17 @@ import { sosService } from "../../../services/sos";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomButton from "../../../components/Button/CustomButton";
 import Toast from "react-native-toast-message";
-
-export default function SOSDiable() {
+import { useSocket } from "../../../hooks/useLiveLocation";
+interface SocketEvents {
+  TOSERVER_SOS_FINISHED: string;
+}
+export default function SOSDisable() {
   const [loading, setLoading] = useState(false);
+  const { socket, userId, registerCommonSocketEvents } = useSocket();
+  const SOCKET_EVENTS: SocketEvents = {
+    TOSERVER_SOS_FINISHED: "TOSERVER_SOS_FINISHED",
+  };
+
   const handleOk = async () => {
     try {
       setLoading(true);
@@ -16,7 +24,8 @@ export default function SOSDiable() {
       const latitude = await AsyncStorage.getItem("latitudeSOS");
       const accuracy = await AsyncStorage.getItem("accuracySOS");
       const sosId = await AsyncStorage.getItem("sosId");
-
+      console.log("socket emit", userId);
+      socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
       await sosService.sos_edit(sosId!, {
         longitude: longitude,
         latitude: latitude,

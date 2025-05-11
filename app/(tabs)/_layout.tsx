@@ -2,11 +2,9 @@ import { Tabs, useSegments } from "expo-router";
 import { View, Image, Keyboard } from "react-native";
 import React, { useEffect, useState } from "react";
 import SOSButton from "../../components/Button/SOSButton";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 export default function BottomNavigation() {
   const segments = useSegments();
-  const hiddenScreens = ["sos_alert", "sos_map", "sos_disable"];
+  const hiddenScreens = ["SOSAlert", "SOSMap", "SOSDisable", "DetailSOS"];
   const isHiddenScreen = hiddenScreens.some((screen) =>
     segments.includes(screen)
   );
@@ -17,13 +15,13 @@ export default function BottomNavigation() {
     const keyboardDidShowListener = Keyboard.addListener(
       "keyboardDidShow",
       () => {
-        setKeyboardVisible(true); // Set to true when keyboard is shown
+        setKeyboardVisible(true);
       }
     );
     const keyboardDidHideListener = Keyboard.addListener(
       "keyboardDidHide",
       () => {
-        setKeyboardVisible(false); // Set to false when keyboard is hidden
+        setKeyboardVisible(false);
       }
     );
 
@@ -86,6 +84,7 @@ export default function BottomNavigation() {
       <Tabs.Screen
         name="donation"
         options={{
+          headerShown: false,
           tabBarIcon: ({ focused }: { focused: boolean }) => (
             <Image
               source={{
