@@ -59,6 +59,7 @@ const Map = ({
   const [selectedRescuer, setSelectedRescuer] = useState<RescuerItem | null>(
     null
   );
+  const [selectUser, setSelectUser] = useState<Marker | null>(null);
   console.log("Markers being passed to Map:", otherUserMarkers);
 
   useEffect(() => {
@@ -188,35 +189,6 @@ const Map = ({
                 />
               </MapboxGL.ShapeSource>
             )}
-            {/* List Rescuer is supporting me */}
-            {/* {listRescuer &&
-              listRescuer
-                .filter(
-                  (rescuer) =>
-                    rescuer.longitude !== otherSOS?.longitude ||
-                    rescuer.latitude !== otherSOS?.latitude
-                )
-                .map((rescuer) => (
-                  <MapboxGL.PointAnnotation
-                    id={`rescuer-marker-${rescuer.id}`}
-                    key={rescuer.id}
-                    coordinate={[
-                      parseFloat(rescuer.longitude),
-                      parseFloat(rescuer.latitude),
-                    ]}
-                  >
-                    <View style={{ alignItems: "center" }}>
-                      {selectedRescuer?.id === rescuer.id && (
-                        <View style={{ marginBottom: 4 }}>
-                          <View style={styles.popupBoard}>
-                            <Text>{rescuer.User.phone}</Text>
-                          </View>
-                        </View>
-                      )}
-                      <View style={styles.rescuerMarker} />
-                    </View>
-                  </MapboxGL.PointAnnotation>
-                ))} */}
 
             {/* My location */}
 

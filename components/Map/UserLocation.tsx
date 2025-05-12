@@ -1,5 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, View, StyleSheet, Image } from "react-native";
+import {
+  Animated,
+  View,
+  StyleSheet,
+  Image,
+  Touchable,
+  TouchableOpacity,
+  Vibration,
+} from "react-native";
 import { Easing } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import MapboxGL from "@rnmapbox/maps";
@@ -72,7 +80,15 @@ const UserLocation = ({
       allowOverlap={true}
       anchor={{ x: 0.5, y: 0.5 }}
     >
-      <View style={[styles.container, { width: size * 2, height: size * 2 }]}>
+      <TouchableOpacity
+        activeOpacity={1}
+        style={[styles.container, { width: size * 2, height: size * 2 }]}
+        onLongPress={() => {
+          Vibration.vibrate(100);
+
+          console.log("Marker pressed");
+        }}
+      >
         <Animated.View
           style={{
             transform: [{ scale }],
@@ -93,7 +109,7 @@ const UserLocation = ({
             onError={() => console.log("Image failed to load")}
           />
         </Animated.View>
-      </View>
+      </TouchableOpacity>
     </MapboxGL.MarkerView>
   );
 };

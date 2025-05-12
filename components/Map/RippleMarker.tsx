@@ -11,6 +11,7 @@ interface RippleMarkerProps {
   type?: string;
   userIDSOS?: number;
   isRescuer?: boolean;
+  onPress?: () => void;
 }
 
 const RippleMarker = ({
@@ -19,6 +20,7 @@ const RippleMarker = ({
   type,
   userIDSOS,
   isRescuer,
+  onPress,
 }: RippleMarkerProps) => {
   const rippleScale = useRef(new Animated.Value(0)).current;
   const rippleOpacity = useRef(new Animated.Value(1)).current;

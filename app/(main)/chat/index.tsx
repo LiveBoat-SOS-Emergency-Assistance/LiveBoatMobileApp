@@ -10,13 +10,45 @@ import Toast from "react-native-toast-message";
 import { notifcationService } from "../../../services/notification";
 
 const AlertTab = ({ listSOS }: { listSOS: any[] }) => {
+  const groupedNotifications: Record<string, any[]> = listSOS.reduce(
+    (acc: Record<string, any[]>, item) => {
+      const type = item.Notification.type;
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(item);
+      return acc;
+    },
+    {}
+  );
   return (
-    <View className="flex-1 pt-16 bg-white">
+    <View className="flex-1 pt-5 bg-white">
       <View className="flex flex-col gap-1">
-        {listSOS.length > 0 ? (
-          listSOS.map((item) => <ChatItem notification={item} key={item.id} />)
+        {Object.keys(groupedNotifications).length > 0 ? (
+          Object.entries(groupedNotifications).map(
+            ([type, notifications]: [string, any[]]) => {
+              // Sắp xếp danh sách thông báo theo `created_at` (mới nhất trước)
+              const sortedNotifications = notifications.sort(
+                (a, b) =>
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime()
+              );
+              const lastest = sortedNotifications[0];
+
+              return (
+                <ChatItem
+                  key={type}
+                  notification={{
+                    type,
+                    count: notifications.length,
+                    lastest,
+                  }}
+                />
+              );
+            }
+          )
         ) : (
-          <View className="pt-5 justify-center items-center">
+          <View className="justify-center items-center">
             <Image
               style={{ width: 200, height: 200 }}
               className="object-cover"
@@ -189,6 +221,7 @@ export default function ChatScreen() {
       // console.log("hihi", result.data);
       setListSOSNotification(result.data);
     } catch (error: any) {
+      console.error(error.response.data.error);
       console.log(error);
     }
   };
