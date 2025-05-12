@@ -1,87 +1,47 @@
-import { View, Text, Dimensions, FlatList, Pressable } from "react-native";
-import React, { useEffect, useState } from "react";
-import { TabView, SceneMap, TabBar } from "react-native-tab-view";
+import {
+  FlatList,
+  Text,
+  TouchableOpacity,
+  View,
+  type TouchableOpacity as TouchableOpacityType,
+} from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronDown, Filter, Users } from "lucide-react-native";
+import DropDownPicker from "react-native-dropdown-picker";
 import ChatItem from "../../../components/Card/ChatItem";
-import { Image } from "react-native";
-import { groupServices } from "../../../services/group";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
-import ImageCustom from "../../../components/Image/Image";
-import Toast from "react-native-toast-message";
 import { notifcationService } from "../../../services/notification";
-
-const AlertTab = ({ listSOS }: { listSOS: any[] }) => {
-  const groupedNotifications: Record<string, any[]> = listSOS.reduce(
-    (acc: Record<string, any[]>, item) => {
-      const type = item.Notification.type;
-      if (!acc[type]) {
-        acc[type] = [];
+import Toast from "react-native-toast-message";
+import { groupServices } from "../../../services/group";
+const ChatScreen = () => {
+  const [selectedValue, setSelectedValue] = useState<string>("alert");
+  const [open, setOpen] = useState(false);
+  const [dropdownWidth, setDropdownWidth] = useState(0);
+  const touchableRef = useRef<React.ElementRef<typeof TouchableOpacity> | null>(
+    null
+  );
+  const [historyChat, setHistoryChat] = useState<any[]>([]);
+  const [listInvite, setListInvite] = useState<any[]>([]);
+  const options = [
+    { label: "Alert", value: "alert" },
+    { label: "Chat", value: "chat" },
+    { label: "Squad", value: "squad" },
+    { label: "Invite", value: "invite" },
+  ];
+  const handleLayout = () => {
+    touchableRef.current?.measure(
+      (
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        pageX: number,
+        pageY: number
+      ) => {
+        setDropdownWidth(width);
       }
-      acc[type].push(item);
-      return acc;
-    },
-    {}
-  );
-  return (
-    <View className="flex-1 pt-5 bg-white">
-      <View className="flex flex-col gap-1">
-        {Object.keys(groupedNotifications).length > 0 ? (
-          Object.entries(groupedNotifications).map(
-            ([type, notifications]: [string, any[]]) => {
-              // Sắp xếp danh sách thông báo theo `created_at` (mới nhất trước)
-              const sortedNotifications = notifications.sort(
-                (a, b) =>
-                  new Date(b.created_at).getTime() -
-                  new Date(a.created_at).getTime()
-              );
-              const lastest = sortedNotifications[0];
-
-              return (
-                <ChatItem
-                  key={type}
-                  notification={{
-                    type,
-                    count: notifications.length,
-                    lastest,
-                  }}
-                />
-              );
-            }
-          )
-        ) : (
-          <View className="justify-center items-center">
-            <Image
-              style={{ width: 200, height: 200 }}
-              className="object-cover"
-              source={require("../../../assets/images/404.jpg")}
-            />
-            <Text className="font-semibold text-[#404040] ">
-              No messages... but we're thinking of you!
-            </Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-};
-const GroupTab = () => (
-  <View className="flex-1  items-center pt-20 bg-white">
-    <Image
-      style={{ width: 200, height: 200 }}
-      className="object-cover"
-      source={require("../../../assets/images/404.jpg")}
-    />
-    <Text className="font-semibold text-[#404040] ">
-      No messages... but we're thinking of you!
-    </Text>
-  </View>
-);
-const InviteTab = ({
-  listInvite,
-  setListInvite,
-}: {
-  listInvite: any[];
-  setListInvite: React.Dispatch<React.SetStateAction<any[]>>;
-}) => {
+    );
+  };
+  // Function for Invite Tab
   const handleAcceptInvite = async (inviteId: string) => {
     try {
       console.log(inviteId);
@@ -141,166 +101,139 @@ const InviteTab = ({
       });
     }
   };
+  const renderListChat = async (route: string) => {
+    if (route === "alert") {
+      try {
+        const result = await notifcationService.get_notification();
+
+        const groupedNotifications = (
+          result.data as Array<{
+            Notification: { type: string };
+            created_at: string;
+          }>
+        ).reduce((acc: Record<string, any[]>, item) => {
+          const type = item.Notification.type;
+          if (!acc[type]) {
+            acc[type] = [];
+          }
+          acc[type].push(item);
+          return acc;
+        }, {});
+
+        const groupedList = Object.entries(groupedNotifications).map(
+          ([type, notifications]) => {
+            const sorted = [...notifications].sort(
+              (a, b) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime()
+            );
+            return {
+              type,
+              notification: sorted[0].Notification,
+            };
+          }
+        );
+
+        setHistoryChat(groupedList);
+      } catch (error: any) {
+        console.log(error);
+      }
+    } else if (route === "invite") {
+      try {
+        const result = await groupServices.getInvites();
+        const pendingInvites = result.data.filter(
+          (invite: any) => invite.status === "PENDING"
+        );
+        setListInvite(pendingInvites);
+      } catch (error: any) {
+        console.log(error);
+      }
+    } else {
+      setHistoryChat([]);
+    }
+  };
+
+  useEffect(() => {
+    renderListChat(selectedValue);
+  }, [selectedValue]);
+
   return (
-    <View className="flex-1 bg-white pt-5">
-      {listInvite.length > 0 ? (
-        <FlatList
-          data={listInvite}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View className="px-4 py-3 border-b border-gray-200 flex flex-row justify-between items-center">
-              <View className="flex flex-col">
-                <Text className="text-lg font-bold text-[#404040]">
-                  {item.Group.name}
-                </Text>
-                <Text className="text-gray-500">
-                  {item.Group.description || "No description"}
-                </Text>
-              </View>
-              <View className="flex flex-row gap-2">
-                <Pressable onPress={() => handleAcceptInvite(item.id)}>
-                  <ImageCustom
-                    width={20}
-                    height={20}
-                    color="#009900"
-                    source="https://img.icons8.com/?size=100&id=pmwTGmuQrtwg&format=png&color=000000"
-                  ></ImageCustom>
-                </Pressable>
-                <Pressable onPress={() => handleRejectInvite(item.id)}>
-                  <ImageCustom
-                    width={20}
-                    height={20}
-                    color="red"
-                    source="https://img.icons8.com/?size=100&id=84073&format=png&color=000000"
-                  ></ImageCustom>
-                </Pressable>
-              </View>
+    <View className="flex flex-col w-full flex-1 h-full bg-white">
+      <View className="flex-row items-center border-b border-gray-200  justify-between py-4 px-5 ">
+        {/* Left */}
+        <View className="relative z-50">
+          <TouchableOpacity
+            ref={touchableRef}
+            onPress={() => {
+              setOpen(!open);
+              setTimeout(handleLayout, 0);
+            }}
+            onLayout={handleLayout}
+            activeOpacity={0.9}
+            className="flex-row items-center gap-2 px-2 py-2 rounded-full bg-gray-50"
+          >
+            <Users size={20} color="#6B7280" />
+            <Text className="font-medium">
+              {selectedValue
+                ? options.find((opt) => opt.value === selectedValue)?.label ||
+                  "Alert"
+                : "Alert"}
+            </Text>
+            <Text className="text-sm bg-green-100 text-green-600 px-2 rounded-full">
+              232
+            </Text>
+            <ChevronDown size={16} color="#6B7280" />
+          </TouchableOpacity>
+          {open && (
+            <View
+              style={{
+                width: dropdownWidth,
+              }}
+              className="absolute top-full z-50 mt-2"
+            >
+              <DropDownPicker
+                open={open}
+                value={selectedValue}
+                items={options}
+                setOpen={setOpen}
+                setValue={setSelectedValue}
+                multiple={false}
+                placeholder=""
+                style={{
+                  backgroundColor: "#fff",
+                  borderColor: "#6B7280",
+                  display: "none",
+                }}
+                dropDownContainerStyle={{
+                  backgroundColor: "#fff",
+                  borderColor: "#ebebec",
+                }}
+              />
             </View>
           )}
-        />
-      ) : (
-        <View className="flex-1 justify-center items-center">
-          <Image
-            style={{ width: 200, height: 200 }}
-            source={require("../../../assets/images/404.jpg")}
-          />
-          <Text className="font-semibold text-[#404040] mt-4">
-            No messages... but we're thinking of you!
-          </Text>
         </View>
-      )}
-    </View>
-  );
-};
-const ChatTab = () => (
-  <View className="flex-1  items-center pt-20 bg-white">
-    <Image
-      style={{ width: 200, height: 200 }}
-      className="object-cover"
-      source={require("../../../assets/images/404.jpg")}
-    />
-    <Text className="font-semibold text-[#404040] ">
-      No messages... but we're thinking of you!
-    </Text>
-  </View>
-);
 
-export default function ChatScreen() {
-  const [index, setIndex] = useState(0);
-  const [listInvite, setListInvite] = useState<any[]>([]);
-  const [listSOSNotification, setListSOSNotification] = useState<any[]>([]);
-  const [routes] = useState([
-    { key: "alert", title: "Alert" },
-    { key: "group", title: "Group" },
-    { key: "invite", title: "Invite" },
-    { key: "chat", title: "Chat" },
-  ]);
-  const getNotificationSOS = async () => {
-    try {
-      const result = await notifcationService.get_notification();
-      // console.log("hihi", result.data);
-      setListSOSNotification(result.data);
-    } catch (error: any) {
-      console.error(error.response.data.error);
-      console.log(error);
-    }
-  };
-  useEffect(() => {
-    getNotificationSOS();
-  }, []);
-  // const renderScene = SceneMap({
-  //   alert: AlertTab,
-  //   group: GroupTab,
-  //   chat: ChatTab,
-  //   invite: InviteTab,
-  // });
-  const renderScene = ({ route }: { route: any }) => {
-    switch (route.key) {
-      case "alert":
-        return <AlertTab listSOS={listSOSNotification} />;
-      case "group":
-        return <GroupTab />;
-      case "invite":
-        return (
-          <InviteTab listInvite={listInvite} setListInvite={setListInvite} />
-        );
-      case "chat":
-        return <ChatTab />;
-      default:
-        return null;
-    }
-  };
+        {/* Right */}
+        <View className="flex-row   items-center gap-2 px-2 py-2 rounded-full bg-[#fafaff]">
+          <Filter size={20} color="#6B7280" />
+          <Text className="font-medium">Oldest</Text>
+          <ChevronDown size={16} color="#6B7280" />
+        </View>
+      </View>
 
-  const screenWidth = Dimensions.get("window").width;
-
-  const getInvite = async () => {
-    try {
-      const result = await groupServices.getInvites();
-      const pendingInvites = result.data.filter(
-        (invite: any) => invite.status === "PENDING"
-      );
-      setListInvite(pendingInvites);
-    } catch (error: any) {
-      console.error(error);
-    }
-  };
-  useEffect(() => {
-    getInvite();
-  }, []);
-  return (
-    <View className="flex-2 w-full h-full bg-white flex flex-col gap-3">
-      <Text className="font-bold text-[28px] text-[#404040] px-8 py-3">
-        My Inbox
-      </Text>
-
-      <View
-        style={{
-          width: screenWidth * 0.9,
-          alignSelf: "center",
-          flex: 1,
-        }}
-      >
-        <TabView
-          navigationState={{ index, routes }}
-          renderScene={renderScene}
-          onIndexChange={setIndex}
-          initialLayout={{ width: screenWidth * 0.9 }}
-          renderTabBar={(props) => (
-            <TabBar
-              {...props}
-              indicatorStyle={{
-                backgroundColor: "#EB4747",
-                height: 4,
-                borderRadius: 5,
-              }}
-              style={{ backgroundColor: "white", elevation: 2 }}
-              activeColor="#EB4747"
-              inactiveColor="#9f9f9f"
-              pressColor="#fddede"
-            />
+      <View className="flex-1 justify-center px-5">
+        <FlatList
+          data={selectedValue === "invite" ? listInvite : historyChat}
+          keyExtractor={(item, index) => `key-${index}`}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <View className="mb-4">
+              <ChatItem notification={item.notification} />
+            </View>
           )}
         />
       </View>
     </View>
   );
-}
+};
+export default ChatScreen;

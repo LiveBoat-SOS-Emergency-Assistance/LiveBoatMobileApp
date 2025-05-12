@@ -30,8 +30,6 @@ const Layout = () => {
             options={{ title: SCREENS.MAIN.title }}
           />
 
-          {/* <Stack.Screen name="(main)" />
-          <Stack.Screen name="(main)/chat/chatbot" /> */}
           <Stack.Screen
             name={SCREENS.LOGIN.name}
             options={{
@@ -84,6 +82,7 @@ const Layout = () => {
               ),
             }}
           />
+
           <Stack.Screen
             name={SCREENS.FORGOT_PASSWORD.name}
             options={{
