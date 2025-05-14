@@ -23,6 +23,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "../../../context/AuthContext";
 import { Profile } from "../../../types/Profile";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 const EditProfile = () => {
   const [text, setText] = useState("");
@@ -203,7 +204,19 @@ const EditProfile = () => {
           </View>
         </View>
       )}
-
+      <View className="flex-row w-full pt-14 bg-white">
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.back()}
+          className="flex-row w-[30px] items-center gap-2  px-5 "
+        >
+          <ImageCustom
+            width={25}
+            height={25}
+            source="https://img.icons8.com/?size=100&id=20i9yZTsnnmg&format=png&color=000000"
+          />
+        </TouchableOpacity>
+      </View>
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,

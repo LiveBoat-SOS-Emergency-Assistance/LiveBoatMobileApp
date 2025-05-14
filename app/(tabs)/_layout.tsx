@@ -4,7 +4,13 @@ import React, { useEffect, useState } from "react";
 import SOSButton from "../../components/Button/SOSButton";
 export default function BottomNavigation() {
   const segments = useSegments();
-  const hiddenScreens = ["SOSAlert", "SOSMap", "SOSDisable", "DetailSOS"];
+  const hiddenScreens = [
+    "SOSAlert",
+    "SOSMap",
+    "SOSDisable",
+    "DetailSOS",
+   
+  ];
   const isHiddenScreen = hiddenScreens.some((screen) =>
     segments.includes(screen)
   );

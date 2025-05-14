@@ -60,7 +60,7 @@ const Map = ({
     null
   );
   const [selectUser, setSelectUser] = useState<Marker | null>(null);
-  console.log("Markers being passed to Map:", otherUserMarkers);
+  // console.log("Markers being passed to Map:", otherUserMarkers);
 
   useEffect(() => {
     const fetchLocation = async () => {

@@ -6,12 +6,15 @@ import {
   type TouchableOpacity as TouchableOpacityType,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
-import { ChevronDown, Filter, Users } from "lucide-react-native";
+import { ChevronDown, ChevronLeft, Filter, Users } from "lucide-react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import ChatItem from "../../../components/Card/ChatItem";
 import { notifcationService } from "../../../services/notification";
 import Toast from "react-native-toast-message";
 import { groupServices } from "../../../services/group";
+import InviteItem from "../../../components/Invite/InviteItem";
+import { router } from "expo-router";
+import ImageCustom from "../../../components/Image/Image";
 const ChatScreen = () => {
   const [selectedValue, setSelectedValue] = useState<string>("alert");
   const [open, setOpen] = useState(false);
@@ -148,6 +151,14 @@ const ChatScreen = () => {
       } catch (error: any) {
         console.log(error);
       }
+    } else if (route === "squad") {
+      try {
+        const result = await groupServices.getGroup();
+        console.log(result.data);
+        setHistoryChat(result.data);
+      } catch (error: any) {
+        console.log(error);
+      }
     } else {
       setHistoryChat([]);
     }
@@ -157,10 +168,31 @@ const ChatScreen = () => {
     renderListChat(selectedValue);
   }, [selectedValue]);
 
+  const handlePress = (Id: number, name: string) => {
+    router.push({
+      pathname: "(main)/chat/ChatBox",
+      params: { Id, name },
+    });
+  };
+
   return (
     <View className="flex flex-col w-full flex-1 h-full bg-white">
+      <View className="w-full pt-14 flex flex-row items-center">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="flex-row items-center gap-2 px-5"
+        >
+          <ImageCustom
+            width={25}
+            height={25}
+            source="https://img.icons8.com/?size=100&id=20i9yZTsnnmg&format=png&color=000000"
+          />
+        </TouchableOpacity>
+        <Text className="text-[24px] text-[#404040] font-bold">My Inbox</Text>
+      </View>
       <View className="flex-row items-center border-b border-gray-200  justify-between py-4 px-5 ">
         {/* Left */}
+
         <View className="relative z-50">
           <TouchableOpacity
             ref={touchableRef}
@@ -226,11 +258,23 @@ const ChatScreen = () => {
           data={selectedValue === "invite" ? listInvite : historyChat}
           keyExtractor={(item, index) => `key-${index}`}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <View className="mb-4">
-              <ChatItem notification={item.notification} />
-            </View>
-          )}
+          renderItem={({ item }) =>
+            selectedValue === "invite" ? (
+              <InviteItem
+                item={item}
+                onAccept={handleAcceptInvite}
+                onReject={handleRejectInvite}
+              ></InviteItem>
+            ) : (
+              <View className="mb-4">
+                <ChatItem
+                  notification={item.notification}
+                  name={item?.name}
+                  onPress={() => handlePress(item?.id, item?.name)}
+                />
+              </View>
+            )
+          }
         />
       </View>
     </View>

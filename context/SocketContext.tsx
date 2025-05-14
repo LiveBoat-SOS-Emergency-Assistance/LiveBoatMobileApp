@@ -28,10 +28,18 @@ interface SocketContextType {
     longitude: number,
     accuracy: number
   ) => void;
+  messages: any[];
   setUserInfo: (userType: string) => void;
   displayOrUpdateMarkers: (data: Marker[]) => void;
   registerCommonSocketEvents: () => void;
   displayOfflineMarker: (userId: number) => void;
+  sendMessage: (
+    senderId: number,
+    groupId: number,
+    content: string,
+    mediaFiles: any[]
+  ) => Promise<boolean>;
+  joinGroup: (groupId: number, userId: number) => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -46,6 +54,12 @@ const SOCKET_EVENTS = {
   TOSERVER_SET_USER_INFO: "TOSERVER_SET_USER_INFO",
   TOCLIENT_SOS_FINISHED: "TOCLIENT_SOS_FINISHED",
   TOCLIENT_HELPER_LOCATIONS: "TOCLIENT_HELPER_LOCATIONS",
+
+  //
+  RECEIVE_MESSAGE: "receive_message",
+  CHAT_HISTORY: "chat_history",
+  JOIN_GROUP: "join_group",
+  SEND_MESSAGE: "send_message",
 };
 
 const serverUrl = "https://liveboat-backend.onrender.com";
@@ -54,6 +68,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [userId, setUserId] = useState<number>(0);
+  const [messages, setMessages] = useState<any[]>([]);
   const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
   const [otherUserMarkers, setOtherUserMarkers] = useState<
     Record<number, Marker>
@@ -70,7 +85,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       socketRef.current.on("disconnect", () => {
-        console.log("❌ Disconnected from server");
+        console.log("❌ Disconnected from server live location");
       });
 
       socketRef.current.on("connect_error", (error: Error) => {
@@ -90,7 +105,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     socketRef.current.on(
       SOCKET_EVENTS.TOCLIENT_COMMON_GROUPS_LOCATIONS,
       (data: Marker[]) => {
-        console.log("Common groups locations:", data);
+        // console.log("Common groups locations:", data);
         displayOrUpdateMarkers(data);
       }
     );
@@ -98,7 +113,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     socketRef.current.on(
       SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED,
       (data: any) => {
-        console.log("User disconnected:", data.userId);
+        console.log("User disconnected live location:", data.userId);
         setOtherUserMarkers((prevMarkers) => {
           const updatedMarkers = { ...prevMarkers };
           delete updatedMarkers[data.userId];
@@ -106,6 +121,18 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }
     );
+    // socketRef?.current?.on(SOCKET_EVENTS.RECEIVE_MESSAGE, (data) => {
+    //   console.log("Received message in React Native:", data);
+    //   setMessages((prevMessages) => {
+    //     const newMessages = [...prevMessages, data];
+    //     // console.log("Updated messages:", newMessages);
+    //     return newMessages;
+    //   });
+    // });
+
+    // socketRef?.current?.on(SOCKET_EVENTS.CHAT_HISTORY, (data) => {
+    //   setMessages(data);
+    // });
   };
 
   const displayOrUpdateMarkers = (data: Marker[]) => {
@@ -173,6 +200,48 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       },
     }));
   };
+  const sendMessage = async (
+    senderId: number,
+    groupId: number,
+    content: string,
+    mediaFiles: any[]
+  ) => {
+    if (!socketRef.current) return false;
+
+    try {
+      if (mediaFiles.length > 3) {
+        throw new Error("You can only upload up to 3 media files.");
+      }
+
+      let mediaUrls = [];
+      if (mediaFiles.length > 0) {
+        // mediaUrls = await uploadMediaFiles(mediaFiles);
+      }
+
+      const data = {
+        senderId,
+        groupId,
+        content,
+        // mediaUrls,
+      };
+
+      socketRef.current.emit(SOCKET_EVENTS.SEND_MESSAGE, data);
+      return true;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      Toast.show({ type: "error", text1: "Error", text2: "" });
+      return false;
+    }
+  };
+
+  const joinGroup = (groupId: number, userId: number) => {
+    if (!socketRef.current) {
+      console.warn("Socket is not initialized");
+      return;
+    }
+    console.log(`Emitting join_group: groupId=${groupId}, userId=${userId}`);
+    socketRef.current.emit(SOCKET_EVENTS.JOIN_GROUP, { groupId, userId });
+  };
 
   useEffect(() => {
     initializeSocket();
@@ -202,6 +271,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         displayOrUpdateMarkers,
         registerCommonSocketEvents,
         displayOfflineMarker,
+        sendMessage,
+        messages,
+        joinGroup,
       }}
     >
       {children}

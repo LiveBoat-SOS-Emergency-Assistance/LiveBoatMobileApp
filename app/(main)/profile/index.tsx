@@ -35,6 +35,18 @@ export default function Profile() {
   };
   return (
     <View className="flex-1 bg-white">
+      <View className="w-full mt-14">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="flex-row w-[30px] items-center gap-2  px-5"
+        >
+          <ImageCustom
+            width={25}
+            height={25}
+            source="https://img.icons8.com/?size=100&id=20i9yZTsnnmg&format=png&color=000000"
+          />
+        </TouchableOpacity>
+      </View>
       <ScrollView>
         <View className="items-center ">
           {/* <Image
