@@ -7,7 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Avatar from "../../../components/Image/Avatar";
 import { useAuth } from "../../../context/AuthContext";
 import DonationCard from "../../../components/Card/DonationCard";
@@ -19,11 +19,12 @@ import SOSCard from "../../../components/Card/SOSCard";
 import ImageCustom from "../../../components/Image/Image";
 import DonationItem from "../../../components/DonationItem/DonationItem";
 import { router } from "expo-router";
-
+import { charityServices } from "../../../services/charity";
 export default function Donation() {
   const { profile } = useAuth();
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth / 3;
+  const [listCharity, setListCharity] = useState([]);
   const visibleWidth = cardWidth * 2.5;
   const data = [
     { id: "1", title: "Item One" },
@@ -31,6 +32,18 @@ export default function Donation() {
     { id: "3", title: "Item Three" },
   ];
 
+  useEffect(() => {
+    const fetchCharity = async () => {
+      try {
+        const result = await charityServices.get_all_charity(3, 1, "ACTIVE");
+        console.log(result.data);
+        setListCharity(result.data);
+      } catch (error: any) {
+        console.log(error);
+      }
+    };
+    fetchCharity();
+  }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "white" }}>
       <View
@@ -57,9 +70,9 @@ export default function Donation() {
             </View>
           </View>
           <View className="flex flex-row w-full px-5 mt-0 gap-4 justify-start items-center">
-            <DonationCard />
-            <DonationCard />
-            <DonationCard />
+            {listCharity.map((item: any, index: number) => {
+              return <DonationCard key={index} charity={item} />;
+            })}
             <View className="h-[100px] flex justify-center items-center pb-8">
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/donation/SupportDiary")}

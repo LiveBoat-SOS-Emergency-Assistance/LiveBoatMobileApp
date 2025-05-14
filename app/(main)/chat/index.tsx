@@ -205,7 +205,7 @@ const ChatScreen = () => {
             className="flex-row items-center gap-2 px-2 py-2 rounded-full bg-gray-50"
           >
             <Users size={20} color="#6B7280" />
-            <Text className="font-medium">
+            <Text className="font-medium text-[#EB4242]">
               {selectedValue
                 ? options.find((opt) => opt.value === selectedValue)?.label ||
                   "Alert"

@@ -9,7 +9,7 @@ export default function BottomNavigation() {
     "SOSMap",
     "SOSDisable",
     "DetailSOS",
-   
+    "chatbot",
   ];
   const isHiddenScreen = hiddenScreens.some((screen) =>
     segments.includes(screen)

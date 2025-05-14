@@ -99,14 +99,7 @@ const Layout = () => {
                 ),
               }}
             />
-            {/* <Stack.Screen
-            name="(main)"
-            options={{
-              headerShown: false,
-              title: "",
-              headerShadowVisible: false,
-            }}
-          /> */}
+
             <Stack.Screen
               name={SCREENS.CHANGE_PASSWORD.name}
               options={{

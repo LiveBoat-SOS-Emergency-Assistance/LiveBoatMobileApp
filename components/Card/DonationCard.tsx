@@ -1,7 +1,17 @@
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
+interface Charity {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
 interface DonationItemProps {
   onPress?: () => void;
+  charity: Charity;
 }
 export default function DonationCard({ onPress }: DonationItemProps) {
   return (
