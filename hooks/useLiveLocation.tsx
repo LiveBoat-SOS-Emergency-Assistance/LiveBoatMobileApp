@@ -186,7 +186,7 @@ export const useSocket = (): UseSocketReturn => {
     socketRef.current.on(
       SOCKET_EVENTS.TOCLIENT_COMMON_GROUPS_LOCATIONS,
       (data: Marker[]) => {
-        console.log("Common groups locations:", data);
+        // console.log("Common groups locations:", data);
         displayOrUpdateMarkers(data);
       }
     );

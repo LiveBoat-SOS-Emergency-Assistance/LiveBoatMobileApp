@@ -412,7 +412,7 @@ export default function HomeScreen() {
           </View>
         )}
         <TopSheet ref={topSheetRef}>
-          <View className="flex flex-col pt-3 pb-5 gap-3  justify-center items-center w-full">
+          <View className="flex flex-col pt-3 pb-0 gap-3  justify-center items-center w-full relative">
             <View
               className="w-[50%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative "
               style={{
@@ -430,7 +430,7 @@ export default function HomeScreen() {
                 {selectNamesquad}
               </Text>
             </View>
-            <View className="h-[120px] w-full pr-5">
+            <View className="h-[150px] w-full pr-5">
               <ScrollView
                 className="w-full px-7"
                 contentContainerStyle={{ gap: 8 }}
@@ -456,7 +456,7 @@ export default function HomeScreen() {
                 ))}
               </ScrollView>
             </View>
-            <View className="w-full justify-around flex flex-row  pb-2">
+            <View className="absolute w-full justify-around flex flex-row bottom-0 bg-white">
               <Pressable
                 onPress={() => setOpenModalCreateSquad(true)}
                 className="w-[40%] h-[43px] bg-white rounded-[40px] flex justify-center items-center relative border border-[#80C4E9]"

@@ -17,6 +17,8 @@ import { sosService } from "../../../services/sos";
 import InfiniteScrollPagination from "../../../components/Pagination/InfiniteScrollPagination";
 import ScrollPagination from "../../../components/Pagination/ScrollPagination";
 import { SOSItem } from "../../../types/sosItem";
+import { useAuth } from "../../../context/AuthContext";
+import Avatar from "../../../components/Image/Avatar";
 export default function History() {
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth / 3;
@@ -25,6 +27,7 @@ export default function History() {
   const [page, setPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const { profile } = useAuth();
   const itemsPerPage = 4;
 
   const loadSOS = async (pageNum: number = 1) => {
@@ -87,9 +90,9 @@ export default function History() {
           <View className=" flex flex-row justify-between px-5 w-full items-center">
             <Text className="text-[28px] text-[#404040] font-bold ">Today</Text>
             <View className="w-[75px] h-[75px] rounded-full flex justify-center items-center border-[#EB4747] border-[3px]">
-              <Image
-                className="w-[65px] h-[65px] rounded-full object-cover"
-                source={require("../../../assets/images/ava.jpg")}
+              <Avatar
+                className="w-[60px] h-[60px] rounded-full object-cover"
+                source={profile?.User?.avatar_url}
               />
             </View>
           </View>

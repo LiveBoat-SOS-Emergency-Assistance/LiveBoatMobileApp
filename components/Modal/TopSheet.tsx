@@ -93,7 +93,9 @@ const styles = StyleSheet.create({
   container: {
     width: width,
     backgroundColor: "white",
-    paddingVertical: 40,
+    // paddingVertical: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     overflow: "hidden",
