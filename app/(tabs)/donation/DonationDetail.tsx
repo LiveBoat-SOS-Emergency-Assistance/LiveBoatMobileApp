@@ -1,20 +1,73 @@
-import { Text, View, Image } from "react-native";
-import React from "react";
+import { Text, View, Image, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
 import ImageCustom from "../../../components/Image/Image";
 import {
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
-import CustomButton from "../../../components/Button/CustomButton";
+import * as Animatable from "react-native-animatable";
 import DonationItem from "../../../components/DonationItem/DonationItem";
+import { router, useLocalSearchParams } from "expo-router";
+import ModalDonation from "../../../components/Modal/ModalDonation";
+
+interface Charity {
+  id: string;
+  title: string;
+  description: string;
+  goal_amount: string;
+  status: string;
+  createdAt: string;
+  extra_data: {
+    focus: string;
+    region: string;
+    image?: {
+      pic1: string;
+    };
+  };
+}
 const DonationDetail = () => {
+  const { item } = useLocalSearchParams();
+  const charity = typeof item === "string" ? JSON.parse(item) : null;
+  const [visible, setVisible] = useState(false);
+  const [openModalDonation, setOpenModalDonation] = useState(false);
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "white" }}>
+    <GestureHandlerRootView
+      style={{
+        flex: 1,
+        backgroundColor: "white",
+        width: "100%",
+        position: "relative",
+      }}
+    >
+      {visible && (
+        <ModalDonation
+          charityId={charity?.id}
+          title="Make a donation"
+          message="Your support helps us achieve our goals and bring positive change"
+          confirmText="Donate now"
+          cancelText="Cancel"
+          onConfirm={() => {
+            console.log("Confirmed");
+            setOpenModalDonation(true);
+            setVisible(false);
+          }}
+          onCancel={() => setVisible(false)}
+        />
+      )}
+
       <ScrollView className="flex w-full h-full bg-white pt-2 px-5 gap-5 pb-32 ">
         <View className="flex flex-col gap-5 relative ">
           <View className="w-[90%] pl-5">
             <Text className="font-bold text-[#404040] text-[18px]">
-              Floods in the Central Region 2023 - Join hands to help people
+              {charity?.title}
             </Text>
           </View>
           <View className="flex flex-col w-full px-5 gap-2">
@@ -28,7 +81,7 @@ const DonationDetail = () => {
                 Start time:
               </Text>
               <Text className="text-[#2D5B75] text-[12px] font-bold">
-                October 2025
+                {charity?.created_at ? formatDate(charity.created_at) : "N/A"}
               </Text>
             </View>
             <View className="flex flex-row gap-2 items-center">
@@ -41,7 +94,7 @@ const DonationDetail = () => {
                 End time:
               </Text>
               <Text className="text-[#2D5B75] text-[12px] font-bold">
-                {"  "}Ongoing
+                {charity?.status === "ACTIVE" ? "  Ongoing" : "  Closed"}
               </Text>
             </View>
             <View className="flex flex-row gap-2 items-center">
@@ -54,8 +107,7 @@ const DonationDetail = () => {
                 Address:
               </Text>
               <Text className="text-[#2D5B75] text-[12px] font-bold">
-                {"   "}
-                Quang Binh, Quang Tri, Thua Thien Hue
+                {"  "} {charity?.extra_data?.region || "N/A"}
               </Text>
             </View>
           </View>
@@ -71,11 +123,7 @@ const DonationDetail = () => {
             </Text>
             <View className="bg-[#d9eef9] w-full h-fit rounded-[30px] flex px-4 py-2">
               <Text className="text-[#404040] text-[13px] px-2  py-2">
-                In October 2023, prolonged heavy rain due to the influence of
-                tropical depression caused serious flooding in the Central
-                provinces. Many areas were deeply flooded, traffic was cut off,
-                thousands of households suffered from lack of food, clean water
-                and safe housing.
+                {charity?.description || "No description available."}
               </Text>
             </View>
           </View>
@@ -95,9 +143,40 @@ const DonationDetail = () => {
           </View>
         </View>
       </ScrollView>
-      <View className="w-full absolute px-4 bottom-32">
-        <CustomButton primary title="Donation" />
-      </View>
+      <TouchableOpacity
+        onPress={() => {
+          setVisible(true);
+          // router.push("(tabs)/donation/Donate");
+        }}
+        activeOpacity={0.8}
+        className="absolute bottom-24 right-5"
+      >
+        <Animatable.View
+          animation="rubberBand"
+          iterationCount="infinite"
+          duration={1500}
+          style={{
+            width: 50,
+            height: 50,
+            backgroundColor: "#EB4747",
+            borderRadius: 25,
+            justifyContent: "center",
+            alignItems: "center",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 5,
+          }}
+        >
+          <ImageCustom
+            width={25}
+            height={25}
+            color="#fff"
+            source="https://img.icons8.com/?size=100&id=wYrEPj8MXvDY&format=png&color=000000"
+          ></ImageCustom>
+        </Animatable.View>
+      </TouchableOpacity>
     </GestureHandlerRootView>
   );
 };

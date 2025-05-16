@@ -43,6 +43,23 @@ export default function Layout() {
           headerShadowVisible: false,
         }}
       />
+      <Stack.Screen
+        name="Donate"
+        options={{
+          headerShown: true,
+          headerTransparent: false,
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="DonationSuccessful"
+        options={{
+          title: "",
+          headerShown: false,
+          headerTransparent: false,
+          headerShadowVisible: false,
+        }}
+      />
     </Stack>
   );
 }
