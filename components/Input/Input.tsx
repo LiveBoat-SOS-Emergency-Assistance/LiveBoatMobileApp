@@ -85,6 +85,11 @@ const Input = ({
           {errorPassword}
         </Text>
       )}
+      {type === "amount" && errorPassword && (
+        <Text className="text-red-500 text-[12px] w-[90%] justify-start text-start pt-1">
+          {errorPassword}
+        </Text>
+      )}
     </View>
   );
 };

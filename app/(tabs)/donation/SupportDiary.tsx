@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Input from "../../../components/Input/Input";
 import {
   GestureHandlerRootView,
@@ -11,10 +11,24 @@ import Dropdown from "../../../components/Dropdown/Dropdown";
 import CustomButton from "../../../components/Button/CustomButton";
 import DonationCard from "../../../components/Card/DonationCard";
 import { router } from "expo-router";
+import { charityServices } from "../../../services/charity";
 const SupportDiary = () => {
+  const [listCharity, setListCharity] = useState([]);
+  const fetchCharity = async () => {
+    try {
+      const result = await charityServices.get_all_charity(4, 0, "ACTIVE");
+      console.log(result.data);
+      setListCharity(result.data);
+    } catch (error: any) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
+    fetchCharity();
+  }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "white" }}>
-      <View className="bg-white w-full h-full pt-32 flex flex-col gap-4 relative">
+      <View className="bg-white w-full h-full pt-32 flex flex-col gap-4 relative ">
         {/* <View className=" w-full justify-center items-center ">
           <Text className="text-[28px] text-[#404040] font-bold ">
             Support diary
@@ -61,24 +75,31 @@ const SupportDiary = () => {
             />
           </View>
         </View>
-        <View className="flex flex-col gap-10 mt-10">
-          <View className="flex flex-row w-full px-4 gap-8">
-            <DonationCard
-              onPress={() => router.push("(tabs)/donation/DonationDetail")}
-            ></DonationCard>
-            <DonationCard
-              onPress={() => router.push("(tabs)/donation/DonationDetail")}
-            ></DonationCard>
-            <DonationCard
-              onPress={() => router.push("(tabs)/donation/DonationDetail")}
-            ></DonationCard>
+
+        <ScrollView
+          className="mt-10 pl-8"
+          contentContainerStyle={{
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100%",
+          }}
+        >
+          <View className="flex-row flex-wrap  gap-y-4">
+            {listCharity.map((charity, index) => (
+              <View key={index} className="w-[32%]">
+                <DonationCard
+                  charity={charity}
+                  onPress={() => {
+                    router.push({
+                      pathname: "(tabs)/donation/DonationDetail",
+                      params: { item: JSON.stringify(charity) },
+                    });
+                  }}
+                />
+              </View>
+            ))}
           </View>
-          <View className="flex flex-row w-full px-4 gap-8">
-            <DonationCard></DonationCard>
-            <DonationCard></DonationCard>
-            <DonationCard></DonationCard>
-          </View>
-        </View>
+        </ScrollView>
       </View>
     </GestureHandlerRootView>
   );

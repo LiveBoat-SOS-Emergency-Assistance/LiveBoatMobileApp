@@ -2,29 +2,27 @@ import {
   View,
   Text,
   Pressable,
-  FlatList,
   Dimensions,
   TextInput,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import Avatar from "../../../components/Image/Avatar";
 import { useAuth } from "../../../context/AuthContext";
 import DonationCard from "../../../components/Card/DonationCard";
-import {
-  GestureHandlerRootView,
-  ScrollView,
-} from "react-native-gesture-handler";
-import SOSCard from "../../../components/Card/SOSCard";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import ImageCustom from "../../../components/Image/Image";
 import DonationItem from "../../../components/DonationItem/DonationItem";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import { charityServices } from "../../../services/charity";
 export default function Donation() {
   const { profile } = useAuth();
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth / 3;
   const [listCharity, setListCharity] = useState([]);
+  const [listDonation, setListDonation] = useState([]);
+  const router = useRouter();
   const visibleWidth = cardWidth * 2.5;
   const data = [
     { id: "1", title: "Item One" },
@@ -35,14 +33,34 @@ export default function Donation() {
   useEffect(() => {
     const fetchCharity = async () => {
       try {
-        const result = await charityServices.get_all_charity(3, 1, "ACTIVE");
-        console.log(result.data);
+        const result = await charityServices.get_all_charity(3, 0, "ACTIVE");
+        // console.log(result.data);
         setListCharity(result.data);
       } catch (error: any) {
         console.log(error);
       }
     };
     fetchCharity();
+  }, []);
+  const handleNavidateToDetail = (item: any) => {
+    router.push({
+      // pathname: "(tabs)/donation/DonationSuccessful",
+      pathname: "(tabs)/donation/DonationDetail",
+      params: { item: JSON.stringify(item) },
+    });
+  };
+  const fetchDonation = async () => {
+    try {
+      const result = await charityServices.get_all_donation_by_charityID();
+      // console.log(result.data[0]);
+      setListDonation(result.data);
+      // setListCharity(result.data);
+    } catch (error: any) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
+    fetchDonation();
   }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "white" }}>
@@ -71,7 +89,13 @@ export default function Donation() {
           </View>
           <View className="flex flex-row w-full px-5 mt-0 gap-4 justify-start items-center">
             {listCharity.map((item: any, index: number) => {
-              return <DonationCard key={index} charity={item} />;
+              return (
+                <DonationCard
+                  key={index}
+                  charity={item}
+                  onPress={() => handleNavidateToDetail(item)}
+                />
+              );
             })}
             <View className="h-[100px] flex justify-center items-center pb-8">
               <TouchableOpacity
@@ -105,6 +129,7 @@ export default function Donation() {
               </View>
             </View>
             <TouchableOpacity
+              onPress={() => router.push("/(tabs)/donation/SupportDiary")}
               activeOpacity={0.8}
               style={{
                 shadowColor: "#000",
@@ -151,11 +176,24 @@ export default function Donation() {
                 ></ImageCustom>
               </TouchableOpacity>
             </View>
-            <View className="flex flex-col w-full gap-2 ">
+            {/* <View className="flex flex-col w-full gap-2 ">
               <DonationItem></DonationItem>
               <DonationItem></DonationItem>
               <DonationItem></DonationItem>
-            </View>
+            </View> */}
+            <ScrollView>
+              <View className="flex flex-col gap-2 px-5">
+                {listDonation.map((item: any, index: number) => {
+                  return (
+                    <DonationItem
+                      key={index}
+                      item={item}
+                      // onPress={() => handleNavidateToDetail(item)}
+                    ></DonationItem>
+                  );
+                })}
+              </View>
+            </ScrollView>
           </View>
         </View>
       </View>

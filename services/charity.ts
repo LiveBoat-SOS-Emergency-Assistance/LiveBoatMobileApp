@@ -77,15 +77,16 @@ export class charityServices {
     }
   }
   static async get_all_donation_by_charityID(
-    charityId: number,
-    status: string
+    charityId?: number,
+    status?: string
   ) {
     try {
+      const params: any = {};
+      if (charityId !== undefined) params.charityId = charityId;
+      if (status !== undefined) params.status = status;
+
       const result = await axiosPrivate.get("/charity-donation/all", {
-        params: {
-          charityId: charityId,
-          status: status,
-        },
+        params,
         headers: {
           "Content-Type": "application/json",
         },
