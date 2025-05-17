@@ -24,8 +24,16 @@ const MenuItem: React.FC<MenuItemProps> = ({
       {subtitle && <Text className="text-gray-500 text-sm">{subtitle}</Text>}
     </View>
 
-    <View className="flex-row items-center space-x-2">
-      {value && <Text className="text-gray-500 text-sm">{value}</Text>}
+    <View className="flex-row items-center space-x-2 ">
+      {value && (
+        <Text
+          className="text-gray-500 text-sm truncate w-[150px]"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {value}
+        </Text>
+      )}
       <Icon path="M9 6L15 12L9 18" />
     </View>
   </TouchableOpacity>

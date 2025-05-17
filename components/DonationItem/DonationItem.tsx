@@ -50,7 +50,7 @@ const DonationItem = ({ item }: DonationItemProps) => {
         </View>
       </View>
       <Text className="text-[#404040] text-[12px] font-bold">
-        {item.amount} VND
+        {Number(item.amount).toLocaleString("vi-VN")} VND
       </Text>
     </TouchableOpacity>
   );

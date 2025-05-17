@@ -58,7 +58,7 @@ export default function Profile() {
             width={128}
             height={128}
           ></Avatar>
-          <Text className="text-xl font-semibold">Bạch Dương</Text>
+          <Text className="text-xl font-semibold">{profile?.name}</Text>
           <TouchableOpacity
             onPress={handlePress}
             className="flex-row items-center bg-[#80C4E9] px-5 py-2 rounded-[30px] mt-2"

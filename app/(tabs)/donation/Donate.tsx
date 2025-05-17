@@ -1,4 +1,3 @@
-// PaymentInterface.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -11,25 +10,94 @@ import {
 } from "react-native";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { ArrowRightLeft, QrCode } from "lucide-react-native";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import QRCode from "react-native-qrcode-svg";
+import { WebView } from "react-native-webview";
 
 type ProcessStatus = "pending" | "completed" | "failed";
 
 export default function PaymentInterface() {
   const { item } = useLocalSearchParams();
   const data = typeof item === "string" ? JSON.parse(item) : null;
-  // console.log("item", item);
+
   const [activeTab, setActiveTab] = useState<"qr" | "transfer">("qr");
   const [processStatus, setProcessStatus] = useState<ProcessStatus>("pending");
 
   const copyToClipboard = (text: string) => {
     Clipboard.setString(text);
-    // Alert.alert("Copied", `"${text}" has been copied to clipboard`);
+  };
+  const handleNavigation = (navState: any) => {
+    const url = navState.url;
+    console.log("Navigated to:", url);
+
+    if (url.startsWith("liveboatapp://payment-success")) {
+      console.log("Payment successful");
+      setProcessStatus("completed");
+      router.replace("(tabs)/donation/DonationSuccessful");
+    } else if (url.startsWith("liveboatapp://payment-cancel")) {
+      setProcessStatus("failed");
+      router.back();
+    }
   };
 
+  console.log("data", data.paymentLinkResponse.checkoutUrl);
   return (
     <View style={styles.container}>
+      <WebView
+        source={{ uri: data.paymentLinkResponse.checkoutUrl }}
+        onNavigationStateChange={handleNavigation}
+        className="w-0 h-0 opacity-0"
+      />
+      {/* <WebView
+        source={{ uri: data.paymentLinkResponse.checkoutUrl }}
+        style={{
+          width: 1,
+          height: 1,
+          position: "absolute",
+          left: -9999,
+          top: -9999,
+        }}
+        onNavigationStateChange={(navState) => {
+          console.log("Navigation state change:", navState);
+          handleNavigation(navState);
+        }}
+        onShouldStartLoadWithRequest={(request) => {
+          const url = request.url;
+          console.log("Should start load with request:", url);
+
+          if (url.startsWith("liveboatapp://payment-success")) {
+            console.log("Payment successful");
+            setProcessStatus("completed");
+            router.replace("(tabs)/donation/DonationSuccessful");
+            return false;
+          } else if (url.startsWith("liveboatapp://payment-cancel")) {
+            console.log("Payment cancelled");
+            setProcessStatus("failed");
+            router.back();
+            return false;
+          }
+
+          return true;
+        }}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.error("WebView error:", nativeEvent);
+          Alert.alert(
+            "Error",
+            "Failed to load payment page. Please try again."
+          );
+          setProcessStatus("failed");
+        }}
+        onHttpError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.error("WebView HTTP error:", nativeEvent);
+          Alert.alert(
+            "Error",
+            `HTTP error ${nativeEvent.statusCode}. Please try again.`
+          );
+          setProcessStatus("failed");
+        }}
+      /> */}
       {/* Tabs */}
       <View style={styles.tabContainer}>
         <TouchableOpacity

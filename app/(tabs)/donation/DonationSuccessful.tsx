@@ -1,6 +1,7 @@
 import { Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
 import ImageCustom from "../../../components/Image/Image";
+import { router } from "expo-router";
 const DonationSuccessful = () => {
   const screenWidth = Dimensions.get("window").width;
   return (
@@ -19,7 +20,10 @@ const DonationSuccessful = () => {
           Your support helps us continue making a meaningful impact.
         </Text>
       </View>
-      <TouchableOpacity className="bg-[#eb4747] px-10 py-2 rounded-full flex justify-center items-center">
+      <TouchableOpacity
+        onPress={() => router.replace("(tabs)/donation")}
+        className="bg-[#eb4747] px-10 py-2 rounded-full flex justify-center items-center"
+      >
         <Text className="text-white">Back</Text>
       </TouchableOpacity>
     </View>
