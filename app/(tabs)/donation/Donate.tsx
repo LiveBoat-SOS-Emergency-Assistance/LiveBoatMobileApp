@@ -48,56 +48,7 @@ export default function PaymentInterface() {
         onNavigationStateChange={handleNavigation}
         className="w-0 h-0 opacity-0"
       />
-      {/* <WebView
-        source={{ uri: data.paymentLinkResponse.checkoutUrl }}
-        style={{
-          width: 1,
-          height: 1,
-          position: "absolute",
-          left: -9999,
-          top: -9999,
-        }}
-        onNavigationStateChange={(navState) => {
-          console.log("Navigation state change:", navState);
-          handleNavigation(navState);
-        }}
-        onShouldStartLoadWithRequest={(request) => {
-          const url = request.url;
-          console.log("Should start load with request:", url);
 
-          if (url.startsWith("liveboatapp://payment-success")) {
-            console.log("Payment successful");
-            setProcessStatus("completed");
-            router.replace("(tabs)/donation/DonationSuccessful");
-            return false;
-          } else if (url.startsWith("liveboatapp://payment-cancel")) {
-            console.log("Payment cancelled");
-            setProcessStatus("failed");
-            router.back();
-            return false;
-          }
-
-          return true;
-        }}
-        onError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          console.error("WebView error:", nativeEvent);
-          Alert.alert(
-            "Error",
-            "Failed to load payment page. Please try again."
-          );
-          setProcessStatus("failed");
-        }}
-        onHttpError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          console.error("WebView HTTP error:", nativeEvent);
-          Alert.alert(
-            "Error",
-            `HTTP error ${nativeEvent.statusCode}. Please try again.`
-          );
-          setProcessStatus("failed");
-        }}
-      /> */}
       {/* Tabs */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -281,18 +232,6 @@ export default function PaymentInterface() {
           >
             <Text style={styles.demoButtonText}>Pending</Text>
           </TouchableOpacity>
-          {/* <TouchableOpacity
-            onPress={() => setProcessStatus("completed")}
-            style={[styles.demoButton, styles.completedButton]}
-          >
-            <Text style={styles.demoButtonText}>Completed</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setProcessStatus("failed")}
-            style={[styles.demoButton, styles.failedButton]}
-          >
-            <Text style={styles.demoButtonText}>Failed</Text>
-          </TouchableOpacity> */}
         </View>
       </View>
     </View>
