@@ -51,7 +51,10 @@ export default function Donation() {
   };
   const fetchDonation = async () => {
     try {
-      const result = await charityServices.get_all_donation_by_charityID();
+      const result = await charityServices.get_all_donation_by_charityID(
+        undefined,
+        "SUCCESS"
+      );
       // console.log(result.data[0]);
       setListDonation(result.data);
       // setListCharity(result.data);

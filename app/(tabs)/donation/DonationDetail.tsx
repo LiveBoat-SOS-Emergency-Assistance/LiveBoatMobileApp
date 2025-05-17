@@ -9,6 +9,7 @@ import * as Animatable from "react-native-animatable";
 import DonationItem from "../../../components/DonationItem/DonationItem";
 import { router, useLocalSearchParams } from "expo-router";
 import ModalDonation from "../../../components/Modal/ModalDonation";
+import { charityServices } from "../../../services/charity";
 
 interface Charity {
   id: string;
@@ -30,6 +31,7 @@ const DonationDetail = () => {
   const charity = typeof item === "string" ? JSON.parse(item) : null;
   const [visible, setVisible] = useState(false);
   const [openModalDonation, setOpenModalDonation] = useState(false);
+  const [listDonation, setListDonation] = useState<any>([]);
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, "0");
@@ -37,7 +39,19 @@ const DonationDetail = () => {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
-
+  const fetchDonation = async () => {
+    try {
+      const result = await charityServices.get_all_donation_by_charityID(
+        charity?.id,
+        "SUCCESS"
+      );
+      // console.log(result.data[0]);
+      setListDonation(result.data);
+      // setListCharity(result.data);
+    } catch (error: any) {
+      console.log(error);
+    }
+  };
   return (
     <GestureHandlerRootView
       style={{
@@ -133,11 +147,11 @@ const DonationDetail = () => {
             </Text>
             <View className="flex flex-col w-full mb-32">
               <View className="flex flex-col w-full mb-32">
+                {/* <DonationItem></DonationItem>
                 <DonationItem></DonationItem>
                 <DonationItem></DonationItem>
                 <DonationItem></DonationItem>
-                <DonationItem></DonationItem>
-                <DonationItem></DonationItem>
+                <DonationItem></DonationItem> */}
               </View>
             </View>
           </View>

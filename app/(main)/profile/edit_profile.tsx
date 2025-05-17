@@ -37,6 +37,7 @@ const EditProfile = () => {
   const [selectedValue, setSelectedValue] = useState<Record<string, string>>(
     {}
   );
+  const [oldAddress, setOldAddress] = useState<string>(""); // Thêm state này
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -88,6 +89,13 @@ const EditProfile = () => {
       }
     }
   };
+  const handleUpdateProfile = async () => {
+    try {
+      console.log("Selected value", selectedValue);
+    } catch (error: any) {
+      console.error("Error updating profile", error);
+    }
+  };
   const scrollToValueIndex = (value: string, options: string[]) => {
     const index = options.indexOf(value);
     if (index !== -1 && scrollViewRef.current) {
@@ -113,7 +121,9 @@ const EditProfile = () => {
     } else {
       setSelectedField(field);
       setDialogVisible(true);
-
+      if (field === "Address") {
+        setOldAddress(selectedValue["Address"] || "");
+      }
       // Scroll to the currently selected value when dialog opens
       const currentValue = selectedValue[field];
       if (currentValue) {
@@ -130,15 +140,31 @@ const EditProfile = () => {
     }));
     setDialogVisible(false);
   };
+  // const handleDateChange = (event: any, date?: Date) => {
+  //   if (event.type === "set" && date) {
+  //     // Normalize the date to midnight UTC
+  //     const normalizedDate = new Date(date);
+  //     normalizedDate.setUTCHours(0, 0, 0, 0);
+  //     // Format the date as YYYY-MM-DD
+  //     const formattedDate = normalizedDate.toISOString().split("T")[0];
+
+  //     setSelectedDate(normalizedDate);
+  //     setSelectedValue((prev) => ({
+  //       ...prev,
+  //       "Date of Birth": formattedDate,
+  //     }));
+  //   }
+  //   setShowDatePicker(false);
+  // };
   const handleDateChange = (event: any, date?: Date) => {
     if (event.type === "set" && date) {
-      // Normalize the date to midnight UTC
-      const normalizedDate = new Date(date);
-      normalizedDate.setUTCHours(0, 0, 0, 0);
-      // Format the date as YYYY-MM-DD
-      const formattedDate = normalizedDate.toISOString().split("T")[0];
+      // Lấy ngày/tháng/năm theo local thay vì UTC
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const year = date.getFullYear();
+      const formattedDate = `${year}-${month}-${day}`;
 
-      setSelectedDate(normalizedDate);
+      setSelectedDate(date);
       setSelectedValue((prev) => ({
         ...prev,
         "Date of Birth": formattedDate,
@@ -178,7 +204,7 @@ const EditProfile = () => {
           onChange={handleDateChange}
         />
       )}
-      {dialogVisible && (
+      {/* {dialogVisible && (
         <View className="absolute inset-0 top-0 bg-black/50 z-50 items-center justify-center">
           <View className="bg-white rounded-lg p-5 w-4/5 max-h-[60%]">
             <Text className="text-lg font-bold mb-4 text-center">
@@ -201,6 +227,74 @@ const EditProfile = () => {
             >
               <Text className="text-red-500">Cancel</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      )} */}
+
+      {dialogVisible && (
+        <View className="absolute inset-0 top-0 bg-black/50 z-50 items-center justify-center">
+          <View className="bg-white rounded-lg p-5 w-4/5 max-h-[60%]">
+            <Text className="text-lg font-bold mb-4 text-center">
+              {selectedField === "Address"
+                ? "Enter Address"
+                : `Select ${selectedField}`}
+            </Text>
+            {selectedField === "Address" ? (
+              <TextInput
+                placeholder="Enter your address"
+                className="border border-gray-300 rounded-md p-2 mb-4"
+                value={selectedValue["Address"] || ""}
+                onChangeText={(text) =>
+                  setSelectedValue((prev) => ({
+                    ...prev,
+                    Address: text,
+                  }))
+                }
+              />
+            ) : (
+              <ScrollView>
+                {getOptions(selectedField).map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    onPress={() => handleSelectValue(option)}
+                    className="p-3 border-b border-gray-200"
+                  >
+                    <Text className="text-base text-center">{option}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: 16,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  // Nếu là Address thì khôi phục lại giá trị cũ
+                  if (selectedField === "Address") {
+                    setSelectedValue((prev) => ({
+                      ...prev,
+                      Address: oldAddress,
+                    }));
+                  }
+                  setDialogVisible(false);
+                }}
+                className="mt-4"
+              >
+                <Text className="text-red-500">Cancel</Text>
+              </TouchableOpacity>
+              {selectedField === "Address" && (
+                <TouchableOpacity
+                  onPress={() => setDialogVisible(false)}
+                  className="mt-4 ml-4"
+                >
+                  <Text className="text-blue-500">Save</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </View>
       )}
@@ -283,7 +377,11 @@ const EditProfile = () => {
             </View>
           </View>
           <SettingsSection title="Personal Information">
-            <MenuItem title="Address" />
+            <MenuItem
+              title="Address"
+              onPress={() => handleOpenDialog("Address")}
+              value={selectedValue["Address"] || ""}
+            />
             <MenuItem
               title="Date of Birth"
               onPress={() => handleOpenDialog("Date of Birth")}
@@ -316,7 +414,7 @@ const EditProfile = () => {
           </SettingsSection>
           <View className="w-[90%] mx-auto">
             <CustomButton
-              onPress={handleConfirmAvatar}
+              onPress={handleUpdateProfile}
               third
               isLoading={loading}
               title="Save"
