@@ -5,6 +5,8 @@ import {
   TextInput,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import Avatar from "../../../components/Image/Avatar";
@@ -14,6 +16,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
 import { useChatSocket } from "../../../hooks/useChatSocket";
+import { Key } from "lucide-react-native";
 interface ChatMessageProps {
   data: {
     avatar_url: string;
@@ -104,69 +107,75 @@ const ChatBox = () => {
   return (
     <GestureHandlerRootView className="flex-1 bg-white relative">
       <SafeAreaView className="flex-1 bg-white">
-        <View className="flex flex-row items-center gap-3 px-5 border-b border-gray-200 pt-4 pb-4">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="flex-row items-start"
-          >
-            <ImageCustom
-              width={25}
-              height={25}
-              source="https://img.icons8.com/?size=100&id=20i9yZTsnnmg&format=png&color=000000"
-            />
-          </TouchableOpacity>
-          <View className="w-[60px] h-[60px] bg-[#fbdada] rounded-full flex justify-center items-center">
-            <Text className="font-bold text-[#EB4747] text-xl">
-              {typeof name === "string" ? name.charAt(0).toUpperCase() : "A"}
-            </Text>
-          </View>
-
-          <View className="flex-1">
-            <Text className="text-2xl font-bold text-[#404040]">{name}</Text>
-            <View className="flex flex-row items-center gap-2">
-              <View className="w-2 h-2 rounded-full bg-[#1fb141]"></View>
-              <Text className="text-sm text-gray-500">Online</Text>
-            </View>
-          </View>
-        </View>
-        {/* Chat Messages */}
-        <FlatList
-          data={messages}
-          keyExtractor={(item, index) => `message-${index}`}
-          renderItem={renderMessage}
-          inverted={false}
-          className="flex-1 w-full mb-20 mt-5 px-5"
-        />
-        <View className="absolute bottom-2">
-          <View className="flex flex-row w-full px-5 gap-2">
-            <View className="relative w-[85%] h-[40px] border border-gray-200 rounded-full flex-row items-center px-3 py-2">
-              <ImageCustom
-                width={20}
-                height={20}
-                color="gray"
-                className="abosolute left-1"
-                source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
-              ></ImageCustom>
-              <TextInput
-                value={messageContent}
-                onChangeText={setMessageContent}
-                placeholder="Enter message..."
-                className="w-full h-full pl-2 pr-3 "
-              ></TextInput>
-            </View>
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        >
+          <View className="flex flex-row items-center gap-3 px-5 border-b border-gray-200 pt-4 pb-4">
             <TouchableOpacity
-              onPress={handleSendMessage}
-              className="bg-[#fbdada]  p-3 rounded-full"
+              onPress={() => router.back()}
+              className="flex-row items-start"
             >
               <ImageCustom
-                width={20}
-                height={20}
-                color="#EB4747"
-                source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
-              ></ImageCustom>
+                width={25}
+                height={25}
+                source="https://img.icons8.com/?size=100&id=20i9yZTsnnmg&format=png&color=000000"
+              />
             </TouchableOpacity>
+            <View className="w-[60px] h-[60px] bg-[#fbdada] rounded-full flex justify-center items-center">
+              <Text className="font-bold text-[#EB4747] text-xl">
+                {typeof name === "string" ? name.charAt(0).toUpperCase() : "A"}
+              </Text>
+            </View>
+
+            <View className="flex-1">
+              <Text className="text-2xl font-bold text-[#404040]">{name}</Text>
+              <View className="flex flex-row items-center gap-2">
+                <View className="w-2 h-2 rounded-full bg-[#1fb141]"></View>
+                <Text className="text-sm text-gray-500">Online</Text>
+              </View>
+            </View>
           </View>
-        </View>
+          {/* Chat Messages */}
+          <FlatList
+            data={messages}
+            keyExtractor={(item, index) => `message-${index}`}
+            renderItem={renderMessage}
+            inverted={false}
+            className="flex-1 w-full mb-20 mt-5 px-5"
+          />
+          <View className="absolute bottom-2">
+            <View className="flex flex-row w-full px-5 gap-2">
+              <View className="relative w-[85%] h-[40px] border border-gray-200 rounded-full flex-row items-center px-3 py-2">
+                <ImageCustom
+                  width={20}
+                  height={20}
+                  color="gray"
+                  className="abosolute left-1"
+                  source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
+                ></ImageCustom>
+                <TextInput
+                  value={messageContent}
+                  onChangeText={setMessageContent}
+                  placeholder="Enter message..."
+                  className="w-full h-full pl-2 pr-3 "
+                ></TextInput>
+              </View>
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                className="bg-[#fbdada]  p-3 rounded-full"
+              >
+                <ImageCustom
+                  width={20}
+                  height={20}
+                  color="#EB4747"
+                  source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
+                ></ImageCustom>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
