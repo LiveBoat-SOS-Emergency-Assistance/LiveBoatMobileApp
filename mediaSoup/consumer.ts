@@ -1,9 +1,9 @@
+import { updateRoomVideo } from "../app/(tabs)/home/PreLive";
 import {
   updateAudioParticipant,
   removeAudioParticipant,
-  updateRoomVideo,
 } from "../utils/liveStream";
-
+// import updateAudioParticipant from "../app/(tabs)/home/SOSMap";
 let device: any = null;
 let consumerTransports: any[] = [];
 let consumingTransports: string[] = [];
@@ -38,10 +38,11 @@ export const signalNewConsumerTransport = async (
         try {
           consumerTransport = device!.createRecvTransport({
             ...params,
-            // iceServers: [
-            //   { urls: 'stun:stun.l.google.com:19302' },
-            //   { urls: 'turn:YOUR_TURN_SERVER', username: 'YOUR_USERNAME', credential: 'YOUR_CREDENTIAL' }
-            // ]  
+            iceServers: [
+              {
+                urls: ["stun:stun.l.google.com:19302"],
+              },
+            ],
           });
         } catch (error) {
           console.log(error);

@@ -92,13 +92,11 @@ export async function updateViewCount() {
   }
 }
 
-export function updateRoomVideo(props: any): void {
-  // Implement in component: update video stream or fallback image
-  const { track } = props;
-  if (track) {
-  } else {
-  }
-}
+// export function updateRoomVideo(props: any): void {
+//   // Implement in component: update video stream or fallback image
+//   const { track } = props;
+//   return track;
+// }
 
 export function updateCameraStatus(
   isCameraOn: boolean,

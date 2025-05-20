@@ -87,7 +87,11 @@ const createDevice = async (isConsumeOnly: boolean = false): Promise<void> => {
       console.log("Creating send transport...");
       const { transport } = await createSendTransport(mediaSoupSocket);
       // console.log("transport", transport);
-      await connectSendTransport(mediaSoupSocket);
+      try {
+        await connectSendTransport(mediaSoupSocket);
+      } catch (error) {
+        console.log("Error in createDevice", error);
+      }
       console.log("helo...");
     }
 

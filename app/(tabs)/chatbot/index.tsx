@@ -264,6 +264,8 @@ import {
   ScrollView,
   TextInput,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import ImageCustom from "../../../components/Image/Image";
@@ -390,112 +392,118 @@ If the input is ambiguous or unclear but could still relate to healthcare, polit
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View className="flex-1 relative h-full">
-        <LinearGradient
-          colors={colors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <TouchableOpacity
-          onPress={() => {
-            setChatHistory([]);
-            setCheck(false);
-            router.replace("/(tabs)/home");
-          }}
-          className="items-start flex absolute top-16 left-5 z-50 w-[20px]"
-        >
-          <ImageCustom
-            width={20}
-            height={20}
-            color="#EB4747"
-            source="https://img.icons8.com/?size=100&id=8112&format=png&color=000000"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 120 : 0}
+      >
+        <View className="flex-1 relative h-full">
+          <LinearGradient
+            colors={colors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
           />
-        </TouchableOpacity>
-        <View className="flex w-full h-[100px] bg-transparent"></View>
-        {check ? (
-          <ScrollView
-            // className=""
-            ref={scrollViewRef}
-            onContentSizeChange={() =>
-              scrollViewRef.current?.scrollToEnd({ animated: true })
-            }
-            style={{ height: 300 }}
-            contentContainerStyle={{
-              paddingVertical: 20,
-              paddingBottom: 80,
-              paddingHorizontal: 20,
+          <TouchableOpacity
+            onPress={() => {
+              setChatHistory([]);
+              setCheck(false);
+              router.replace("/(tabs)/home");
             }}
+            className="items-start flex absolute top-16 left-5 z-50 w-[20px]"
           >
-            {chatHistory.map((message, index) => (
-              <View
-                key={index}
-                className={`mb-3 p-2 rounded-xl ${
-                  message.sender === "user"
-                    ? "self-end bg-white"
-                    : message.sender === "error"
-                    ? "self-start bg-red-100"
-                    : "self-start bg-white"
-                }`}
-              >
-                <Text className="color-black">
-                  {message.sender === "error"
-                    ? "Oops, something went wrong!"
-                    : message.content}
+            <ImageCustom
+              width={20}
+              height={20}
+              color="#EB4747"
+              source="https://img.icons8.com/?size=100&id=8112&format=png&color=000000"
+            />
+          </TouchableOpacity>
+          <View className="flex w-full h-[100px] bg-transparent"></View>
+          {check ? (
+            <ScrollView
+              // className=""
+              ref={scrollViewRef}
+              onContentSizeChange={() =>
+                scrollViewRef.current?.scrollToEnd({ animated: true })
+              }
+              style={{ height: 300 }}
+              contentContainerStyle={{
+                paddingVertical: 20,
+                paddingBottom: 80,
+                paddingHorizontal: 20,
+              }}
+            >
+              {chatHistory.map((message, index) => (
+                <View
+                  key={index}
+                  className={`mb-3 p-2 rounded-xl ${
+                    message.sender === "user"
+                      ? "self-end bg-white"
+                      : message.sender === "error"
+                      ? "self-start bg-red-100"
+                      : "self-start bg-white"
+                  }`}
+                >
+                  <Text className="color-black">
+                    {message.sender === "error"
+                      ? "Oops, something went wrong!"
+                      : message.content}
+                  </Text>
+                </View>
+              ))}
+
+              {chatHistory.length > 0 &&
+                chatHistory[chatHistory.length - 1].sender === "loading" && (
+                  <Text className="color-gray-500 self-start">Typing...</Text>
+                )}
+            </ScrollView>
+          ) : (
+            <View className="flex-1 z-10 justify-center items-center px-5">
+              <View className="flex flex-col gap-2 items-center">
+                <Text className="font-normal text-2xl text-white">
+                  Hello, Bach Duong!
+                </Text>
+                <Text className="text-2xl text-white">
+                  How can I help you today?
                 </Text>
               </View>
-            ))}
-
-            {chatHistory.length > 0 &&
-              chatHistory[chatHistory.length - 1].sender === "loading" && (
-                <Text className="color-gray-500 self-start">Typing...</Text>
-              )}
-          </ScrollView>
-        ) : (
-          <View className="flex-1 z-10 justify-center items-center px-5">
-            <View className="flex flex-col gap-2 items-center">
-              <Text className="font-normal text-2xl text-white">
-                Hello, Bach Duong!
-              </Text>
-              <Text className="text-2xl text-white">
-                How can I help you today?
-              </Text>
             </View>
-          </View>
-        )}
-        <View className="absolute bottom-2 z-50">
-          <View className="flex flex-row w-full px-5 gap-4">
-            <View className="relative w-[85%] h-[40px] border border-gray-200 rounded-full bg-white flex-row items-center px-3 py-2">
-              <ImageCustom
-                width={20}
-                height={20}
-                color="gray"
-                className="absolute left-3"
-                source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
-              />
-              <TextInput
-                ref={textInputRef}
-                value={messageContent}
-                onChangeText={setMessageContent}
-                placeholder="Enter message..."
-                className="w-full h-full pl-8 pr-3 text-black"
-              />
+          )}
+          <View className="absolute bottom-2 z-50">
+            <View className="flex flex-row w-full px-5 gap-4">
+              <View className="relative w-[85%] h-[40px] border border-gray-200 rounded-full bg-white flex-row items-center px-3 py-2">
+                <ImageCustom
+                  width={20}
+                  height={20}
+                  color="gray"
+                  className="absolute left-3"
+                  source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
+                />
+                <TextInput
+                  ref={textInputRef}
+                  value={messageContent}
+                  onChangeText={setMessageContent}
+                  placeholder="Enter message..."
+                  className="w-full h-full pl-8 pr-3 text-black"
+                />
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleSendMessage}
+                className="bg-white p-3 rounded-full z-50"
+              >
+                <ImageCustom
+                  width={20}
+                  height={20}
+                  color="#EB4747"
+                  source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
+                />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleSendMessage}
-              className="bg-white p-3 rounded-full z-50"
-            >
-              <ImageCustom
-                width={20}
-                height={20}
-                color="#EB4747"
-                source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
-              />
-            </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </GestureHandlerRootView>
   );
 }

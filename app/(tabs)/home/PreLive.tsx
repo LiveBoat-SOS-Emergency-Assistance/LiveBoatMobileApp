@@ -21,12 +21,31 @@ import ImageCustom from "../../../components/Image/Image";
 import { router, useLocalSearchParams } from "expo-router";
 import * as mediaSoupModule from "../../../mediaSoup/index";
 import { mediaSoupSocket } from "./SOSMap";
-import { MediaStream, mediaDevices } from "react-native-webrtc";
+import { MediaStream, RTCView, mediaDevices } from "react-native-webrtc";
 import { getChatSocket } from "../../../utils/socket";
 import { initializeChatModule, sendMessage } from "../../../sockets/ChatModule";
 import { updateViewCount } from "../../../utils/liveStream";
+import { liveStreamService } from "../../../services/liveStream";
+// Extend the Window interface to include setRemoteVideoTrack
+declare global {
+  interface Window {
+    setRemoteVideoTrack?: (track: any) => void;
+  }
+}
+
+export function updateRoomVideo(props: any): void {
+  const { track } = props;
+
+  if (typeof window !== "undefined" && window.setRemoteVideoTrack) {
+    window.setRemoteVideoTrack(track);
+  }
+  return track;
+}
 const PreLive = () => {
+  const { isHost } = useLocalSearchParams<{ isHost: string }>();
+  const isHostBool = isHost === "true";
   const { profile } = useAuth();
+  const { sosId } = useLocalSearchParams<{ sosId: string }>();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const cameraRef = useRef<CameraView | null>(null);
   const videoStream = useRef<MediaStream | null>(null);
@@ -34,13 +53,13 @@ const PreLive = () => {
   const [tryToTurnOffAudio, setTryToTurnOffAudio] = useState(true);
   const [tryToTurnOffCamera, setTryToTurnOffCamera] = useState(true);
   const [isLiveStreaming, setIsLiveStreaming] = useState(false);
-  const [showAudioParticipants, setShowAudioParticipants] = useState(false);
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const chatSocket = getChatSocket();
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState("");
   const chatScrollViewRef = useRef<ScrollView>(null);
   const [viewerCount, setViewerCount] = useState(0);
+  const [remoteVideoTrack, setRemoteVideoTrack] = useState<any>(null);
   useEffect(() => {
     const update = async () => {
       const count = await updateViewCount();
@@ -51,6 +70,12 @@ const PreLive = () => {
     mediaSoupSocket.on("update-room-peers", update);
     return () => {
       mediaSoupSocket.off("update-room-peers", update);
+    };
+  }, []);
+  useEffect(() => {
+    window.setRemoteVideoTrack = setRemoteVideoTrack;
+    return () => {
+      window.setRemoteVideoTrack = undefined;
     };
   }, []);
   useEffect(() => {
@@ -105,82 +130,50 @@ const PreLive = () => {
     });
     setTryToTurnOffAudio(newAudioState);
   };
-  // const toggleCamera = () => {
-  //   const { videoProducer } = mediaSoupModule.producerModule.getProducerInfo();
-  //   const videoTrack = videoStream?.current?.getVideoTracks()[0];
-  //   console.log("Video Track:", videoTrack);
+  const toggleCamera = () => {
+    const { videoProducer } = mediaSoupModule.producerModule.getProducerInfo();
+    const videoTrack = videoStream?.current?.getVideoTracks()[0];
+    console.log("Video Track:", videoTrack);
 
-  //   if (!videoProducer) {
-  //     console.log("No video producer available");
-  //     return;
-  //   }
+    if (!videoProducer) {
+      console.log("No video producer available");
+      return;
+    }
 
-  //   if (tryToTurnOffCamera) {
-  //     if (
-  //       videoStream.current &&
-  //       videoStream.current.getVideoTracks().length > 0
-  //     ) {
-  //       videoTrack!.enabled = false;
-  //       mediaSoupSocket.emit("camera-status", {
-  //         isCameraOn: false,
-  //         producerId: videoProducer.id,
-  //       });
-  //     } else {
-  //       console.log("No video track to stop");
-  //     }
-  //   } else {
-  //     videoTrack!.enabled = true;
-  //     mediaSoupSocket.emit("camera-status", {
-  //       isCameraOn: true,
-  //       producerId: videoProducer.id,
-  //     });
-  //   }
-  // };
-  const toggleCamera = async () => {
-    try {
-      // console.log("mediaSoupModule", mediaSoupModule);
-
-      const producerInfo = mediaSoupModule.producerModule.getProducerInfo?.();
-      const { videoProducer } = producerInfo || {};
-      if (!videoProducer) {
-        console.log("No video producer available");
-        Alert.alert(
-          "Error",
-          "Video producer not initialized. Please try again."
-        );
-        return;
-      }
-      const videoTrack = videoStream.current?.getVideoTracks()[0];
-      if (!videoTrack) {
-        console.log("No video track available");
-        Alert.alert(
-          "Error",
-          "No video track found. Please restart the stream."
-        );
-        return;
-      }
-      const newCameraState = !tryToTurnOffCamera;
-      if (newCameraState) {
-        // Turn camera on
-        videoTrack.enabled = true;
-        mediaSoupSocket.emit("camera-status", {
-          isCameraOn: true,
-          producerId: videoProducer.id,
-        });
-      } else {
-        // Turn camera off
-        videoTrack.enabled = false;
+    if (tryToTurnOffCamera) {
+      if (
+        videoStream.current &&
+        videoStream.current.getVideoTracks().length > 0
+      ) {
+        videoTrack!.enabled = false;
         mediaSoupSocket.emit("camera-status", {
           isCameraOn: false,
           producerId: videoProducer.id,
         });
+      } else {
+        console.log("No video track to stop");
       }
-      setTryToTurnOffCamera(newCameraState);
+    } else {
+      videoTrack!.enabled = true;
+      mediaSoupSocket.emit("camera-status", {
+        isCameraOn: true,
+        producerId: videoProducer.id,
+      });
+    }
+    setTryToTurnOffCamera((prev) => !prev);
+  };
+  const handleUpdateStatus = async () => {
+    try {
+      const result = await liveStreamService.update_livestream_status({
+        sosId: Number(sosId),
+        hasLivestream: true,
+      });
+      console.log("update live status");
     } catch (error) {
-      console.error("Error toggling camera:", error);
-      Alert.alert("Error", "Failed to toggle camera. Please try again.");
+      console.log("Error in handleUpdateStatus:", error);
     }
   };
+
   const getLocalStream = async (): Promise<void> => {
     try {
       //Only take streams if you have permission
@@ -188,14 +181,10 @@ const PreLive = () => {
         console.log("No camera or microphone access");
         return;
       }
-
-      //Get stream from camera and mic
-      const stream = await mediaDevices.getUserMedia({
-        audio: true,
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
+        audio: true,
       });
-      // Store the stream for later use by mediasoup
-      videoStream.current = stream;
 
       // Get audio/video track
       const audioTrack = stream.getAudioTracks()[0];
@@ -223,6 +212,7 @@ const PreLive = () => {
   };
 
   useEffect(() => {
+    if (!isHostBool) return;
     (async () => {
       const { status: cameraStatus } =
         await Camera.requestCameraPermissionsAsync();
@@ -251,7 +241,7 @@ const PreLive = () => {
         setHasPermission(true);
       }
     })();
-  }, []);
+  }, [isHostBool]);
 
   if (hasPermission === false) {
     return (
@@ -273,45 +263,59 @@ const PreLive = () => {
     <View style={{ flex: 1 }}>
       {/* Nếu có quyền thì dùng camera làm nền, không thì dùng màu 404040 */}
       {hasPermission && tryToTurnOffCamera ? (
-        <CameraView
-          ref={cameraRef}
-          style={StyleSheet.absoluteFill}
-          facing={facing}
-          mute={tryToTurnOffAudio}
-          active={tryToTurnOffCamera}
-        />
-      ) : (
-        <ImageBackground
-          source={
-            profile?.User.avatar_url
-              ? { uri: profile.User.avatar_url }
-              : require("../../../assets/images/ava1.png")
-          }
-          style={[
-            StyleSheet.absoluteFill,
-            { justifyContent: "center", alignItems: "center" },
-          ]}
-          resizeMode="cover"
-        >
-          <BlurView
-            intensity={50}
-            tint="dark"
-            style={{ position: "absolute", width: "100%", height: "100%" }}
+        remoteVideoTrack ? (
+          <RTCView
+            streamURL={new MediaStream([remoteVideoTrack]).toURL()}
+            style={StyleSheet.absoluteFill}
+            objectFit="cover"
           />
-          <Avatar source={profile?.User.avatar_url} width={120} height={120} />
-          <Text style={{ color: "white", marginTop: 10 }}>Camera is off</Text>
-          <TouchableOpacity
-            onPress={toggleCamera}
-            style={{
-              marginTop: 20,
-              padding: 10,
-              backgroundColor: "#ffffff30",
-              borderRadius: 5,
-            }}
+        ) : (
+          <CameraView
+            ref={cameraRef}
+            style={StyleSheet.absoluteFill}
+            facing={facing}
+            mute={tryToTurnOffAudio}
+            active={tryToTurnOffCamera}
+          />
+        )
+      ) : (
+        isHostBool && (
+          <ImageBackground
+            source={
+              profile?.User.avatar_url
+                ? { uri: profile.User.avatar_url }
+                : require("../../../assets/images/ava1.png")
+            }
+            style={[
+              StyleSheet.absoluteFill,
+              { justifyContent: "center", alignItems: "center" },
+            ]}
+            resizeMode="cover"
           >
-            <Text style={{ color: "white" }}>Turn On Camera</Text>
-          </TouchableOpacity>
-        </ImageBackground>
+            <BlurView
+              intensity={50}
+              tint="dark"
+              style={{ position: "absolute", width: "100%", height: "100%" }}
+            />
+            <Avatar
+              source={profile?.User.avatar_url}
+              width={120}
+              height={120}
+            />
+            <Text style={{ color: "white", marginTop: 10 }}>Camera is off</Text>
+            <TouchableOpacity
+              onPress={toggleCamera}
+              style={{
+                marginTop: 20,
+                padding: 10,
+                backgroundColor: "#ffffff30",
+                borderRadius: 5,
+              }}
+            >
+              <Text style={{ color: "white" }}>Turn On Camera</Text>
+            </TouchableOpacity>
+          </ImageBackground>
+        )
       )}
 
       {/* Overlay content */}
@@ -365,62 +369,65 @@ const PreLive = () => {
             </BlurView>
           </TouchableOpacity>
         </View>
-        <View className="absolute right-2 top-1/4 flex flex-col gap-5">
-          <TouchableOpacity
-            onPress={toggleCamera}
-            activeOpacity={0.8}
-            className="flex flex-col gap-1 justify-center items-center"
-          >
-            <ImageCustom
-              source={
-                tryToTurnOffCamera
-                  ? "https://img.icons8.com/?size=100&id=59749&format=png&color=000000" // Thay thế bằng URL biểu tượng camera đang bật
-                  : "https://img.icons8.com/?size=100&id=82601&format=png&color=000000" // Thay thế bằng URL biểu tượng camera đang tắt
-              }
-              width={25}
-              height={25}
-              color="white"
-            />
-            <Text className="text-white text-[12px]">Camera</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={toggleFacing}
-            activeOpacity={0.8}
-            className="flex flex-col gap-1 justify-center items-center"
-          >
-            <ImageCustom
-              source="https://img.icons8.com/?size=100&id=IxtZfghGBNPZ&format=png&color=000000"
-              width={25}
-              height={25}
-              color="white"
-            />
-            <Text className="text-white text-[12px]">Flip</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={toggleMute}
-            activeOpacity={0.8}
-            className="flex flex-col gap-1 justify-center items-center"
-          >
-            <ImageCustom
-              source={
-                tryToTurnOffAudio
-                  ? "https://img.icons8.com/?size=100&id=85836&format=png&color=000000" // Replace with actual muted icon URL
-                  : "https://img.icons8.com/?size=100&id=qv2H3YadsNcR&format=png&color=000000" // Replace with actual unmuted icon URL
-              }
-              width={25}
-              height={25}
-              color="white"
-            />
-            <Text className="text-white text-[12px]">Mic</Text>
-          </TouchableOpacity>
-        </View>
+        {isHostBool && (
+          <View className="absolute right-2 top-1/4 flex flex-col gap-5">
+            <TouchableOpacity
+              onPress={toggleCamera}
+              activeOpacity={0.8}
+              className="flex flex-col gap-1 justify-center items-center"
+            >
+              <ImageCustom
+                source={
+                  tryToTurnOffCamera
+                    ? "https://img.icons8.com/?size=100&id=59749&format=png&color=000000" // Thay thế bằng URL biểu tượng camera đang bật
+                    : "https://img.icons8.com/?size=100&id=82601&format=png&color=000000" // Thay thế bằng URL biểu tượng camera đang tắt
+                }
+                width={25}
+                height={25}
+                color="white"
+              />
+              <Text className="text-white text-[12px]">Camera</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={toggleFacing}
+              activeOpacity={0.8}
+              className="flex flex-col gap-1 justify-center items-center"
+            >
+              <ImageCustom
+                source="https://img.icons8.com/?size=100&id=IxtZfghGBNPZ&format=png&color=000000"
+                width={25}
+                height={25}
+                color="white"
+              />
+              <Text className="text-white text-[12px]">Flip</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={toggleMute}
+              activeOpacity={0.8}
+              className="flex flex-col gap-1 justify-center items-center"
+            >
+              <ImageCustom
+                source={
+                  tryToTurnOffAudio
+                    ? "https://img.icons8.com/?size=100&id=85836&format=png&color=000000" // Replace with actual muted icon URL
+                    : "https://img.icons8.com/?size=100&id=qv2H3YadsNcR&format=png&color=000000" // Replace with actual unmuted icon URL
+                }
+                width={25}
+                height={25}
+                color="white"
+              />
+              <Text className="text-white text-[12px]">Mic</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View className="bottom-5 left-0 right-0 absolute px-5">
-          {!isLiveStreaming ? (
+          {isHostBool && !isLiveStreaming ? (
             <TouchableOpacity
               onPress={() => {
                 startStreaming();
                 setIsLiveStreaming(true);
+                handleUpdateStatus();
               }}
               activeOpacity={0.9}
               className="bg-[#FF4D00] px-4 py-4 rounded-[30px] flex justify-center items-center w-full shadow-md"

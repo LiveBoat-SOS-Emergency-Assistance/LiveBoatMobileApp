@@ -52,13 +52,22 @@ if (typeof global !== "undefined") {
     writable: true,
   });
 }
-// if (RTCPeerConnection && !RTCPeerConnection.prototype.addStream) {
-//   RTCPeerConnection.prototype.addStream = function (stream) {
-//     stream.getTracks().forEach((track) => {
-//       this.addTrack(track, stream);
-//     });
-//   };
-// }
+// @ts-ignore
+if (
+  typeof RTCPeerConnection !== "undefined" &&
+  // @ts-ignore
+  !RTCPeerConnection.prototype.addStream
+) {
+  // @ts-ignore
+  RTCPeerConnection.prototype.addStream = function (stream: any) {
+    const existingTracks = this.getSenders().map((sender) => sender.track);
+    stream.getTracks().forEach((track: any) => {
+      if (!existingTracks.includes(track)) {
+        this.addTrack(track, stream);
+      }
+    });
+  };
+}
 export const mediaSoupSocket = getMediaSoupSocket();
 export const chatSocket = getChatSocket();
 interface SocketEvents {
@@ -367,7 +376,7 @@ export default function SOSMap() {
               // router.push("/(tabs)/home/PreLive");
               router.push({
                 pathname: "/(tabs)/home/PreLive",
-                params: { groupId: groupId },
+                params: { groupId: groupId, sosId: sosId, isHost: "true" },
               });
             }}
             activeOpacity={0.8}

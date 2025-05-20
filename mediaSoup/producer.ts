@@ -69,9 +69,11 @@ export const createSendTransport = (socket: any): Promise<any> => {
         console.log("1");
         producerTransport = device.createSendTransport({
           ...params,
-          // iceServers: [
-          //   { urls: "stun:stun.l.google.com:19302" }
-          // ]
+          iceServers: [
+            {
+              urls: ["stun:stun.l.google.com:19302"],
+            },
+          ],
         });
         console.log("2");
 

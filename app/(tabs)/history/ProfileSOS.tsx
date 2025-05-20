@@ -21,6 +21,10 @@ import Avatar from "../../../components/Image/Avatar";
 import Toast from "react-native-toast-message";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RescuerItem } from "../../../types/rescuerItem";
+import * as mediaSoupModule from "../../../mediaSoup/index";
+import { getChatSocket, getMediaSoupSocket } from "../../../utils/socket";
+import { initializeChatModule } from "../../../sockets/ChatModule";
+
 interface SOSProfile {
   accuracy: string;
   created_at: string;
@@ -35,6 +39,7 @@ interface SOSProfile {
   reported_count: number;
   status: string;
   user_id: string;
+  has_livestream: boolean;
 }
 interface UserProfile {
   name: string;
@@ -63,7 +68,9 @@ const ProfileSOS = () => {
     latitude: number;
     accuracy?: number;
   } | null>(null);
-
+  const chatSocket = getChatSocket();
+  const mediaSoupSocket = getMediaSoupSocket();
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     const getMyRescuerCurrent = async () => {
       try {
@@ -152,6 +159,48 @@ const ProfileSOS = () => {
       });
     }
   };
+
+  const consumeOnly = (): Promise<any> => {
+    return mediaSoupModule.joinRoom({
+      isConsumeOnly: true,
+      userId: profile?.id,
+    });
+  };
+  const initialize = async () => {
+    try {
+      setLoading(true);
+      const fetchedGroupId = await sosService.getGroupBySOSID(Number(id));
+      // console.log("Fetched group ID:", fetchedGroupId.data);
+      // setGroupId(fetchedGroupId.data);
+
+      if (chatSocket && fetchedGroupId) {
+        console.log("Chat Socket at sos", chatSocket.id);
+        initializeChatModule({
+          chatSocket,
+          groupId: fetchedGroupId.data,
+        });
+      }
+      console.log("before mediaSoupSocket");
+      if (mediaSoupSocket) {
+        mediaSoupModule.initializeMediaSoupModule();
+      }
+      consumeOnly();
+      setLoading(false);
+    } catch (error) {
+      console.error("Initialization error:", error);
+    }
+  };
+  const handleJoinLiveStream = async () => {
+    initialize();
+    if (!loading) {
+      router.push({
+        pathname: "/(tabs)/home/PreLive",
+        params: {
+          sosId: id,
+        },
+      });
+    }
+  };
   return (
     <SafeAreaView className="flex-1">
       <ScrollView
@@ -200,11 +249,16 @@ const ProfileSOS = () => {
               </Text>
             </View>
             <View className="flex flex-row gap-2 h-[30px]">
-              <TouchableOpacity className="w-fit px-3 py-2 bg-white border rounded-[20px] border-red-400 flex justify-center items-center">
-                <Text className="text-[11px] text-red-400 font-bold">
-                  Join Live Stream
-                </Text>
-              </TouchableOpacity>
+              {profile?.has_livestream === true && (
+                <TouchableOpacity
+                  onPress={handleJoinLiveStream}
+                  className="w-fit px-3 py-2 bg-white border rounded-[20px] border-red-400 flex justify-center items-center"
+                >
+                  <Text className="text-[11px] text-red-400 font-bold">
+                    Join Live Stream
+                  </Text>
+                </TouchableOpacity>
+              )}
               {checkHelping && currentMyRescuer && (
                 <TouchableOpacity
                   onPress={handleCancelSOS}

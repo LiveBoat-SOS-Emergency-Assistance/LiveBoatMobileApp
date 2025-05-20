@@ -1,6 +1,5 @@
 import { Stack } from "expo-router";
 import React from "react";
-import ImageCustom from "../../../components/Image/Image";
 export default function Layout() {
   return (
     <Stack>
