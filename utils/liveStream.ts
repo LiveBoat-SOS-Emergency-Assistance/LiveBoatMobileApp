@@ -84,14 +84,20 @@ export async function updateViewCount() {
   try {
     const view = await getRoomPeersAmount();
     // Pass 'view' to your component state/UI
-    console.log(`Current viewers: ${view}`);
+    // console.log(`Current viewers: ${view}`);
+    return view;
   } catch (error) {
     console.error("Error updating view count:", error);
+    return 0;
   }
 }
 
 export function updateRoomVideo(props: any): void {
   // Implement in component: update video stream or fallback image
+  const { track } = props;
+  if (track) {
+  } else {
+  }
 }
 
 export function updateCameraStatus(

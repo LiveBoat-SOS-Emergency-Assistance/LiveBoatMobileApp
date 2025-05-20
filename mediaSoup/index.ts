@@ -72,7 +72,7 @@ export const initializeMediaSoupModule = (): void => {
 const createDevice = async (isConsumeOnly: boolean = false): Promise<void> => {
   try {
     device = new Device();
-
+    console.log("Creating device...");
     await device.load({
       routerRtpCapabilities: rtpCapabilities,
     });
@@ -81,10 +81,14 @@ const createDevice = async (isConsumeOnly: boolean = false): Promise<void> => {
     setConsumerDevice(device);
 
     if (isConsumeOnly) {
+      console.log("Creating consumer transport...");
       getProducersThenConsume(mediaSoupSocket);
     } else {
+      console.log("Creating send transport...");
       const { transport } = await createSendTransport(mediaSoupSocket);
+      // console.log("transport", transport);
       await connectSendTransport(mediaSoupSocket);
+      console.log("helo...");
     }
 
     handleProducerClosed(mediaSoupSocket);
@@ -119,10 +123,15 @@ export const joinRoom = async ({
   isConsumeOnly = false,
   userId = null,
 }: any): Promise<void> => {
-  mediaSoupSocket.emit("joinRoom", { roomName, userId }, (data: any) => {
-    rtpCapabilities = data.rtpCapabilities;
-    createDevice(isConsumeOnly);
-  });
+  console.log("Joining room:", roomName, userId);
+  mediaSoupSocket.emit(
+    "joinRoom",
+    { roomName: Number(roomName), userId },
+    (data: any) => {
+      rtpCapabilities = data.rtpCapabilities;
+      createDevice(isConsumeOnly);
+    }
+  );
 
   updateViewCount();
 };

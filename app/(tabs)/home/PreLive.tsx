@@ -18,10 +18,13 @@ import { useAuth } from "../../../context/AuthContext";
 import Avatar from "../../../components/Image/Avatar";
 import { BlurView } from "expo-blur";
 import ImageCustom from "../../../components/Image/Image";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import * as mediaSoupModule from "../../../mediaSoup/index";
 import { mediaSoupSocket } from "./SOSMap";
 import { MediaStream, mediaDevices } from "react-native-webrtc";
+import { getChatSocket } from "../../../utils/socket";
+import { initializeChatModule, sendMessage } from "../../../sockets/ChatModule";
+import { updateViewCount } from "../../../utils/liveStream";
 const PreLive = () => {
   const { profile } = useAuth();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -32,66 +35,151 @@ const PreLive = () => {
   const [tryToTurnOffCamera, setTryToTurnOffCamera] = useState(true);
   const [isLiveStreaming, setIsLiveStreaming] = useState(false);
   const [showAudioParticipants, setShowAudioParticipants] = useState(false);
-  const [chatMessage, setChatMessage] = useState("");
-  // const [chatMessages, setChatMessages] = useState<
-  //   { name?: string; content: string }[]
-  // >([]);
-  // const [chatInput, setChatInput] = useState("");
+  const { groupId } = useLocalSearchParams<{ groupId: string }>();
+  const chatSocket = getChatSocket();
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const chatScrollViewRef = useRef<ScrollView>(null);
+  const [viewerCount, setViewerCount] = useState(0);
+  useEffect(() => {
+    const update = async () => {
+      const count = await updateViewCount();
+      setViewerCount(count);
+    };
 
-  // const handleSendLiveChat = () => {
-  //   if (chatInput.trim()) {
-  //     setChatMessages((prev) => [
-  //       ...prev,
-  //       { name: profile?.name, content: chatInput.trim() },
-  //     ]);
-  //     setChatInput("");
-  //   }
-  // };
+    update();
+    mediaSoupSocket.on("update-room-peers", update);
+    return () => {
+      mediaSoupSocket.off("update-room-peers", update);
+    };
+  }, []);
+  useEffect(() => {
+    if (!chatSocket || !groupId) return;
+    initializeChatModule({
+      chatSocket,
+      groupId,
+      onNewMessage: (msg) => setChatMessages((prev) => [...prev, msg]),
+      onChatHistory: (msgs) => setChatMessages(msgs),
+    });
+    return () => {
+      chatSocket.off("receive_message");
+      chatSocket.off("chat_history");
+    };
+  }, [chatSocket, groupId]);
 
+  useEffect(() => {
+    if (isLiveStreaming && chatScrollViewRef.current) {
+      chatScrollViewRef.current.scrollToEnd({ animated: true });
+    }
+  }, [chatMessages, isLiveStreaming]);
+
+  const handleSendLiveChat = () => {
+    if (chatInput.trim()) {
+      sendMessage(chatSocket, chatInput, groupId, profile?.id!);
+      setChatInput("");
+    }
+  };
   const toggleFacing = () => {
     setFacing((prev) => (prev === "front" ? "back" : "front"));
   };
   const toggleMute = () => {
-    console.log("toggleMute");
-    setTryToTurnOffAudio((prev) => {
-      const newState = !prev;
-      try {
-        const { audioProducer } =
-          mediaSoupModule.producerModule.getProducerInfo?.() || {};
-        const audioTrack = videoStream.current?.getAudioTracks?.()[0];
-        if (audioProducer && audioTrack) {
-          audioTrack.enabled = !newState;
-          mediaSoupSocket.emit("audio-status", {
-            isAudioOn: !newState,
-            producerId: audioProducer.id,
-          });
-        }
-      } catch (err) {
-        console.log("Error toggling audio:", err);
-      }
-      return newState;
+    const producerInfo = mediaSoupModule.producerModule.getProducerInfo?.();
+    // console.log("Producer Info:", producerInfo);
+    const { audioProducer } = producerInfo || {};
+    const audioTrack = videoStream.current?.getAudioTracks()[0];
+
+    if (!audioProducer) {
+      console.log("No audio producer available");
+      return;
+    }
+    if (!audioTrack) {
+      console.log("No audio track available");
+      return;
+    }
+
+    const newAudioState = !tryToTurnOffAudio;
+    audioTrack.enabled = newAudioState;
+    mediaSoupSocket.emit("audio-status", {
+      isAudioOn: newAudioState,
+      producerId: audioProducer.id,
     });
+    setTryToTurnOffAudio(newAudioState);
   };
-  const toggleCamera = () => {
-    console.log("toggleCamera");
-    setTryToTurnOffCamera((prev) => {
-      const newState = !prev;
-      try {
-        const { videoProducer } =
-          mediaSoupModule.producerModule.getProducerInfo?.() || {};
-        const videoTrack = videoStream.current?.getVideoTracks?.()[0];
-        if (videoProducer && videoTrack) {
-          videoTrack.enabled = !newState;
-          mediaSoupSocket.emit("camera-status", {
-            isCameraOn: !newState,
-            producerId: videoProducer.id,
-          });
-        }
-      } catch (err) {
-        console.log("Error toggling camera:", err);
+  // const toggleCamera = () => {
+  //   const { videoProducer } = mediaSoupModule.producerModule.getProducerInfo();
+  //   const videoTrack = videoStream?.current?.getVideoTracks()[0];
+  //   console.log("Video Track:", videoTrack);
+
+  //   if (!videoProducer) {
+  //     console.log("No video producer available");
+  //     return;
+  //   }
+
+  //   if (tryToTurnOffCamera) {
+  //     if (
+  //       videoStream.current &&
+  //       videoStream.current.getVideoTracks().length > 0
+  //     ) {
+  //       videoTrack!.enabled = false;
+  //       mediaSoupSocket.emit("camera-status", {
+  //         isCameraOn: false,
+  //         producerId: videoProducer.id,
+  //       });
+  //     } else {
+  //       console.log("No video track to stop");
+  //     }
+  //   } else {
+  //     videoTrack!.enabled = true;
+  //     mediaSoupSocket.emit("camera-status", {
+  //       isCameraOn: true,
+  //       producerId: videoProducer.id,
+  //     });
+  //   }
+  // };
+  const toggleCamera = async () => {
+    try {
+      // console.log("mediaSoupModule", mediaSoupModule);
+
+      const producerInfo = mediaSoupModule.producerModule.getProducerInfo?.();
+      const { videoProducer } = producerInfo || {};
+      if (!videoProducer) {
+        console.log("No video producer available");
+        Alert.alert(
+          "Error",
+          "Video producer not initialized. Please try again."
+        );
+        return;
       }
-      return newState;
-    });
+      const videoTrack = videoStream.current?.getVideoTracks()[0];
+      if (!videoTrack) {
+        console.log("No video track available");
+        Alert.alert(
+          "Error",
+          "No video track found. Please restart the stream."
+        );
+        return;
+      }
+      const newCameraState = !tryToTurnOffCamera;
+      if (newCameraState) {
+        // Turn camera on
+        videoTrack.enabled = true;
+        mediaSoupSocket.emit("camera-status", {
+          isCameraOn: true,
+          producerId: videoProducer.id,
+        });
+      } else {
+        // Turn camera off
+        videoTrack.enabled = false;
+        mediaSoupSocket.emit("camera-status", {
+          isCameraOn: false,
+          producerId: videoProducer.id,
+        });
+      }
+      setTryToTurnOffCamera(newCameraState);
+    } catch (error) {
+      console.error("Error toggling camera:", error);
+      Alert.alert("Error", "Failed to toggle camera. Please try again.");
+    }
   };
   const getLocalStream = async (): Promise<void> => {
     try {
@@ -106,14 +194,12 @@ const PreLive = () => {
         audio: true,
         video: true,
       });
-
-      // Save to videoStream ref for use by other functions
+      // Store the stream for later use by mediasoup
       videoStream.current = stream;
 
       // Get audio/video track
       const audioTrack = stream.getAudioTracks()[0];
       const videoTrack = stream.getVideoTracks()[0];
-
       // Set parameters for producer
       if (audioTrack && videoTrack) {
         const audioParams = { track: audioTrack };
@@ -133,19 +219,6 @@ const PreLive = () => {
       mediaSoupModule.joinRoom({ isConsumeOnly: false, userId: profile?.id });
     } catch (error) {
       console.log("Error starting streaming:", error);
-    }
-  };
-  const stopStreaming = async () => {
-    try {
-      console.log("Stopping streaming...");
-      if (videoStream.current) {
-        videoStream.current.getTracks().forEach((track) => track.stop());
-        videoStream.current = null;
-      }
-      setIsLiveStreaming(false);
-      // mediaSoupModule.leaveRoom();
-    } catch (error) {
-      console.log("Error stopping streaming:", error);
     }
   };
 
@@ -269,7 +342,12 @@ const PreLive = () => {
                   height={12}
                   color="white"
                 />
-                <Text className="text-[12px] text-white">0</Text>
+                <Text className="text-[12px] text-white">
+                  {/* {count !== undefined ? count : "..."} */}
+                  {viewerCount}
+                </Text>
+
+                {/* <Text className="text-[12px] text-white">{count}</Text> */}
               </View>
             </View>
           </BlurView>
@@ -337,7 +415,7 @@ const PreLive = () => {
           </TouchableOpacity>
         </View>
 
-        <View className="bottom-10 left-0 right-0 absolute px-5">
+        <View className="bottom-5 left-0 right-0 absolute px-5">
           {!isLiveStreaming ? (
             <TouchableOpacity
               onPress={() => {
@@ -350,91 +428,81 @@ const PreLive = () => {
               <Text className="text-white font-semibold">Start Live</Text>
             </TouchableOpacity>
           ) : (
-            <View className="w-full items-center justify-center py-4">
-              <Text className="text-white text-lg font-semibold">
-                You are live!
-              </Text>
+            <View
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: 0,
+                padding: 10,
+                backgroundColor: "transparent",
+              }}
+            >
+              <View style={{ maxHeight: 210, marginBottom: 8 }}>
+                <ScrollView style={{ maxHeight: 210 }} ref={chatScrollViewRef}>
+                  {chatMessages.map((msg, idx) => (
+                    <View
+                      key={idx}
+                      style={{
+                        marginBottom: 4,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        padding: 4,
+                        gap: 5,
+                      }}
+                    >
+                      <Avatar
+                        source={msg?.avatar_url}
+                        width={40}
+                        height={40}
+                      ></Avatar>
+                      <View className="flex flex-col gap-0">
+                        <Text
+                          style={{
+                            color: "#fff",
+                            fontWeight: "bold",
+                            marginRight: 6,
+                          }}
+                        >
+                          {msg.name || "You"}:
+                        </Text>
+                        <Text style={{ color: "#fff" }}>{msg.content}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+              <View className="flex flex-row w-full px-5 gap-2">
+                <View className="relative w-[85%] h-[40px] border bg-white border-gray-200 rounded-full  flex-row items-center px-3 py-2">
+                  <ImageCustom
+                    width={20}
+                    height={20}
+                    color="gray"
+                    className="abosolute left-1"
+                    source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
+                  ></ImageCustom>
+                  <TextInput
+                    value={chatInput}
+                    onChangeText={setChatInput}
+                    placeholder="Enter message..."
+                    className="w-full h-full pl-2 pr-3 "
+                  ></TextInput>
+                </View>
+                <TouchableOpacity
+                  onPress={handleSendLiveChat}
+                  className="bg-[#fbdada]  p-3 rounded-full"
+                >
+                  <ImageCustom
+                    width={20}
+                    height={20}
+                    color="#EB4747"
+                    source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
+                  ></ImageCustom>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </View>
-
-        {/* Live Chat UI when streaming */}
-        {/* {isLiveStreaming && (
-          <View
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 0,
-              padding: 10,
-              backgroundColor: "rgba(0,0,0,0.7)",
-            }}
-          >
-            <View style={{ maxHeight: 120, marginBottom: 8 }}>
-              <ScrollView
-                style={{ maxHeight: 120 }}
-                contentContainerStyle={{
-                  flexGrow: 1,
-                  justifyContent: "flex-end",
-                }}
-                ref={(ref) => {
-                  if (ref) ref.scrollToEnd({ animated: true });
-                }}
-              >
-                {chatMessages?.map((msg, idx) => (
-                  <View
-                    key={idx}
-                    style={{
-                      marginBottom: 4,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#fff",
-                        fontWeight: "bold",
-                        marginRight: 6,
-                      }}
-                    >
-                      {msg.name || "You"}:
-                    </Text>
-                    <Text style={{ color: "#fff" }}>{msg.content}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: "#fff",
-                borderRadius: 20,
-                paddingHorizontal: 10,
-              }}
-            >
-              <TextInput
-                style={{ flex: 1, height: 36, color: "#222" }}
-                value={chatInput}
-                onChangeText={setChatInput}
-                placeholder="Type a message..."
-                placeholderTextColor="#888"
-              />
-              <TouchableOpacity
-                onPress={handleSendLiveChat}
-                style={{
-                  marginLeft: 8,
-                  padding: 6,
-                  backgroundColor: "#FF4D00",
-                  borderRadius: 16,
-                }}
-                disabled={!chatInput.trim()}
-              >
-                <Text style={{ color: "#fff", fontWeight: "bold" }}>Send</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )} */}
       </View>
     </View>
   );

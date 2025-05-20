@@ -31,6 +31,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { getChatSocket, getMediaSoupSocket } from "../../../utils/socket";
 import { initializeChatModule } from "../../../sockets/ChatModule";
 import * as mediaSoupModule from "../../../mediaSoup/index";
+
 import {
   RTCPeerConnection,
   RTCSessionDescription,
@@ -43,7 +44,7 @@ if (typeof global !== "undefined") {
   global.RTCPeerConnection = RTCPeerConnection as any;
   global.RTCSessionDescription = RTCSessionDescription as any;
   global.RTCIceCandidate = RTCIceCandidate as any;
-  global.MediaStream = MediaStream as any; // <-- add this line
+  global.MediaStream = MediaStream as any;
   global.navigator = global.navigator || {};
   Object.defineProperty(global.navigator, "mediaDevices", {
     value: mediaDevices,
@@ -51,7 +52,15 @@ if (typeof global !== "undefined") {
     writable: true,
   });
 }
+// if (RTCPeerConnection && !RTCPeerConnection.prototype.addStream) {
+//   RTCPeerConnection.prototype.addStream = function (stream) {
+//     stream.getTracks().forEach((track) => {
+//       this.addTrack(track, stream);
+//     });
+//   };
+// }
 export const mediaSoupSocket = getMediaSoupSocket();
+export const chatSocket = getChatSocket();
 interface SocketEvents {
   TOCLIENT_HELPER_LOCATIONS: string;
   TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
@@ -81,7 +90,10 @@ export default function SOSMap() {
     getSOSId();
   }, []);
   const consumeOnly = (): Promise<any> => {
-    return mediaSoupModule.joinRoom({ isConsumeOnly: true });
+    return mediaSoupModule.joinRoom({
+      isConsumeOnly: true,
+      userId: profile?.id,
+    });
   };
   const initialize = async () => {
     try {
@@ -101,7 +113,7 @@ export default function SOSMap() {
           groupId: fetchedGroupId.data,
         });
       }
-      console.log("before mediaSoupSocket", mediaSoupSocket);
+      console.log("before mediaSoupSocket");
       if (mediaSoupSocket) {
         mediaSoupModule.initializeMediaSoupModule();
       }

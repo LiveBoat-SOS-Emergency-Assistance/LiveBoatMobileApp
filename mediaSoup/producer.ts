@@ -53,8 +53,9 @@ export const setMediaParams = (
 };
 
 export const createSendTransport = (socket: any): Promise<any> => {
+  console.log("device", device);
   if (!device) throw new Error("Device not initialized");
-
+  console.log("createSendTransport");
   return new Promise((resolve, reject) => {
     socket.emit(
       "createWebRtcTransport",
@@ -65,23 +66,27 @@ export const createSendTransport = (socket: any): Promise<any> => {
           reject(params.error);
           return;
         }
-
+        console.log("1");
         producerTransport = device.createSendTransport({
           ...params,
           // iceServers: [
           //   { urls: "stun:stun.l.google.com:19302" }
           // ]
         });
+        console.log("2");
 
         producerTransport.on(
           "connect",
           async ({ dtlsParameters }: any, callback: any, errback: any) => {
             try {
+              console.log("31");
               await socket.emit("transport-connect", {
                 dtlsParameters,
               });
               callback();
+              console.log("3");
             } catch (error) {
+              console.error("Error in transport connect callback:", error);
               errback(error);
             }
           }
@@ -92,6 +97,7 @@ export const createSendTransport = (socket: any): Promise<any> => {
           async (parameters: any, callback: any, errback: any) => {
             console.log("producerTransport produce", parameters);
             try {
+              console.log("transport-produce 1");
               await socket.emit(
                 "transport-produce",
                 {
@@ -104,16 +110,18 @@ export const createSendTransport = (socket: any): Promise<any> => {
                     console.error("Error producing:", error);
                     return;
                   }
-
+                  console.log("transport-produce 2");
                   callback({ id });
-
+                  console.log("transport-produce 3");
                   if (producersExist) {
                     getProducersThenConsume(socket);
+                    console.log("transport-produce 4");
                     resolve({
                       transport: producerTransport,
                       producersExist: true,
                     });
                   } else {
+                    console.log("transport-produce 5");
                     resolve({
                       transport: producerTransport,
                       producersExist: false,
@@ -121,22 +129,32 @@ export const createSendTransport = (socket: any): Promise<any> => {
                   }
                 }
               );
+              console.log("4");
             } catch (error) {
+              console.error("Error in produce callback:", error);
               errback(error);
             }
           }
         );
+        resolve({ transport: producerTransport });
       }
     );
   });
 };
 
 export const connectSendTransport = async (socket: any): Promise<any> => {
+  // console.log("pls");
   if (!producerTransport) throw new Error("Producer transport not initialized");
-
+  // console.log("videoParams", videoParams);
   if (videoParams?.track) {
-    videoProducer = await producerTransport.produce(videoParams);
-
+    console.log("videoParams.track", videoParams.track);
+    try {
+      videoProducer = await producerTransport.produce(videoParams);
+    } catch (error) {
+      console.log("error producing video", error);
+      // return;
+    }
+    console.log("videoProducer123");
     videoProducer.on("trackended", () => {
       console.log("video track ended");
     });
@@ -145,8 +163,9 @@ export const connectSendTransport = async (socket: any): Promise<any> => {
       console.log("video transport ended");
     });
   }
-
+  console.log("audioParams", audioParams);
   if (audioParams?.track) {
+    console.log("audioParams.track", audioParams.track);
     audioProducer = await producerTransport.produce(audioParams);
     audioProducer.on("trackended", () => {
       console.log("audio track ended");
@@ -161,6 +180,10 @@ export const connectSendTransport = async (socket: any): Promise<any> => {
 };
 
 export const getProducerInfo = () => {
+  console.log("videoProducer", videoProducer);
+  console.log("audioProducer", audioProducer);
+  // console.log("producerTransport", producerTransport);
+  if (!producerTransport) throw new Error("Producer transport not initialized");
   return {
     videoProducer,
     audioProducer,

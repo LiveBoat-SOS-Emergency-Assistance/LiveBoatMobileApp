@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 let mediaSoupSocket: any = null;
 let chatSocket: any = null;
 
-const serverUrl = "http://160.30.113.117:3000";
+const serverUrl = "https://d23f-113-176-107-191.ngrok-free.app";
 
 export const getMediaSoupSocket = () => {
   if (!mediaSoupSocket) {

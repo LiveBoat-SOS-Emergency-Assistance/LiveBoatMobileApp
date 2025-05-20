@@ -12,9 +12,10 @@ import { getChatSocket } from "../../../utils/socket";
 import { initializeChatModule, sendMessage } from "../../../sockets/ChatModule";
 import { useAuth } from "../../../context/AuthContext";
 import Avatar from "../../../components/Image/Avatar";
+import { chatSocket } from "./SOSMap";
 const GroupChat = () => {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
-  const chatSocket = getChatSocket();
+  // const chatSocket = getChatSocket();
   const [messages, setMessages] = useState<any[]>([]);
   const [messageContent, setMessageContent] = useState("");
   const { profile } = useAuth();
