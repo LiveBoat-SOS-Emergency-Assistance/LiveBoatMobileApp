@@ -272,6 +272,7 @@ import ImageCustom from "../../../components/Image/Image";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { router } from "expo-router";
 import { aiURL } from "../../../baseUrl";
+import LottieView from "lottie-react-native";
 
 export default function Chatbot(): JSX.Element {
   const angleAnim = useRef(new Animated.Value(0)).current;
@@ -282,6 +283,7 @@ export default function Chatbot(): JSX.Element {
   const [apiUrl] = useState(aiURL);
   const scrollViewRef = useRef<ScrollView>(null);
   const fetchUrl = `${apiUrl.trim()}/api/generate`;
+  const [typing, setTyping] = useState(false);
   // const [chatHistory, setChatHistory] = useState<string[]>([]);
   const [chatHistory, setChatHistory] = useState<
     { sender: "user" | "ai" | "error" | "loading"; content: string }[]
@@ -324,6 +326,7 @@ export default function Chatbot(): JSX.Element {
     setMessageContent("");
 
     try {
+      setTyping(true);
       console.log("Fetch URL:", fetchUrl);
 
       if (!apiUrl || !apiUrl.startsWith("http")) {
@@ -363,7 +366,7 @@ If the input is ambiguous or unclear but could still relate to healthcare, polit
       console.log("Response:", data.response);
 
       const aiResponse = `${data.response || "No response from AI."}`;
-
+      setTyping(false);
       setChatHistory((prev) => [
         ...prev,
         { sender: "ai", content: aiResponse || "No response from AI." },
@@ -453,10 +456,24 @@ If the input is ambiguous or unclear but could still relate to healthcare, polit
                 </View>
               ))}
 
-              {chatHistory.length > 0 &&
-                chatHistory[chatHistory.length - 1].sender === "loading" && (
-                  <Text className="color-gray-500 self-start">Typing...</Text>
-                )}
+              {typing && (
+                <View>
+                  <LottieView
+                    source={{
+                      uri: "https://lottie.host/f52662c5-7c67-4040-a539-899bb0dfbf7d/0pB91FaotS.lottie",
+                    }}
+                    autoPlay
+                    loop
+                    speed={2}
+                    style={{
+                      width: 60,
+                      height: 60,
+                      backgroundColor: "#f3f4f6",
+                      borderRadius: 16,
+                    }}
+                  />
+                </View>
+              )}
             </ScrollView>
           ) : (
             <View className="flex-1 z-10 justify-center items-center px-5">

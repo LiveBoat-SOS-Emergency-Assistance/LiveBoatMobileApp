@@ -8,7 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Avatar from "../../../components/Image/Avatar";
 import { router, useLocalSearchParams } from "expo-router";
 import ImageCustom from "../../../components/Image/Image";
@@ -16,7 +16,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
 import { useChatSocket } from "../../../hooks/useChatSocket";
-import { Key } from "lucide-react-native";
 interface ChatMessageProps {
   data: {
     avatar_url: string;
@@ -33,6 +32,7 @@ const ChatBox = () => {
   const [messageContent, setMessageContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState([]);
   const [isSocketReady, setSocketReady] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
   console.log("Group ID:", groupId);
   const { socket, messages, sendMessage, joinGroup, socketEvents } =
     useChatSocket();
@@ -45,6 +45,12 @@ const ChatBox = () => {
       socket.current?.on("connect", () => joinGroup(groupId, senderId));
     }
   }, [socket.current, groupId, senderId]);
+
+  useEffect(() => {
+    if (flatListRef.current && messages.length > 0) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
 
   const handleSendMessage = async () => {
     if (!messageContent.trim() && mediaFiles.length === 0) {
@@ -64,6 +70,9 @@ const ChatBox = () => {
       sendMessage(senderId, groupId, messageContent, mediaFiles);
       setMessageContent("");
       setMediaFiles([]);
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
@@ -139,6 +148,7 @@ const ChatBox = () => {
           </View>
           {/* Chat Messages */}
           <FlatList
+            ref={flatListRef}
             data={messages}
             keyExtractor={(item, index) => `message-${index}`}
             renderItem={renderMessage}

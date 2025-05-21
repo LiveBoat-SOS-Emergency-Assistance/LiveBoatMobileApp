@@ -346,12 +346,7 @@ const PreLive = () => {
                   height={12}
                   color="white"
                 />
-                <Text className="text-[12px] text-white">
-                  {/* {count !== undefined ? count : "..."} */}
-                  {viewerCount}
-                </Text>
-
-                {/* <Text className="text-[12px] text-white">{count}</Text> */}
+                <Text className="text-[12px] text-white">{viewerCount}</Text>
               </View>
             </View>
           </BlurView>

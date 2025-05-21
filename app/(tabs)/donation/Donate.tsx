@@ -125,7 +125,7 @@ export default function PaymentInterface() {
       {activeTab === "transfer" && (
         <View style={styles.transferContainer}>
           <Text style={styles.name}>
-            {data?.paymentLinkResponse.accountName || "PHAM VAN TUAN"}
+            {data?.paymentLinkResponse.accountName || "VAN THI BACH DUONG"}
           </Text>
           <View style={styles.bankRow}>
             <View style={styles.bankBadge}>
