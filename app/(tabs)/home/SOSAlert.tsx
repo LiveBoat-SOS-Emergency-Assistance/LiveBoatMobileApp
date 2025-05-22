@@ -37,7 +37,7 @@ export default function SOSAlert() {
           await AsyncStorage.setItem("accuracySOS", accuracy.toString());
 
           router.push("/(tabs)/home/SOSMap");
-          // handleSendNotification();
+          handleSendNotification();
         } else {
           console.error("Location data is missing.");
         }

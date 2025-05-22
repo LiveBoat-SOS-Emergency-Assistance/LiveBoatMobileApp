@@ -166,6 +166,13 @@ export default function SOSMap() {
 
     socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
       console.log("The Helper locations:", data);
+      Toast.show({
+        type: "info",
+        text1: "Notification",
+        text2: "Someone is coming to support you!",
+        position: "top",
+        visibilityTime: 2000,
+      });
       displayOrUpdateMarkers(data);
     });
     const userType = "SENDER";
@@ -249,22 +256,22 @@ export default function SOSMap() {
     }
   };
 
-  useEffect(() => {
-    const getListRescuer = async () => {
-      try {
-        const sosId = await AsyncStorage.getItem("sosId");
-        console.log("SOS ID", sosId);
-        const result = await rescuerServices.getRescuerBySOSId(
-          Number(sosId),
-          "ENROUTE"
-        );
-        setListRescuer(result.data);
-      } catch (error: any) {
-        console.log("Error when get List Rescuer", error);
-      }
-    };
-    getListRescuer();
-  }, []);
+  // useEffect(() => {
+  //   const getListRescuer = async () => {
+  //     try {
+  //       const sosId = await AsyncStorage.getItem("sosId");
+  //       console.log("SOS ID", sosId);
+  //       const result = await rescuerServices.getRescuerBySOSId(
+  //         Number(sosId),
+  //         "ENROUTE"
+  //       );
+  //       setListRescuer(result.data);
+  //     } catch (error: any) {
+  //       console.log("Error when get List Rescuer", error);
+  //     }
+  //   };
+  //   getListRescuer();
+  // }, []);
   const handleResolve = async () => {
     try {
       // setLoading(true);

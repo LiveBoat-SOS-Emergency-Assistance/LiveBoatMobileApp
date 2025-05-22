@@ -60,6 +60,8 @@ const PreLive = () => {
   const chatScrollViewRef = useRef<ScrollView>(null);
   const [viewerCount, setViewerCount] = useState(0);
   const [remoteVideoTrack, setRemoteVideoTrack] = useState<any>(null);
+  console.log("isHostBool, sosId", isHostBool, sosId);
+
   useEffect(() => {
     const update = async () => {
       const count = await updateViewCount();
@@ -205,6 +207,7 @@ const PreLive = () => {
     try {
       console.log("Starting streaming...");
       await getLocalStream();
+      console.log("profileid", profile?.id);
       mediaSoupModule.joinRoom({ isConsumeOnly: false, userId: profile?.id });
     } catch (error) {
       console.log("Error starting streaming:", error);
@@ -261,7 +264,6 @@ const PreLive = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Nếu có quyền thì dùng camera làm nền, không thì dùng màu 404040 */}
       {hasPermission && tryToTurnOffCamera ? (
         remoteVideoTrack ? (
           <RTCView
@@ -270,12 +272,10 @@ const PreLive = () => {
             objectFit="cover"
           />
         ) : (
-          <CameraView
-            ref={cameraRef}
+          <RTCView
+            streamURL={new MediaStream([remoteVideoTrack]).toURL()}
             style={StyleSheet.absoluteFill}
-            facing={facing}
-            mute={tryToTurnOffAudio}
-            active={tryToTurnOffCamera}
+            objectFit="cover"
           />
         )
       ) : (

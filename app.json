@@ -1,15 +1,15 @@
 {
   "expo": {
     "scheme": "liveboatapp",
-    "name": "liveboatapp",
+    "name": "LiveBoat",
     "slug": "liveboatapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./images/liveboat.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./images/liveboat.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./images/liveboat.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.liveboatapp"
@@ -27,9 +27,6 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": [
-      "expo-font",
-      "expo-router"
-    ]
+    "plugins": ["expo-font", "expo-router"]
   }
 }

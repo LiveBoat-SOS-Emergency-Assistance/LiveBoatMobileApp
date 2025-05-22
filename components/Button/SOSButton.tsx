@@ -61,9 +61,9 @@ const SOSButton = () => {
   const handlePressIn = () => {
     setIsPressed(true);
     startWaveAnimation();
-    // Vibration.vibrate([500, 500, 500], true);
+    Vibration.vibrate([500, 500, 500], true);
     const newTimer = setTimeout(() => {
-      // Vibration.cancel();
+      Vibration.cancel();
       router.push("/(tabs)/home/SOSAlert");
     }, 3000);
     setTimer(newTimer);

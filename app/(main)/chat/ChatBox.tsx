@@ -47,6 +47,7 @@ const ChatBox = () => {
   }, [socket.current, groupId, senderId]);
 
   useEffect(() => {
+  
     if (flatListRef.current && messages.length > 0) {
       flatListRef.current.scrollToEnd({ animated: true });
     }

@@ -19,7 +19,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
     onPress={onPress}
     className="flex-row justify-between items-center py-5 px-5 border-b border-gray-200"
   >
-    <View>
+    <View className="flex-1">
       <Text className="text-base">{title}</Text>
       {subtitle && <Text className="text-gray-500 text-sm">{subtitle}</Text>}
     </View>
@@ -27,7 +27,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
     <View className="flex-row items-center space-x-2 ">
       {value && (
         <Text
-          className="text-gray-500 text-sm truncate w-[150px]"
+          className="text-gray-500 text-sm truncate w-[150px] text-right"
           numberOfLines={1}
           ellipsizeMode="tail"
         >

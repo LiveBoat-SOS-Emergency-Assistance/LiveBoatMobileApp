@@ -24,6 +24,7 @@ import { RescuerItem } from "../../../types/rescuerItem";
 import * as mediaSoupModule from "../../../mediaSoup/index";
 import { getChatSocket, getMediaSoupSocket } from "../../../utils/socket";
 import { initializeChatModule } from "../../../sockets/ChatModule";
+import { useAuth } from "../../../context/AuthContext";
 
 interface SOSProfile {
   accuracy: string;
@@ -57,12 +58,13 @@ interface UserProfile {
 }
 const ProfileSOS = () => {
   const { id } = useLocalSearchParams();
-  const [profile, setProfile] = useState<SOSProfile | null>(null);
+  const [profileSOS, setProfileSOS] = useState<SOSProfile | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [checkHelping, setCheckHelping] = useState(true);
   const [currentMyRescuer, setCurrentMyRescuer] = useState<RescuerItem | null>(
     null
   );
+  const { profile } = useAuth();
   const [location, setLocation] = useState<{
     longitude: number;
     latitude: number;
@@ -104,7 +106,7 @@ const ProfileSOS = () => {
           accuracy: loc.accuracy,
         });
       }
-      setProfile(result.data);
+      setProfileSOS(result.data);
       setUserProfile(resultUserProfile.data);
     };
     if (id) {
@@ -135,11 +137,11 @@ const ProfileSOS = () => {
   const handleCancelSOS = async () => {
     try {
       // console.log(currentSOS.SOS);
-      if (profile) {
+      if (profileSOS) {
         const result = await rescuerServices.updateRescuer({
-          longitude: profile.longitude,
-          latitude: profile.latitude,
-          accuracy: profile.accuracy,
+          longitude: profileSOS.longitude,
+          latitude: profileSOS.latitude,
+          accuracy: profileSOS.accuracy,
           status: "CANCELED",
         });
       }
@@ -249,7 +251,7 @@ const ProfileSOS = () => {
               </Text>
             </View>
             <View className="flex flex-row gap-2 h-[30px]">
-              {profile?.has_livestream === true && (
+              {profileSOS?.has_livestream === true && (
                 <TouchableOpacity
                   onPress={handleJoinLiveStream}
                   className="w-fit px-3 py-2 bg-white border rounded-[20px] border-red-400 flex justify-center items-center"
@@ -289,7 +291,7 @@ const ProfileSOS = () => {
               </View>
               <Text className="text-white font-bold">Description:</Text>
               <Text className="text-white text-[13px]">
-                {profile?.description}
+                {profileSOS?.description}
               </Text>
             </View>
             <View
