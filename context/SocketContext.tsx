@@ -23,6 +23,9 @@ interface SocketContextType {
   userId: number;
   myLocation: [number, number] | null;
   otherUserMarkers: Record<number, Marker>;
+  setOtherUserMarkers: React.Dispatch<
+    React.SetStateAction<Record<number, Marker>>
+  >;
   updateLocation: (
     latitude: number,
     longitude: number,
@@ -266,6 +269,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         userId,
         myLocation,
         otherUserMarkers,
+        setOtherUserMarkers,
         updateLocation,
         setUserInfo,
         displayOrUpdateMarkers,

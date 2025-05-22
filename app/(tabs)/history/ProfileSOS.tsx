@@ -125,6 +125,7 @@ const ProfileSOS = () => {
         await AsyncStorage.setItem("SOSID", id.toString());
         router.replace("/(tabs)/home");
       }
+      
     } catch (error: any) {
       Toast.show({
         type: "error",
@@ -163,6 +164,7 @@ const ProfileSOS = () => {
   };
 
   const consumeOnly = (): Promise<any> => {
+    console.log("Consume only call");
     return mediaSoupModule.joinRoom({
       isConsumeOnly: true,
       userId: profile?.id,
@@ -187,6 +189,7 @@ const ProfileSOS = () => {
         mediaSoupModule.initializeMediaSoupModule();
       }
       consumeOnly();
+
       setLoading(false);
     } catch (error) {
       console.error("Initialization error:", error);
@@ -199,6 +202,7 @@ const ProfileSOS = () => {
         pathname: "/(tabs)/home/PreLive",
         params: {
           sosId: id,
+          userProfile: JSON.stringify(userProfile),
         },
       });
     }

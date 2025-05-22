@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import { AnimatePresence, time } from "framer-motion";
 import BottomModal from "../../../components/Modal/BottomModal";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SlideToCancel from "../../../components/Button/SlideCancelButton";
-import { router, useNavigation } from "expo-router";
+import { router, useFocusEffect, useNavigation } from "expo-router";
 import CustomDialog from "../../../components/Dialog/DialogEditSOS";
 import AddressSOSCard from "../../../components/Card/AddressSOSCard";
 import Avatar from "../../../components/Image/Avatar";
@@ -145,6 +145,7 @@ export default function SOSMap() {
     setUserInfo,
     updateLocation,
     otherUserMarkers,
+    setOtherUserMarkers,
     displayOrUpdateMarkers,
     registerCommonSocketEvents,
   } = useSocketContext();
@@ -161,59 +162,73 @@ export default function SOSMap() {
   const handleEditSOS = () => {
     setVisible(true);
   };
-  useEffect(() => {
-    registerCommonSocketEvents();
+  useFocusEffect(
+    useCallback(() => {
+      registerCommonSocketEvents();
 
-    socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
-      console.log("The Helper locations:", data);
-      Toast.show({
-        type: "info",
-        text1: "Notification",
-        text2: "Someone is coming to support you!",
-        position: "top",
-        visibilityTime: 2000,
+      socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
+        console.log("The Helper locations:", data);
+        Toast.show({
+          type: "info",
+          text1: "Notification",
+          text2: "Someone is coming to support you!",
+          position: "top",
+          visibilityTime: 2000,
+        });
+        displayOrUpdateMarkers(data);
       });
-      displayOrUpdateMarkers(data);
-    });
-    const userType = "SENDER";
-    setUserInfo(userType);
-    const timeout1 = setTimeout(() => {
-      socket.current?.emit(
-        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
-      );
-    }, 3000);
-
-    socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
-    const timeout2 = setTimeout(async () => {
-      const location = await getCurrentLocation();
-      if (location) {
-        updateLocation(
-          location.latitude,
-          location.longitude,
-          location.accuracy ?? 0
+      const userType = "SENDER";
+      setUserInfo(userType);
+      const timeout1 = setTimeout(() => {
+        socket.current?.emit(
+          SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
         );
-      }
-    }, 5000);
-    const locationInterval = setInterval(async () => {
-      const location = await getCurrentLocation();
-      if (location) {
-        updateLocation(
-          location.latitude,
-          location.longitude,
-          location.accuracy ?? 0
-        );
-      }
-    }, 10000);
-    return () => {
-      clearInterval(timeout1);
-      clearTimeout(timeout2);
-      clearInterval(locationInterval);
+      }, 3000);
 
-      socket.current?.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
-      socket.current?.off(
-        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
-      );
+      socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
+      const timeout2 = setTimeout(async () => {
+        const location = await getCurrentLocation();
+        if (location) {
+          updateLocation(
+            location.latitude,
+            location.longitude,
+            location.accuracy ?? 0
+          );
+        }
+      }, 5000);
+      const locationInterval = setInterval(async () => {
+        const location = await getCurrentLocation();
+        if (location) {
+          updateLocation(
+            location.latitude,
+            location.longitude,
+            location.accuracy ?? 0
+          );
+        }
+      }, 10000);
+      return () => {
+        clearInterval(timeout1);
+        clearTimeout(timeout2);
+        clearInterval(locationInterval);
+        console.log("Unsubscribed from socket events");
+        socket.current?.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
+        setOtherUserMarkers([]);
+        socket.current?.off(
+          SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+        );
+      };
+    }, [])
+  );
+  useEffect(() => {
+    const getSOSId = async () => {
+      try {
+        const sosId = await AsyncStorage.getItem("sosId");
+        setSosId(sosId);
+      } catch (error) {
+        console.log("Error when get SOS ID", error);
+      }
     };
+    getSOSId();
   }, []);
   useEffect(() => {
     const unsubscribe = navigation.addListener(

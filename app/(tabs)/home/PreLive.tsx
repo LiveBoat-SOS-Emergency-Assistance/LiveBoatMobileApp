@@ -26,6 +26,7 @@ import { getChatSocket } from "../../../utils/socket";
 import { initializeChatModule, sendMessage } from "../../../sockets/ChatModule";
 import { updateViewCount } from "../../../utils/liveStream";
 import { liveStreamService } from "../../../services/liveStream";
+import { userServices } from "../../../services/user";
 // Extend the Window interface to include setRemoteVideoTrack
 declare global {
   interface Window {
@@ -41,6 +42,7 @@ export function updateRoomVideo(props: any): void {
   }
   return track;
 }
+
 const PreLive = () => {
   const { isHost } = useLocalSearchParams<{ isHost: string }>();
   const isHostBool = isHost === "true";
@@ -61,6 +63,34 @@ const PreLive = () => {
   const [viewerCount, setViewerCount] = useState(0);
   const [remoteVideoTrack, setRemoteVideoTrack] = useState<any>(null);
   console.log("isHostBool, sosId", isHostBool, sosId);
+  const [host, setHost] = useState<any>();
+  const { userProfile } = useLocalSearchParams<{ userProfile: string }>();
+  // console.log("userProfile", userProfile);
+  useEffect(() => {
+    if (isHostBool) return;
+    const fetchHost = async () => {
+      try {
+        if (userProfile) {
+          const parsedProfile = JSON.parse(userProfile);
+          setHost(parsedProfile);
+        } else {
+          setHost(undefined);
+        }
+      } catch (error) {
+        console.error("Error parsing userProfile:", error);
+        setHost(undefined);
+      }
+    };
+    fetchHost();
+  }, [isHostBool, userProfile]);
+  useEffect(() => {
+    window.setRemoteVideoTrack = (track: any) => {
+      setRemoteVideoTrack(track);
+    };
+    return () => {
+      window.setRemoteVideoTrack = undefined;
+    };
+  }, []);
 
   useEffect(() => {
     const update = async () => {
@@ -278,44 +308,63 @@ const PreLive = () => {
             objectFit="cover"
           />
         )
-      ) : (
-        isHostBool && (
-          <ImageBackground
-            source={
-              profile?.User.avatar_url
-                ? { uri: profile.User.avatar_url }
-                : require("../../../assets/images/ava1.png")
-            }
-            style={[
-              StyleSheet.absoluteFill,
-              { justifyContent: "center", alignItems: "center" },
-            ]}
-            resizeMode="cover"
+      ) : isHostBool ? (
+        <ImageBackground
+          source={
+            profile?.User.avatar_url
+              ? { uri: profile.User.avatar_url }
+              : require("../../../assets/images/ava1.png")
+          }
+          style={[
+            StyleSheet.absoluteFill,
+            { justifyContent: "center", alignItems: "center" },
+          ]}
+          resizeMode="cover"
+        >
+          <BlurView
+            intensity={50}
+            tint="dark"
+            style={{ position: "absolute", width: "100%", height: "100%" }}
+          />
+          <Avatar source={profile?.User.avatar_url} width={120} height={120} />
+          <Text style={{ color: "white", marginTop: 10 }}>Camera is off</Text>
+          <TouchableOpacity
+            onPress={toggleCamera}
+            style={{
+              marginTop: 20,
+              padding: 10,
+              backgroundColor: "#ffffff30",
+              borderRadius: 5,
+            }}
           >
-            <BlurView
-              intensity={50}
-              tint="dark"
-              style={{ position: "absolute", width: "100%", height: "100%" }}
-            />
-            <Avatar
-              source={profile?.User.avatar_url}
-              width={120}
-              height={120}
-            />
-            <Text style={{ color: "white", marginTop: 10 }}>Camera is off</Text>
-            <TouchableOpacity
-              onPress={toggleCamera}
-              style={{
-                marginTop: 20,
-                padding: 10,
-                backgroundColor: "#ffffff30",
-                borderRadius: 5,
-              }}
-            >
-              <Text style={{ color: "white" }}>Turn On Camera</Text>
-            </TouchableOpacity>
-          </ImageBackground>
-        )
+            <Text style={{ color: "white" }}>Turn On Camera</Text>
+          </TouchableOpacity>
+        </ImageBackground>
+      ) : (
+        <ImageBackground
+          source={
+            host && host.User && host.User.avatar_url
+              ? { uri: host.User.avatar_url }
+              : require("../../../assets/images/ava1.png")
+          }
+          style={[
+            StyleSheet.absoluteFill,
+            { justifyContent: "center", alignItems: "center" },
+          ]}
+          resizeMode="cover"
+        >
+          <BlurView
+            intensity={50}
+            tint="dark"
+            style={{ position: "absolute", width: "100%", height: "100%" }}
+          />
+          <Avatar
+            source={host && host.User ? host.User.avatar_url : undefined}
+            width={120}
+            height={120}
+          />
+          {/* <Text style={{ color: "white", marginTop: 10 }}>Camera is off</Text> */}
+        </ImageBackground>
       )}
 
       {/* Overlay content */}
@@ -329,7 +378,13 @@ const PreLive = () => {
           >
             <View className="w-[45px] h-[45px] bg-white rounded-full overflow-hidden justify-center items-center flex">
               <Avatar
-                source={profile?.User.avatar_url}
+                source={
+                  isHostBool
+                    ? profile?.User.avatar_url
+                    : host && host.User
+                    ? host.User.avatar_url
+                    : undefined
+                }
                 width={40}
                 height={40}
                 className="rounded-full z-10"
@@ -337,7 +392,7 @@ const PreLive = () => {
             </View>
             <View className="flex flex-col gap-1">
               <Text className="text-white font-medium z-10">
-                {profile?.name}
+                {isHostBool ? profile?.name : host ? host.name : ""}
               </Text>
               <View className="flex flex-row items-center gap-1">
                 <ImageCustom
