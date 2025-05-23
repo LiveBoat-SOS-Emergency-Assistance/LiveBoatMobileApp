@@ -91,7 +91,9 @@ export default function History() {
             <Text className="text-[28px] text-[#404040] font-bold ">Today</Text>
             <View className="w-[75px] h-[75px] rounded-full flex justify-center items-center border-[#EB4747] border-[3px]">
               <Avatar
-                className="w-[60px] h-[60px] rounded-full object-cover"
+                width={65}
+                height={65}
+                className="w-[50px] h-[50px] rounded-full object-cover"
                 source={profile?.User?.avatar_url}
               />
             </View>

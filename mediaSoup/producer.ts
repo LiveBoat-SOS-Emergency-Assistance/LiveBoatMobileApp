@@ -116,12 +116,14 @@ export const createSendTransport = (socket: any): Promise<any> => {
                   callback({ id });
                   console.log("transport-produce 3");
                   if (producersExist) {
+                    console.log("before transport-produce 4");
                     getProducersThenConsume(socket);
                     console.log("transport-produce 4");
                     resolve({
                       transport: producerTransport,
                       producersExist: true,
                     });
+                    console.log("transport-produce 4.5");
                   } else {
                     console.log("transport-produce 5");
                     resolve({
@@ -138,6 +140,7 @@ export const createSendTransport = (socket: any): Promise<any> => {
             }
           }
         );
+        console.log("5");
         resolve({ transport: producerTransport });
       }
     );

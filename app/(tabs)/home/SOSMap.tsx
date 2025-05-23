@@ -31,15 +31,15 @@ import { useAuth } from "../../../context/AuthContext";
 import { getChatSocket, getMediaSoupSocket } from "../../../utils/socket";
 import { initializeChatModule } from "../../../sockets/ChatModule";
 import * as mediaSoupModule from "../../../mediaSoup/index";
-
 import {
+  mediaDevices,
+  MediaStream,
+  RTCIceCandidate,
   RTCPeerConnection,
   RTCSessionDescription,
-  RTCIceCandidate,
-  mediaDevices,
-  MediaStream, // <-- add this import
 } from "react-native-webrtc";
 
+// registerGlobals();
 if (typeof global !== "undefined") {
   global.RTCPeerConnection = RTCPeerConnection as any;
   global.RTCSessionDescription = RTCSessionDescription as any;

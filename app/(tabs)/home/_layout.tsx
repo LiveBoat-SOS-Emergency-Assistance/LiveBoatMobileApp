@@ -1,5 +1,43 @@
 import { Stack } from "expo-router";
 import React from "react";
+import { registerGlobals } from "react-native-webrtc";
+import {
+  RTCPeerConnection,
+  RTCSessionDescription,
+  RTCIceCandidate,
+  mediaDevices,
+  MediaStream,
+} from "react-native-webrtc";
+
+registerGlobals();
+if (typeof global !== "undefined") {
+  global.RTCPeerConnection = RTCPeerConnection as any;
+  global.RTCSessionDescription = RTCSessionDescription as any;
+  global.RTCIceCandidate = RTCIceCandidate as any;
+  global.MediaStream = MediaStream as any;
+  global.navigator = global.navigator || {};
+  Object.defineProperty(global.navigator, "mediaDevices", {
+    value: mediaDevices,
+    configurable: true,
+    writable: true,
+  });
+}
+// @ts-ignore
+if (
+  typeof RTCPeerConnection !== "undefined" &&
+  // @ts-ignore
+  !RTCPeerConnection.prototype.addStream
+) {
+  // @ts-ignore
+  RTCPeerConnection.prototype.addStream = function (stream: any) {
+    const existingTracks = this.getSenders().map((sender) => sender.track);
+    stream.getTracks().forEach((track: any) => {
+      if (!existingTracks.includes(track)) {
+        this.addTrack(track, stream);
+      }
+    });
+  };
+}
 export default function Layout() {
   return (
     <Stack>

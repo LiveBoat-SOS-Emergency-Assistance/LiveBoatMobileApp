@@ -125,7 +125,6 @@ const ProfileSOS = () => {
         await AsyncStorage.setItem("SOSID", id.toString());
         router.replace("/(tabs)/home");
       }
-      
     } catch (error: any) {
       Toast.show({
         type: "error",
@@ -168,6 +167,7 @@ const ProfileSOS = () => {
     return mediaSoupModule.joinRoom({
       isConsumeOnly: true,
       userId: profile?.id,
+      sosId: id,
     });
   };
   const initialize = async () => {

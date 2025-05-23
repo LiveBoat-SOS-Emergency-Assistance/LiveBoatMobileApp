@@ -98,23 +98,23 @@ export async function updateViewCount() {
 //   return track;
 // }
 
-export function updateCameraStatus(
-  isCameraOn: boolean,
-  producerId: string
-): void {}
+// export function updateCameraStatus(
+//   isCameraOn: boolean,
+//   producerId: string
+// ): void {}
 
 export function updateAudioStatus(
   isAudioOn: boolean,
   producerId: string
 ): void {}
 
-export function scrollChatToBottom(): void {
-  // Implement in component: use FlatList ref and scrollToEnd
-}
+// export function scrollChatToBottom(): void {
+//   // Implement in component: use FlatList ref and scrollToEnd
+// }
 
-export function displayNewMessage(props: any): void {
-  // Implement in component: add message to chat state and scroll to bottom
-}
+// export function displayNewMessage(props: any): void {
+//   // Implement in component: add message to chat state and scroll to bottom
+// }
 
 const styles = StyleSheet.create({
   participantContainer: {

@@ -11,7 +11,6 @@ import {
   setMediaParams,
   getProducerInfo,
 } from "./producer";
-
 export const producerModule = {
   createSendTransport,
   connectSendTransport,
@@ -25,9 +24,10 @@ import { Device } from "mediasoup-client";
 import { getRoomName, mediaSoupSocket } from "../app/(tabs)/home/SOSMap";
 import {
   updateViewCount,
-  updateCameraStatus,
+  // updateCameraStatus,
   updateAudioStatus,
 } from "../utils/liveStream";
+import { updateCameraStatus } from "../app/(tabs)/home/PreLive";
 
 let device: any = null;
 let rtpCapabilities: any = null;
@@ -71,7 +71,8 @@ export const initializeMediaSoupModule = (): void => {
 
 const createDevice = async (isConsumeOnly: boolean = false): Promise<void> => {
   try {
-    device = new Device();
+    const device = new Device();
+    // device = new Device({ handlerFactory: ReactNative });
     console.log("Creating device...");
     await device.load({
       routerRtpCapabilities: rtpCapabilities,
@@ -86,8 +87,9 @@ const createDevice = async (isConsumeOnly: boolean = false): Promise<void> => {
     } else {
       console.log("Creating send transport...");
       const { transport } = await createSendTransport(mediaSoupSocket);
-      // console.log("transport", transport);
+      console.log("transport calll", transport);
       try {
+        console.log("connect send transport in createDevice");
         await connectSendTransport(mediaSoupSocket);
       } catch (error) {
         console.log("Error in createDevice", error);
@@ -122,15 +124,15 @@ export const getRoomPeersAmount = async (): Promise<number> => {
     );
   });
 };
-
 export const joinRoom = async ({
   isConsumeOnly = false,
   userId = null,
+  sosId = null,
 }: any): Promise<void> => {
-  console.log("Joining room:", roomName, userId);
+  console.log("Joining room:", sosId ?? roomName, userId);
   mediaSoupSocket.emit(
     "joinRoom",
-    { roomName: Number(roomName), userId },
+    { roomName: sosId ? Number(sosId) : Number(roomName), userId },
     (data: any) => {
       rtpCapabilities = data.rtpCapabilities;
       createDevice(isConsumeOnly);

@@ -1,32 +1,3 @@
-// // Polyfill for deprecated getRemoteStreams for legacy code compatibility
-// const globalObjects = [
-//   typeof global !== "undefined" ? global : undefined,
-//   typeof globalThis !== "undefined" ? globalThis : undefined,
-//   typeof window !== "undefined" ? window : undefined,
-// ];
-
-// for (const g of globalObjects) {
-//   if (
-//     g &&
-//     g.RTCPeerConnection &&
-//     !(g.RTCPeerConnection.prototype as any).getRemoteStreams
-//   ) {
-//     (g.RTCPeerConnection.prototype as any).getRemoteStreams = function () {
-//       let tracks: any[] = [];
-//       if (this.getReceivers) {
-//         tracks = this.getReceivers()
-//           .map((r: any) => r.track)
-//           .filter(Boolean);
-//       }
-//       if (tracks.length && typeof g.MediaStream === "function") {
-//         return [new g.MediaStream(tracks)];
-//       }
-//       // Fallback: return an empty array to avoid undefined issues
-//       return [];
-//     };
-//   }
-// }
-
 import { updateRoomVideo } from "../app/(tabs)/home/PreLive";
 import {
   updateAudioParticipant,
@@ -73,32 +44,6 @@ export const signalNewConsumerTransport = async (
               },
             ],
           });
-          // Polyfill getRemoteStreams for legacy compatibility
-          if (
-            consumerTransport.connection &&
-            typeof consumerTransport.connection.getRemoteStreams !== "function"
-          ) {
-            consumerTransport.connection.getRemoteStreams = function () {
-              // Always return an array with a MediaStream (even if empty)
-              let tracks: any[] = [];
-              if (this.getReceivers) {
-                tracks = this.getReceivers()
-                  .map((r: any) => r.track)
-                  .filter(Boolean);
-              }
-              if (typeof MediaStream === "function") {
-                return [new MediaStream(tracks)];
-              }
-              // Fallback: return a fake MediaStream with a no-op getTrackById
-              return [
-                {
-                  getTrackById: () => undefined,
-                  getTracks: () => [],
-                  toURL: () => "",
-                },
-              ];
-            };
-          }
         } catch (error) {
           console.log(error);
           reject(error);
@@ -119,21 +64,15 @@ export const signalNewConsumerTransport = async (
             }
           }
         );
-        console.log("signalNewConsumerTransport call", remoteProducerId);
-
-        try {
-          connectRecvTransport(
-            socket,
-            consumerTransport,
-            remoteProducerId,
-            params.id
-          )
-            .then(resolve)
-            .catch(reject);
-        } catch (error) {
-          console.log("error in signalNewConsumerTransport", error);
-          reject(error);
-        }
+        console.log("check before connectRecvTransport");
+        connectRecvTransport(
+          socket,
+          consumerTransport,
+          remoteProducerId,
+          params.id
+        )
+          .then(resolve)
+          .catch(reject);
       }
     );
   });
@@ -159,7 +98,8 @@ const connectRecvTransport = async (
           reject(params.error);
           return;
         }
-        console.log("123");
+        console.log("CAlll connectRecvTransport 1");
+
         try {
           const consumer = await consumerTransport.consume({
             id: params.id,
@@ -167,7 +107,7 @@ const connectRecvTransport = async (
             kind: params.kind,
             rtpParameters: params.rtpParameters,
           });
-          console.log("456");
+          console.log("CAlll connectRecvTransport 2");
           consumerTransports = [
             ...consumerTransports,
             {
@@ -179,22 +119,22 @@ const connectRecvTransport = async (
           ];
 
           const { track } = consumer;
-          console.log("connectrRecvTransports call", consumer);
+          console.log("CAlll connectRecvTransport 3", track);
 
           if (params.kind === "audio") {
             updateAudioParticipant({ remoteProducerId, track });
           } else {
+            console.log("else called ");
             roomVideoOwner_producerId = remoteProducerId;
             updateRoomVideo({ track });
           }
 
-          // Sau khi tạo consumer, gán ontrack cho peer connection nếu c
           socket.emit("consumer-resume", {
             serverConsumerId: params.serverConsumerId,
           });
           resolve({ consumer, consumerTransport });
         } catch (error) {
-          console.log("Error in consumer transport:", error);
+          console.log("Error in connectRecvTransport", error);
           reject(error);
         }
       }
