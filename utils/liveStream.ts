@@ -103,10 +103,10 @@ export async function updateViewCount() {
 //   producerId: string
 // ): void {}
 
-export function updateAudioStatus(
-  isAudioOn: boolean,
-  producerId: string
-): void {}
+// export function updateAudioStatus(
+//   isAudioOn: boolean,
+//   producerId: string
+// ): void {}
 
 // export function scrollChatToBottom(): void {
 //   // Implement in component: use FlatList ref and scrollToEnd

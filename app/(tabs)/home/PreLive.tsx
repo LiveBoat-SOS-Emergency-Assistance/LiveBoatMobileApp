@@ -48,22 +48,39 @@ export function updateRoomVideo(props: any): void {
   return track;
 }
 
+// export function updateCameraStatus(
+//   isCameraOn: boolean,
+//   producerId: string
+// ): void {
+//   if (typeof window !== "undefined" && window.setRemoteVideoTrack) {
+//     console.log("Camera status updated:", isCameraOn, producerId);
+//     if (isCameraOn) {
+//       console.log("Camera is on", videotrack);
+//       window.setRemoteVideoTrack(videotrack);
+//     } else {
+//       window.setRemoteVideoTrack(null);
+//     }
+//   }
+// }
 export function updateCameraStatus(
   isCameraOn: boolean,
   producerId: string
 ): void {
   if (typeof window !== "undefined" && window.setRemoteVideoTrack) {
     console.log("Camera status updated:", isCameraOn, producerId);
-    // window.setRemoteVideoTrack(isCameraOn ? undefined : null);
-    if (isCameraOn) {
-      console.log("Camera is on", videotrack);
+    if (isCameraOn && videotrack) {
+      console.log("Setting video track:", videotrack);
       window.setRemoteVideoTrack(videotrack);
     } else {
+      console.log("Clearing video track");
       window.setRemoteVideoTrack(null);
     }
   }
-  // return isCameraOn;
 }
+export function updateAudioStatus(
+  isAudioOn: boolean,
+  producerId: string
+): void {}
 
 const PreLive = () => {
   const { isHost } = useLocalSearchParams<{ isHost: string }>();
@@ -86,6 +103,7 @@ const PreLive = () => {
   const [remoteVideoTrack, setRemoteVideoTrack] = useState<any>(null);
   console.log("isHostBool, sosId", isHostBool, sosId);
   const [host, setHost] = useState<any>();
+  const [loading, setLoading] = useState(false);
   const { userProfile } = useLocalSearchParams<{ userProfile: string }>();
   const [isJoining, setIsJoining] = useState(false);
   // GET HOST LIVE STREAM
@@ -195,10 +213,9 @@ const PreLive = () => {
   // TOGGLE MIC
   const toggleMute = () => {
     const producerInfo = mediaSoupModule.producerModule.getProducerInfo?.();
-    // console.log("Producer Info:", producerInfo);
     const { audioProducer } = producerInfo || {};
     const audioTrack = videoStream.current?.getAudioTracks()[0];
-
+    console.log("Audio Track:", audioTrack);
     if (!audioProducer) {
       console.log("No audio producer available");
       return;
@@ -373,6 +390,80 @@ const PreLive = () => {
     );
   }
 
+  // const handleJoinLive = async () => {
+  //   try {
+  //     // Request microphone permission
+  //     const { status: audioStatus } = await Audio.requestPermissionsAsync();
+  //     if (audioStatus !== "granted") {
+  //       Alert.alert(
+  //         "Permission Required",
+  //         "App needs access to your microphone to join the live stream. Please enable it in settings.",
+  //         [
+  //           { text: "Cancel", style: "cancel" },
+  //           {
+  //             text: "Open Settings",
+  //             onPress: () => {
+  //               if (Platform.OS === "ios") {
+  //                 Linking.openURL("app-settings:");
+  //               } else {
+  //                 Linking.openSettings();
+  //               }
+  //             },
+  //           },
+  //         ]
+  //       );
+  //       return;
+  //     }
+  //     console.log("Audio permission granted");
+  //     // Set audio mode
+  //     await Audio.setAudioModeAsync({
+  //       allowsRecordingIOS: true,
+  //       playsInSilentModeIOS: true,
+  //       staysActiveInBackground: true,
+  //       interruptionModeIOS: InterruptionModeIOS?.DoNotMix || 1,
+  //       interruptionModeAndroid: InterruptionModeAndroid?.DoNotMix || 1,
+  //       shouldDuckAndroid: true,
+  //     });
+
+  //     console.log("Audio mode set");
+  //     // Get audio-only stream using react-native-webrtc
+  //     const stream = await mediaDevices.getUserMedia({
+  //       audio: true,
+  //       video: false,
+  //     });
+
+  //     // Store stream in ref
+  //     videoStream.current = stream;
+
+  //     // Get audio track
+  //     const audioTrack = stream.getAudioTracks()[0];
+  //     if (!audioTrack) {
+  //       console.log("No audio track available");
+  //       return;
+  //     }
+  //     console.log("Audio Track Prelive:", audioTrack);
+
+  //     // Set audio parameters for MediaSoup
+  //     const audioParams = { track: audioTrack };
+  //     console.log("Audio Params:", audioParams);
+  //     console.log("HOST Track:", remoteVideoTrack);
+  //     mediaSoupModule.producerModule.setMediaParams({}, audioParams);
+
+  //     // Join room as audio-only participant
+  //     mediaSoupModule.joinRoom({
+  //       isConsumeOnly: false,
+  //       userId: profile?.id,
+  //       sosId: sosId,
+  //     });
+  //     // setRemoteVideoTrack(videotrack);
+  //     // Update audio state
+  //     setTryToTurnOffAudio(true);
+  //     setIsJoining(true);
+  //   } catch (error) {
+  //     console.error("Error in handleJoinLive:", error);
+  //     Alert.alert("Error", "Failed to join live stream. Please try again.");
+  //   }
+  // };
   const handleJoinLive = async () => {
     try {
       // Request microphone permission
@@ -397,6 +488,8 @@ const PreLive = () => {
         );
         return;
       }
+      console.log("Audio permission granted");
+      setLoading(true);
 
       // Set audio mode
       await Audio.setAudioModeAsync({
@@ -407,40 +500,42 @@ const PreLive = () => {
         interruptionModeAndroid: InterruptionModeAndroid?.DoNotMix || 1,
         shouldDuckAndroid: true,
       });
+      console.log("Audio mode set");
 
-      // Get audio-only stream using react-native-webrtc
+      // Get audio-only stream
       const stream = await mediaDevices.getUserMedia({
         audio: true,
         video: false,
       });
-
-      // Store stream in ref
       videoStream.current = stream;
-
-      // Get audio track
       const audioTrack = stream.getAudioTracks()[0];
       if (!audioTrack) {
         console.log("No audio track available");
         return;
       }
+      console.log("Audio Track Prelive:", audioTrack);
 
       // Set audio parameters for MediaSoup
       const audioParams = { track: audioTrack };
       mediaSoupModule.producerModule.setMediaParams({}, audioParams);
 
-      // Join room as audio-only participant
-      mediaSoupModule.joinRoom({
-        isConsumeOnly: false,
-        userId: profile?.id,
-        isAudioOnly: true,
-      });
-
-      // Update audio state
       setTryToTurnOffAudio(true);
       setIsJoining(true);
+      try {
+        await mediaSoupModule.joinRoom({
+          isConsumeOnly: false,
+          userId: profile?.id,
+          sosId: sosId,
+        });
+      } catch (error) {
+        console.log("Error joining room:", error);
+        Alert.alert("Error", "Failed to join live stream. Please try again.");
+        // return;
+      }
+      setRemoteVideoTrack(videotrack);
+      console.log("Remote after join live stream", remoteVideoTrack);
     } catch (error) {
       console.error("Error in handleJoinLive:", error);
-      Alert.alert("Error", "Failed to join live stream. Please try again.");
     }
   };
   const handleLeaveLive = async () => {
@@ -451,9 +546,19 @@ const PreLive = () => {
         videoStream.current.removeTrack(audioTrack);
       }
     }
-    // updateCameraStatus(false, profile?.id);
+
     setIsJoining(false);
   };
+
+  useEffect(() => {
+    if (remoteVideoTrack) {
+      console.log("remoteVideoTrack state:", {
+        enabled: remoteVideoTrack.enabled,
+        readyState: remoteVideoTrack.readyState,
+        muted: remoteVideoTrack.muted,
+      });
+    }
+  }, [remoteVideoTrack]);
   return (
     <View style={{ flex: 1 }}>
       {isHostBool ? (
@@ -504,12 +609,17 @@ const PreLive = () => {
           </ImageBackground>
         )
       ) : // Viewer view
-      remoteVideoTrack ? (
-        <RTCView
-          streamURL={new MediaStream([remoteVideoTrack]).toURL()}
-          style={StyleSheet.absoluteFill}
-          objectFit="cover"
-        />
+      remoteVideoTrack &&
+        remoteVideoTrack.enabled &&
+        remoteVideoTrack.readyState === "live" ? (
+        (console.log("[RTCView render] remoteVideoTrack:", remoteVideoTrack),
+        (
+          <RTCView
+            streamURL={new MediaStream([remoteVideoTrack]).toURL()}
+            style={StyleSheet.absoluteFill}
+            objectFit="cover"
+          />
+        ))
       ) : (
         <ImageBackground
           source={

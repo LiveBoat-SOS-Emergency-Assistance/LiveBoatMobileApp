@@ -25,9 +25,12 @@ import { getRoomName, mediaSoupSocket } from "../app/(tabs)/home/SOSMap";
 import {
   updateViewCount,
   // updateCameraStatus,
-  updateAudioStatus,
+  // updateAudioStatus,
 } from "../utils/liveStream";
-import { updateCameraStatus } from "../app/(tabs)/home/PreLive";
+import {
+  updateAudioStatus,
+  updateCameraStatus,
+} from "../app/(tabs)/home/PreLive";
 
 let device: any = null;
 let rtpCapabilities: any = null;
