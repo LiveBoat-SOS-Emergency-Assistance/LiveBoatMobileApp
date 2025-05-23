@@ -372,68 +372,6 @@ const PreLive = () => {
       </View>
     );
   }
-  // const handleJoinLive = async () => {
-  //   try {
-  //     const { status: audioStatus } = await Audio.requestPermissionsAsync();
-  //     if (audioStatus !== "granted") {
-  //       Alert.alert(
-  //         "Permission Required",
-  //         "App needs access to your microphone to join the live stream. Please enable it in settings.",
-  //         [
-  //           { text: "Cancel", style: "cancel" },
-  //           {
-  //             text: "Open Settings",
-  //             onPress: () => {
-  //               if (Platform.OS === "ios") {
-  //                 Linking.openURL("app-settings:");
-  //               } else {
-  //                 Linking.openSettings();
-  //               }
-  //             },
-  //           },
-  //         ]
-  //       );
-  //       return;
-  //     }
-  //     // Thiết lập audio mode
-  //     await Audio.setAudioModeAsync({
-  //       allowsRecordingIOS: true,
-  //       playsInSilentModeIOS: true,
-  //       staysActiveInBackground: true,
-  //       interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-  //       interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
-  //       shouldDuckAndroid: true,
-  //     });
-
-  //     // Tạo audio recording
-  //     const recording = new Audio.Recording();
-  //     await recording.prepareToRecordAsync(
-  //       Audio.RecordingOptionsPresets.HIGH_QUALITY
-  //     );
-  //     await recording.startAsync();
-
-  //     // Tạo MediaStream từ recording
-  //     const mediaStream = new MediaStream();
-  //     const audioTrack = mediaStream.addTrack(recording.getAudioTrack());
-  //     videoStream = mediaStream;
-
-  //     if (videoStream) {
-  //       let audioParams = { track: audioTrack };
-
-  //       // Thiết lập tham số audio cho producer
-  //       mediaSoupModule.producerModule.setMediaParams({}, audioParams);
-
-  //       // Tham gia phòng để bắt đầu streaming
-  //       mediaSoupModule.joinRoom({ userId: profile?.id });
-  //     } else {
-  //       console.log("Không thể lấy được audio stream.");
-  //     }
-  //   } catch (error) {
-  //     console.log("Error in handleJoinLive:", error);
-  //   }
-  // };
-
-  // ...
 
   const handleJoinLive = async () => {
     try {
