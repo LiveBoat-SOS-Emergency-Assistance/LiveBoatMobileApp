@@ -1,6 +1,5 @@
 import {
   Modal,
-  Pressable,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
@@ -9,19 +8,18 @@ import {
 import React, { useState } from "react";
 import Input from "../Input/Input";
 import ImageCustom from "../Image/Image";
-import CustomButton from "../Button/CustomButton";
 import { groupServices } from "../../services/group";
 import Toast from "react-native-toast-message";
+
 interface modalProps {
   onClose: () => void;
   onRefresh?: () => void;
 }
 
 const ModalCreateSquad = ({ onClose, onRefresh }: modalProps) => {
-  // console.log("Click");
   const [name, setName] = useState("");
-  const [nameError, setNameError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const handleAdd = async () => {
     if (!name.trim()) {
       Toast.show({
@@ -38,114 +36,148 @@ const ModalCreateSquad = ({ onClose, onRefresh }: modalProps) => {
       Toast.show({
         type: "success",
         text1: "Successful",
-        text2: "Add squad successfully",
+        text2: "Squad created successfully",
       });
       setLoading(false);
       onClose();
     } catch (error: any) {
       console.error("Error adding group:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to create squad",
+      });
       setLoading(false);
     }
   };
+
   return (
     <Modal
       visible={true}
       transparent={true}
       statusBarTranslucent
       onRequestClose={onClose}
-      style={{
-        justifyContent: "center",
-        alignItems: "center",
-        margin: 0,
-      }}
+      animationType="fade"
     >
       <TouchableWithoutFeedback onPress={onClose}>
-        <View className="flex-1 justify-center items-center bg-black/50">
-          <View
-            style={{
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 3,
-            }}
-            className="w-[90%] h-fit py-5 px-3 gap-2 relative bg-white justify-center items-center rounded-[20px]"
-          >
-            <View className="flex flex-row justify-center items-center relative gap-2 w-full">
-              <Text className="font-bold text-[#404040] text-[15px] ">
-                Add support group to
-              </Text>
-              <Text className="font-bold text-[#EB4747] text-[15px]">SOS</Text>
-              <Pressable className="absolute right-2" onPress={onClose}>
-                <ImageCustom
-                  source="https://img.icons8.com/?size=100&id=71200&format=png&color=000000"
-                  width={14}
-                  height={14}
-                  color="#4A9FCE"
-                ></ImageCustom>
-              </Pressable>
-            </View>
-            <View className="flex flex-col justify-start gap-4 w-full px-3">
-              <Text className="text-[#4A9FCE] text-[10px] font-bold">
-                Squad name:
-              </Text>
-              <View className="w-full justify-center flex items-center">
+        <View className="flex-1 justify-center items-center bg-black/50 px-6">
+          <TouchableWithoutFeedback>
+            <View className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl">
+              {/* Header */}
+              <View className="relative mb-6">
+                <Text className="text-xl font-bold text-gray-800 text-center">
+                  Create New Squad
+                </Text>
+                <Text className="text-sm text-gray-500 text-center mt-1">
+                  Add support group to{" "}
+                  <Text className="font-bold text-red-500">SOS</Text>
+                </Text>
+                <TouchableOpacity
+                  onPress={onClose}
+                  className="absolute -top-2 right-2 bg-gray-100 rounded-full p-2"
+                >
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=71200&format=png&color=000000"
+                    width={16}
+                    height={16}
+                    color="#6b7280"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Squad Name Input */}
+              <View className="mb-6">
+                <Text className="text-blue-600 text-sm font-semibold mb-3">
+                  Squad Name
+                </Text>
                 <Input
                   value={name}
                   onChangeText={setName}
-                  placeholder="Enter name squad"
+                  placeholder="Enter squad name"
                   width="100%"
-                ></Input>
+                />
               </View>
-              <View className="flex flex-col gap-3 pt-5">
-                <View className="flex flex-row gap-2 items-center">
-                  <ImageCustom
-                    width={15}
-                    height={15}
-                    source="https://img.icons8.com/?size=100&id=114436&format=png&color=000000"
-                  ></ImageCustom>
-                  <Text className="text-[10px] font-bold text-[#404040]">
+
+              {/* Benefits Section */}
+              <View className="mb-8">
+                <View className="flex-row items-center mb-4">
+                  <View className="bg-blue-100 rounded-full p-2 mr-3">
+                    <ImageCustom
+                      width={16}
+                      height={16}
+                      source="https://img.icons8.com/?size=100&id=114436&format=png&color=000000"
+                      color="#3b82f6"
+                    />
+                  </View>
+                  <Text className="text-sm font-semibold text-gray-700">
                     Team members will receive:
                   </Text>
                 </View>
-                <View className="flex flex-row gap-2 items-center">
-                  <ImageCustom
-                    width={15}
-                    height={15}
-                    source="https://img.icons8.com/?size=100&id=jHQbIMnZor2r&format=png&color=000000"
-                  ></ImageCustom>
-                  <Text className="text-[10px] text-[#404040]">
-                    Instant SOS notification.
-                  </Text>
-                </View>
-                <View className="flex flex-row gap-2 items-center">
-                  <ImageCustom
-                    width={15}
-                    height={15}
-                    source="https://img.icons8.com/?size=100&id=jHQbIMnZor2r&format=png&color=000000"
-                  ></ImageCustom>
-                  <Text className="text-[10px] text-[#404040]">
-                    Your current location.
-                  </Text>
+
+                <View className="bg-blue-50 rounded-2xl p-4 space-y-3">
+                  <View className="flex-row items-center">
+                    <View className="bg-green-100 rounded-full p-1.5 mr-3">
+                      <ImageCustom
+                        width={12}
+                        height={12}
+                        source="https://img.icons8.com/?size=100&id=82461&format=png&color=000000"
+                        color="#10b981"
+                      />
+                    </View>
+                    <Text className="text-sm text-gray-600 flex-1">
+                      Instant SOS notifications
+                    </Text>
+                  </View>
+
+                  <View className="flex-row items-center">
+                    <View className="bg-green-100 rounded-full p-1.5 mr-3">
+                      <ImageCustom
+                        width={12}
+                        height={12}
+                        source="https://img.icons8.com/?size=100&id=12599&format=png&color=000000"
+                        color="#10b981"
+                      />
+                    </View>
+                    <Text className="text-sm text-gray-600 flex-1">
+                      Real-time location sharing
+                    </Text>
+                  </View>
                 </View>
               </View>
-              <View className="w-full   flex items-end justify-end">
+
+              {/* Action Buttons */}
+              <View className="flex-row gap-3">
+                <TouchableOpacity
+                  onPress={onClose}
+                  className="flex-1 bg-gray-100 rounded-2xl py-4 items-center"
+                >
+                  <Text className="text-gray-600 font-semibold">Cancel</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={handleAdd}
-                  className="flex w-2/5 justify-center items-center px-2 py-2 flex-row gap-2 bg-[#EB4747] rounded-[30px]"
+                  disabled={loading}
+                  className={`flex-1 rounded-2xl py-4 items-center flex-row justify-center gap-2 ${
+                    loading ? "bg-gray-300" : "bg-red-500"
+                  }`}
                 >
-                  <ImageCustom
-                    source="https://img.icons8.com/?size=100&id=r4ZoJ0KDic77&format=png&color=000000"
-                    width={24}
-                    height={24}
-                    color="white"
-                  ></ImageCustom>
-                  <Text className="text-white font-bold text-[10px]">Add</Text>
+                  {loading ? (
+                    <Text className="text-white font-semibold">
+                      Creating...
+                    </Text>
+                  ) : (
+                    <>
+                      <Text className="text-white font-semibold">Create</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
     </Modal>
   );
 };
+
 export default ModalCreateSquad;

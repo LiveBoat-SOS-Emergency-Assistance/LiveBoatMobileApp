@@ -73,8 +73,14 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
         <SettingsSection title="Group Settings">
-          <MenuItem title="Manage Group" />
-          <MenuItem title="Share Location" />
+          <MenuItem
+            title="Manage Group"
+            onPress={() => router.push("/(main)/profile/ManageGroup")}
+          />
+          {/* <MenuItem
+            title="Share Location"
+            onPress={() => router.push("/(main)/profile/ShareLocation")}
+          /> */}
           <MenuItem
             title="Smart Notifications"
             onPress={handleSmartNotification}
@@ -83,10 +89,22 @@ export default function Profile() {
 
         <SettingsSection title="General Settings">
           <MenuItem title="Change Password" onPress={handleChangePassword} />
-          <MenuItem title="SOS History" />
-          <MenuItem title="Settings" />
-          <MenuItem title="Invite Friends" />
-          <MenuItem title="FAQ" />
+          <MenuItem
+            title="SOS History"
+            onPress={() => router.push("/(main)/profile/SOSHistory")}
+          />
+          <MenuItem
+            title="Privacy Policy"
+            onPress={() => router.push("/(main)/profile/PrivacyPolicy")}
+          />
+          <MenuItem
+            title="Term of Service"
+            onPress={() => router.push("/(main)/profile/TermOfService")}
+          />
+          <MenuItem
+            title="FAQ"
+            onPress={() => router.push("/(main)/profile/FAQ")}
+          />
         </SettingsSection>
         <View className="px-8 mb-[80px] mt-5">
           <CustomButton

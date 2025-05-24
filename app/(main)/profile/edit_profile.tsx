@@ -37,7 +37,7 @@ const EditProfile = () => {
   const [selectedValue, setSelectedValue] = useState<Record<string, string>>(
     {}
   );
-  console.log("profile", profile);
+  // console.log("profile", profile);
   const [oldAddress, setOldAddress] = useState<string>(""); // Thêm state này
   const [name, setName] = useState<string>("");
   // const [loading, setLoading] = useState(false);
@@ -68,24 +68,24 @@ const EditProfile = () => {
     }
   };
   // Function for save avatar
-  const handleConfirmAvatar = async () => {
-    if (profile && imageUri) {
-      const success = await userServices.updateImage({ avatarUrl: imageUri });
-      if (success) {
-        const updatedProfile = {
-          ...profile,
-          User: {
-            ...profile.User,
-            avatar_url: imageUri,
-          },
-        };
-        setProfile(updatedProfile);
-        await AsyncStorage.setItem("profile", JSON.stringify(updatedProfile));
-      } else {
-        alert("Failed to update avatar");
-      }
-    }
-  };
+  // const handleConfirmAvatar = async () => {
+  //   if (profile && imageUri) {
+  //     const success = await userServices.updateImage({ avatarUrl: imageUri });
+  //     if (success) {
+  //       const updatedProfile = {
+  //         ...profile,
+  //         User: {
+  //           ...profile.User,
+  //           avatar_url: imageUri,
+  //         },
+  //       };
+  //       setProfile(updatedProfile);
+  //       await AsyncStorage.setItem("profile", JSON.stringify(updatedProfile));
+  //     } else {
+  //       alert("Failed to update avatar");
+  //     }
+  //   }
+  // };
   const handleUpdateProfile = async () => {
     try {
       setLoading(true);
@@ -112,21 +112,39 @@ const EditProfile = () => {
       };
 
       const result = await userServices.updateProfile(data);
+      if (imageUri) {
+        await userServices.updateImage({ avatarUrl: imageUri });
+      }
       console.log("result.data", result);
       if (result) {
         if (!profile) return;
-        const updatedProfile: Profile = {
-          ...profile,
-          ...data,
-          id: profile.id, // Ensure required fields are present and not undefined
-          user_id: profile.user_id,
-          User: profile.User,
-        };
+        let updatedProfile;
+        if (imageUri) {
+          updatedProfile = {
+            ...profile,
+            ...data,
+            id: profile.id,
+            user_id: profile.user_id,
+            User: {
+              ...profile.User,
+              avatar_url: imageUri,
+            },
+          };
+        } else {
+          updatedProfile = {
+            ...profile,
+            ...data,
+            id: profile.id,
+            user_id: profile.user_id,
+            User: profile.User,
+          };
+        }
+
         console.log("updatedProfile", updatedProfile);
         setProfile(updatedProfile);
         await AsyncStorage.setItem("profile", JSON.stringify(updatedProfile));
       }
-      handleConfirmAvatar();
+      // handleConfirmAvatar();
       setLoading(false);
       Toast.show({
         type: "success",
