@@ -5,11 +5,11 @@
     "slug": "liveboatapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./images/liveboat.png",
+    "icon": "./assets/images/liveboatappicon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./images/liveboat.png",
+      "image": "./assets/images/liveboatappicon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./images/liveboat.png",
+        "foregroundImage": "./assets/images/liveboatappicon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.liveboatapp"

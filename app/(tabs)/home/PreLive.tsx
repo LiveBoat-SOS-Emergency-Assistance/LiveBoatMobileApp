@@ -70,6 +70,9 @@ export function updateCameraStatus(
     console.log("Camera status updated:", isCameraOn, producerId);
     if (isCameraOn && videotrack) {
       console.log("Setting video track:", videotrack);
+      if (videotrack.enabled === false) {
+        videotrack.enabled = true; // Ensure track is enabled
+      }
       window.setRemoteVideoTrack(videotrack);
     } else {
       console.log("Clearing video track");
@@ -92,7 +95,7 @@ const PreLive = () => {
   const videoStream = useRef<MediaStream | null>(null);
   const [facing, setFacing] = useState<"front" | "back">("front");
   const [tryToTurnOffAudio, setTryToTurnOffAudio] = useState(true);
-  const [tryToTurnOffCamera, setTryToTurnOffCamera] = useState(true);
+  const [isCameraOn, setIsCameraOn] = useState(true);
   const [isLiveStreaming, setIsLiveStreaming] = useState(false);
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const chatSocket = getChatSocket();
@@ -206,12 +209,86 @@ const PreLive = () => {
   };
 
   // TOGGLE CAMERA FACING
-  const toggleFacing = () => {
-    setFacing((prev) => (prev === "front" ? "back" : "front"));
+  // const toggleFacing = () => {
+  //   setFacing((prev) => (prev === "front" ? "back" : "front"));
+  // };
+  const toggleFacing = async () => {
+    if (!isLiveStreaming || !videoStream.current) {
+      // If not streaming, just toggle the facing state for preview
+      setFacing((prev) => (prev === "front" ? "back" : "front"));
+      return;
+    }
+
+    try {
+      // Toggle facing state
+      const newFacing = facing === "front" ? "back" : "front";
+      setFacing(newFacing);
+
+      // Stop the current video track
+      const currentVideoTrack = videoStream.current.getVideoTracks()[0];
+      if (currentVideoTrack) {
+        currentVideoTrack.stop();
+        videoStream.current.removeTrack(currentVideoTrack);
+      }
+
+      // Request a new stream with the updated facing mode
+      const newStream = await mediaDevices.getUserMedia({
+        video: {
+          facingMode: newFacing === "front" ? "user" : "environment",
+        },
+        audio: true, // Preserve audio track
+      });
+
+      // Update videoStream with the new stream
+      videoStream.current = newStream;
+      const newVideoTrack = newStream.getVideoTracks()[0];
+
+      // Update remoteVideoTrack
+      setRemoteVideoTrack(newVideoTrack);
+      window.setRemoteVideoTrack?.(newVideoTrack);
+
+      // Update MediaSoup producer with the new video track
+      const producerInfo = mediaSoupModule.producerModule.getProducerInfo?.();
+      const { videoProducer } = producerInfo || {};
+      if (videoProducer) {
+        // Replace the track in the existing video producer
+        await videoProducer.replaceTrack({ track: newVideoTrack });
+        console.log(
+          "Video producer track replaced with new facing:",
+          newFacing
+        );
+      } else {
+        // If no video producer exists, set new media params
+        const videoParams = { track: newVideoTrack };
+        const audioTrack = newStream.getAudioTracks()[0];
+        const audioParams = audioTrack ? { track: audioTrack } : {};
+        mediaSoupModule.producerModule.setMediaParams(videoParams, audioParams);
+        console.log("Set new media params for video producer");
+      }
+
+      // Notify peers about camera status
+      if (videoProducer) {
+        mediaSoupSocket.emit("camera-status", {
+          isCameraOn: isCameraOn,
+          producerId: videoProducer.id,
+        });
+      }
+
+      console.log("Camera facing toggled to:", newFacing);
+    } catch (error) {
+      console.error("Error toggling camera facing:", error);
+      // Revert facing state on error
+      setFacing(facing);
+      // Optionally, restore the previous stream or handle the error gracefully
+    }
   };
 
   // TOGGLE MIC
   const toggleMute = () => {
+    if (!isLiveStreaming) {
+      setTryToTurnOffAudio((prev) => !prev);
+      return;
+    }
     const producerInfo = mediaSoupModule.producerModule.getProducerInfo?.();
     const { audioProducer } = producerInfo || {};
     const audioTrack = videoStream.current?.getAudioTracks()[0];
@@ -235,36 +312,46 @@ const PreLive = () => {
   };
   // TOGGLE CAMERA
   const toggleCamera = () => {
+    if (!isLiveStreaming) {
+      setIsCameraOn((prev) => !prev);
+      return;
+    }
     const { videoProducer } = mediaSoupModule.producerModule.getProducerInfo();
-    const videoTrack = videoStream?.current?.getVideoTracks()[0];
-    console.log("Video Track:", videoTrack);
+    console.log("Video Stream at toggle cam:", videoStream);
+    const videoTrackk = videoStream?.current?.getVideoTracks()[0];
+    console.log("Video Track:", videoTrackk);
 
     if (!videoProducer) {
       console.log("No video producer available");
       return;
     }
-
-    if (tryToTurnOffCamera) {
+    // if (!videoTrackk) {
+    //   console.log("No video track available");
+    //   return;
+    // }
+    if (isCameraOn) {
       if (
         videoStream.current &&
         videoStream.current.getVideoTracks().length > 0
       ) {
-        videoTrack!.enabled = false;
+        videoTrackk!.enabled = false;
         mediaSoupSocket.emit("camera-status", {
           isCameraOn: false,
           producerId: videoProducer.id,
         });
+        setRemoteVideoTrack(null);
       } else {
         console.log("No video track to stop");
       }
     } else {
-      videoTrack!.enabled = true;
+      videoTrackk!.enabled = true;
       mediaSoupSocket.emit("camera-status", {
         isCameraOn: true,
         producerId: videoProducer.id,
       });
+      setRemoteVideoTrack(videoTrackk);
     }
-    setTryToTurnOffCamera((prev) => !prev);
+    setIsCameraOn((prev) => !prev);
   };
 
   // useEffect(() => {
@@ -307,11 +394,14 @@ const PreLive = () => {
         console.log("No camera or microphone access");
         return;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+      const stream = await mediaDevices.getUserMedia({
+        video: {
+          facingMode: facing === "front" ? "user" : "environment",
+        },
         audio: true,
       });
-
+      videoStream.current = stream;
+      console.log("videoStream.current set:", videoStream.current);
       // Get audio/video track
       const audioTrack = stream.getAudioTracks()[0];
       const videoTrack = stream.getVideoTracks()[0];
@@ -319,6 +409,7 @@ const PreLive = () => {
       if (audioTrack && videoTrack) {
         const audioParams = { track: audioTrack };
         const videoParams = { track: videoTrack };
+        setRemoteVideoTrack(videoTrack);
         mediaSoupModule.producerModule.setMediaParams(videoParams, audioParams);
       } else {
         console.log("Unable to get audio/video track from stream.");
@@ -332,9 +423,18 @@ const PreLive = () => {
   const startStreaming = async () => {
     try {
       console.log("Starting streaming...");
+      if (!mediaSoupSocket.connected) {
+        mediaSoupSocket.connect();
+        console.log("Reconnected mediaSoupSocket");
+      }
+      if (!chatSocket.connected) {
+        chatSocket.connect();
+        console.log("Reconnected chatSocket");
+      }
       await getLocalStream();
       console.log("profileid", profile?.id);
       mediaSoupModule.joinRoom({ isConsumeOnly: false, userId: profile?.id });
+      await handleUpdateStatus();
     } catch (error) {
       console.log("Error starting streaming:", error);
     }
@@ -513,6 +613,7 @@ const PreLive = () => {
         console.log("No audio track available");
         return;
       }
+      // setRemoteVideoTrack(videotrack);
       console.log("Audio Track Prelive:", audioTrack);
 
       // Set audio parameters for MediaSoup
@@ -532,6 +633,7 @@ const PreLive = () => {
         Alert.alert("Error", "Failed to join live stream. Please try again.");
         // return;
       }
+      console.log("Joined room successfully", videotrack);
       setRemoteVideoTrack(videotrack);
       console.log("Remote after join live stream", remoteVideoTrack);
     } catch (error) {
@@ -539,15 +641,66 @@ const PreLive = () => {
     }
   };
   const handleLeaveLive = async () => {
-    if (videoStream.current) {
-      const audioTrack = videoStream.current.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.stop();
-        videoStream.current.removeTrack(audioTrack);
-      }
-    }
+    try {
+      console.log("Viewer leaving live stream...");
 
-    setIsJoining(false);
+      // 1. Stop and clean up audio stream
+      if (videoStream.current) {
+        const tracks = videoStream.current.getTracks();
+        tracks.forEach((track) => {
+          console.log("Stopping track:", track.kind);
+          track.stop();
+          videoStream.current?.removeTrack(track);
+        });
+        videoStream.current = null;
+      }
+
+      // 2. Close MediaSoup producers if any
+      try {
+        const producerInfo = mediaSoupModule.producerModule.getProducerInfo();
+        const { audioProducer } = producerInfo || {};
+
+        if (audioProducer) {
+          audioProducer.close();
+          console.log("Audio producer closed");
+        }
+      } catch (error) {
+        console.log("Error closing producers:", error);
+      }
+
+      // 3. Leave MediaSoup room
+      try {
+        mediaSoupSocket.emit("leave-room");
+        console.log("Left MediaSoup room");
+      } catch (error) {
+        console.log("Error leaving room:", error);
+      }
+
+      // 4. Reset audio mode
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: false,
+          staysActiveInBackground: false,
+        });
+        console.log("Audio mode reset");
+      } catch (error) {
+        console.log("Error resetting audio mode:", error);
+      }
+
+      // 5. Reset states
+      setIsJoining(false);
+      setTryToTurnOffAudio(true);
+      setLoading(false);
+
+      console.log("Successfully left live stream");
+    } catch (error) {
+      console.error("Error in handleLeaveLive:", error);
+
+      // Ensure state is reset even if there are errors
+      setIsJoining(false);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -559,18 +712,174 @@ const PreLive = () => {
       });
     }
   }, [remoteVideoTrack]);
+  const endLive = async () => {
+    try {
+      console.log("Ending live stream...");
+
+      // 1. Stop all tracks
+      if (videoStream.current) {
+        const tracks = videoStream.current.getTracks();
+        tracks.forEach((track) => {
+          console.log("Stopping track:", track.kind);
+          track.stop();
+          videoStream.current?.removeTrack(track);
+        });
+        videoStream.current = null;
+      }
+
+      // 2. Close MediaSoup producers
+      try {
+        const producerInfo = mediaSoupModule.producerModule.getProducerInfo?.();
+        const { videoProducer, audioProducer } = producerInfo || {};
+
+        if (videoProducer) {
+          videoProducer.close();
+          console.log("Video producer closed");
+        }
+        if (audioProducer) {
+          audioProducer.close();
+          console.log("Audio producer closed");
+        }
+      } catch (error) {
+        console.log("Error closing producers:", error);
+      }
+
+      // 3. Notify server and leave room
+      try {
+        mediaSoupSocket.emit("leave-room");
+        console.log("Emitted leave-room");
+      } catch (error) {
+        console.log("Error emitting leave-room:", error);
+      }
+
+      // 4. Disconnect sockets
+      try {
+        mediaSoupSocket.disconnect();
+        chatSocket.disconnect();
+        console.log("Sockets disconnected");
+      } catch (error) {
+        console.log("Error disconnecting sockets:", error);
+      }
+
+      // 5. Update live stream status
+      try {
+        await liveStreamService.update_livestream_status({
+          sosId: Number(sosId),
+          hasLivestream: false,
+        });
+        console.log("Live stream status updated to ended");
+      } catch (error) {
+        console.log("Error updating live status:", error);
+      }
+
+      // 6. Reset states
+      setIsLiveStreaming(false);
+      setIsCameraOn(false);
+      setTryToTurnOffAudio(false);
+      setRemoteVideoTrack(null);
+      videotrack = null; // Reset global videotrack
+      window.setRemoteVideoTrack?.(null); // Clear remote video track
+
+      console.log("Live stream ended successfully");
+    } catch (error) {
+      console.error("Error ending live stream:", error);
+    } finally {
+      router.back();
+    }
+  };
+  // const endLive = async () => {
+  //   try {
+  //     console.log("Ending live stream...");
+  //     mediaSoupSocket.disconnect();
+  //     chatSocket.disconnect();
+
+  //     try {
+  //       await liveStreamService.update_livestream_status({
+  //         sosId: Number(sosId),
+  //         hasLivestream: false,
+  //       });
+  //       console.log("Live stream status updated to ended");
+  //     } catch (error) {
+  //       console.log("Error updating live status:", error);
+  //     }
+  //     setIsLiveStreaming(false);
+  //     setIsCameraOn(false);
+  //     setTryToTurnOffAudio(false);
+  //     videoStream.current = null;
+  //     router.back();
+
+  //     console.log("Live stream ended successfully");
+  //   } catch (error) {
+  //     console.error("Error ending live stream:", error);
+  //   }
+  // };
+  const handleClose = async () => {
+    if (isHostBool) {
+      // Host: end live stream
+      if (isLiveStreaming) {
+        Alert.alert(
+          "End Live Stream",
+          "Are you sure you want to end the live stream?",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+            {
+              text: "End Live",
+              style: "destructive",
+              onPress: async () => {
+                await endLive();
+                router.back();
+              },
+            },
+          ]
+        );
+      } else {
+        // Chưa live thì back luôn
+        router.back();
+      }
+    } else {
+      // Viewer: leave live stream
+      if (isJoining) {
+        await handleLeaveLive();
+      }
+      router.back();
+    }
+  };
+  // useEffect(() => {
+  //   window.setRemoteVideoTrack = (track: any) => {
+  //     if (track) {
+  //       const stream = new MediaStream();
+  //       stream.addTrack(track);
+  //       setRemoteVideoTrack(stream);
+  //     } else {
+  //       setRemoteVideoTrack(null);
+  //     }
+  //   };
+  //   return () => {
+  //     window.setRemoteVideoTrack = undefined;
+  //   };
+  // }, []);
   return (
     <View style={{ flex: 1 }}>
       {isHostBool ? (
         // Host view
-        hasPermission && !tryToTurnOffCamera ? (
-          <CameraView
-            ref={cameraRef}
-            style={StyleSheet.absoluteFill}
-            facing={facing}
-            mute={tryToTurnOffAudio}
-            active={!tryToTurnOffCamera}
-          />
+        hasPermission && isCameraOn ? (
+          remoteVideoTrack ? (
+            <RTCView
+              streamURL={new MediaStream([remoteVideoTrack]).toURL()}
+              style={StyleSheet.absoluteFill}
+              objectFit="cover"
+            />
+          ) : (
+            <CameraView
+              ref={cameraRef}
+              active={isCameraOn}
+              style={StyleSheet.absoluteFill}
+              facing={facing}
+            ></CameraView>
+          )
         ) : (
           <ImageBackground
             source={
@@ -683,9 +992,13 @@ const PreLive = () => {
           </BlurView>
           <TouchableOpacity
             onPress={() => {
-              router.back();
-              if (!isHostBool) {
-                handleLeaveLive();
+              if (isHostBool) {
+                handleClose();
+              } else {
+                router.back();
+                if (!isHostBool) {
+                  handleLeaveLive();
+                }
               }
             }}
             activeOpacity={0.8}
@@ -712,7 +1025,7 @@ const PreLive = () => {
             >
               <ImageCustom
                 source={
-                  tryToTurnOffCamera
+                  isCameraOn
                     ? "https://img.icons8.com/?size=100&id=59749&format=png&color=000000"
                     : "https://img.icons8.com/?size=100&id=82601&format=png&color=000000"
                 }
@@ -800,9 +1113,9 @@ const PreLive = () => {
           {isHostBool && !isLiveStreaming ? (
             <TouchableOpacity
               onPress={() => {
+                setIsCameraOn(true);
                 startStreaming();
                 setIsLiveStreaming(true);
-                handleUpdateStatus();
               }}
               activeOpacity={0.9}
               className="bg-[#FF4D00] px-4 py-4 rounded-[30px] flex justify-center items-center w-full shadow-md"

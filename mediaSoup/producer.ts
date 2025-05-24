@@ -187,7 +187,7 @@ export const connectSendTransport = async (socket: any): Promise<any> => {
 export const getProducerInfo = () => {
   console.log("videoProducer", videoProducer);
   console.log("audioProducer", audioProducer);
-  // console.log("producerTransport", producerTransport);
+  console.log("producerTransport", producerTransport);
   if (!producerTransport) throw new Error("Producer transport not initialized");
   return {
     videoProducer,

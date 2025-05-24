@@ -40,7 +40,7 @@ const Layout = () => {
                 title: SCREENS.LOGIN.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -53,7 +53,7 @@ const Layout = () => {
                 title: SCREENS.REGISTER.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -66,7 +66,7 @@ const Layout = () => {
                 title: SCREENS.VERIFY_ACCOUNT.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -79,7 +79,7 @@ const Layout = () => {
                 title: SCREENS.SEND_OTP.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -93,7 +93,7 @@ const Layout = () => {
                 title: SCREENS.FORGOT_PASSWORD.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -107,7 +107,7 @@ const Layout = () => {
                 title: SCREENS.CHANGE_PASSWORD.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -120,7 +120,7 @@ const Layout = () => {
                 title: SCREENS.VERIFY_EMAIL_PASSWORD.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -159,7 +159,7 @@ const Layout = () => {
                 title: SCREENS.LOGIN.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -172,7 +172,7 @@ const Layout = () => {
                 title: SCREENS.REGISTER.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -185,7 +185,7 @@ const Layout = () => {
                 title: SCREENS.VERIFY_ACCOUNT.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -198,7 +198,7 @@ const Layout = () => {
                 title: SCREENS.SEND_OTP.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -212,7 +212,7 @@ const Layout = () => {
                 title: SCREENS.FORGOT_PASSWORD.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -233,7 +233,7 @@ const Layout = () => {
                 title: SCREENS.CHANGE_PASSWORD.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
@@ -246,7 +246,7 @@ const Layout = () => {
                 title: SCREENS.VERIFY_EMAIL_PASSWORD.title,
                 headerRight: () => (
                   <Image
-                    source={require("../assets/images/liveboat.png")}
+                    source={require("../assets/images/liveboatappicon.png")}
                     style={{ marginRight: 0 }}
                   />
                 ),
