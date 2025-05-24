@@ -83,8 +83,7 @@ export async function playAudioFromUri(uri: string): Promise<Audio.Sound> {
 export async function updateViewCount() {
   try {
     const view = await getRoomPeersAmount();
-    // Pass 'view' to your component state/UI
-    // console.log(`Current viewers: ${view}`);
+    console.log(`Current viewers: ${view}`);
     return view;
   } catch (error) {
     console.error("Error updating view count:", error);

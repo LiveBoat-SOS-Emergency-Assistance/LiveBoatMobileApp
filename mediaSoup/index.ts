@@ -2,6 +2,10 @@ import {
   signalNewConsumerTransport,
   handleProducerClosed,
   setConsumerDevice,
+  clearConsumingTransports,
+  closeAllConsumers,
+  resetConsumerModule,
+  getConsumerInfo,
 } from "./consumer";
 import {
   createSendTransport,
@@ -10,6 +14,9 @@ import {
   setProducerDevice,
   setMediaParams,
   getProducerInfo,
+  closeAllProducers,
+  resetProducerModule,
+  clearProducer,
 } from "./producer";
 export const producerModule = {
   createSendTransport,
@@ -18,6 +25,19 @@ export const producerModule = {
   setProducerDevice,
   setMediaParams,
   getProducerInfo,
+  closeAllProducers,
+  resetProducerModule,
+  clearProducer,
+};
+
+export const consumerModule = {
+  signalNewConsumerTransport,
+  handleProducerClosed,
+  setConsumerDevice,
+  clearConsumingTransports,
+  closeAllConsumers,
+  resetConsumerModule,
+  getConsumerInfo,
 };
 
 import { Device } from "mediasoup-client";
@@ -143,4 +163,50 @@ export const joinRoom = async ({
   );
 
   updateViewCount();
+};
+
+// ✅ RESET FUNCTION - Clear hết mọi thứ về MediaSoup
+export const reset = (): void => {
+  console.log("🔄 Starting MediaSoup complete reset...");
+
+  try {
+    // 1. Remove all socket event listeners
+    console.log("📡 Removing socket event listeners...");
+    if (mediaSoupSocket) {
+      mediaSoupSocket.off("connection-success");
+      mediaSoupSocket.off("new-producer");
+      mediaSoupSocket.off("update-room-peers");
+      mediaSoupSocket.off("update-camera-status");
+      mediaSoupSocket.off("update-audio-status");
+      mediaSoupSocket.off("producer-closed");
+      console.log("Socket event listeners removed");
+    }
+
+    // 2. Reset producer module (close producers, transports, clear vars)
+    console.log("🎬 Resetting producer module...");
+    resetProducerModule();
+
+    // 3. Reset consumer module (close consumers, transports, clear arrays)
+    console.log("📺 Resetting consumer module...");
+    resetConsumerModule();
+
+    // 4. Reset main module variables
+    console.log("🧹 Clearing main module variables...");
+    device = null;
+    rtpCapabilities = null;
+
+    // 5. Leave MediaSoup room if connected
+    if (mediaSoupSocket && mediaSoupSocket.connected) {
+      try {
+        mediaSoupSocket.emit("leave-room");
+        console.log("📤 Sent leave-room signal");
+      } catch (error) {
+        console.log("Error sending leave-room:", error);
+      }
+    }
+
+    console.log("✅ MediaSoup complete reset finished!");
+  } catch (error) {
+    console.error("❌ Error during MediaSoup reset:", error);
+  }
 };

@@ -73,6 +73,7 @@ const ProfileSOS = () => {
   const chatSocket = getChatSocket();
   const mediaSoupSocket = getMediaSoupSocket();
   const [loading, setLoading] = useState(false);
+  const [groupId, setGroupId] = useState<number | null>(null);
   useEffect(() => {
     const getMyRescuerCurrent = async () => {
       try {
@@ -98,6 +99,8 @@ const ProfileSOS = () => {
       const resultUserProfile = await userServices.getUserByID(
         Number(result.data.user_id)
       );
+      const dataGroupId = await sosService.getGroupBySOSID(Number(id));
+
       const loc = await getCurrentLocation();
       if (loc) {
         setLocation({
@@ -108,6 +111,7 @@ const ProfileSOS = () => {
       }
       setProfileSOS(result.data);
       setUserProfile(resultUserProfile.data);
+      setGroupId(dataGroupId.data);
     };
     if (id) {
       getProfileSOS();
@@ -187,10 +191,9 @@ const ProfileSOS = () => {
       console.log("before mediaSoupSocket");
       if (mediaSoupSocket) {
         mediaSoupModule.initializeMediaSoupModule();
+        consumeOnly();
+        setLoading(false);
       }
-      consumeOnly();
-
-      setLoading(false);
     } catch (error) {
       console.error("Initialization error:", error);
     }
@@ -203,10 +206,12 @@ const ProfileSOS = () => {
         params: {
           sosId: id,
           userProfile: JSON.stringify(userProfile),
+          groupId: groupId,
         },
       });
     }
   };
+
   return (
     <SafeAreaView className="flex-1">
       <ScrollView

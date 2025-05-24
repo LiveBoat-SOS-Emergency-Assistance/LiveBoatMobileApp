@@ -197,8 +197,101 @@ export const getProducerInfo = () => {
 };
 
 export const getProducersThenConsume = (socket: any): void => {
+  console.log("🔍 Requesting producers from server...");
   socket.emit("getProducers", (producerIds: string[]) => {
-    console.log("getProducersThenConsume producerIds", producerIds);
-    producerIds.forEach((id) => signalNewConsumerTransport(socket, id));
+    console.log(
+      "📡 getProducersThenConsume received producerIds:",
+      producerIds
+    );
+
+    if (!producerIds || producerIds.length === 0) {
+      console.log("⚠️ No producers found! Host may not be streaming yet.");
+      return;
+    }
+
+    console.log(
+      `🎬 Found ${producerIds.length} producers, starting consumption...`
+    );
+    producerIds.forEach((id) => {
+      console.log(`📺 Starting consumer for producer: ${id}`);
+      signalNewConsumerTransport(socket, id);
+    });
   });
+};
+export const clearProducer = (): void => {
+  producerTransport = null;
+  audioProducer = null;
+  videoProducer = null;
+  videoParams = null;
+  audioParams = null;
+};
+
+export const closeAllProducers = (): void => {
+  console.log("Closing all producers...");
+
+  try {
+    // Close video producer
+    if (videoProducer && !videoProducer.closed) {
+      videoProducer.close();
+      console.log("Video producer closed");
+    }
+
+    // Close audio producer
+    if (audioProducer && !audioProducer.closed) {
+      audioProducer.close();
+      console.log("Audio producer closed");
+    }
+
+    // Close producer transport
+    if (producerTransport && producerTransport.connectionState !== "closed") {
+      producerTransport.close();
+      console.log("Producer transport closed");
+    }
+  } catch (error) {
+    console.error("Error closing producers:", error);
+  }
+
+  // Clear all references
+  clearProducer();
+  console.log("All producers closed and cleared");
+};
+
+export const resetProducerModule = (): void => {
+  console.log("Resetting producer module...");
+
+  // Close all producers first
+  closeAllProducers();
+
+  // Reset device and capabilities
+  device = null;
+  rtpCapabilities = null;
+
+  // Reset params to defaults
+  videoParams = {
+    params: {
+      encodings: [
+        {
+          rid: "r0",
+          maxBitrate: 100000,
+          scalabilityMode: "S1T3",
+        },
+        {
+          rid: "r1",
+          maxBitrate: 300000,
+          scalabilityMode: "S1T3",
+        },
+        {
+          rid: "r2",
+          maxBitrate: 900000,
+          scalabilityMode: "S1T3",
+        },
+      ],
+      codecOptions: {
+        videoGoogleStartBitrate: 1000,
+      },
+    },
+  };
+  audioParams = {};
+
+  console.log("Producer module reset complete");
 };

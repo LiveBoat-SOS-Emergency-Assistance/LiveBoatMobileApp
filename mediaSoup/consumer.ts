@@ -19,10 +19,10 @@ export const signalNewConsumerTransport = async (
   remoteProducerId: string
 ): Promise<{ consumer: any; consumerTransport: any } | undefined> => {
   if (!device) throw new Error("Device not initialized");
-
+  console.log("signalNewConsumerTransport");
   if (consumingTransports.includes(remoteProducerId)) return;
   consumingTransports.push(remoteProducerId);
-
+  console.log("consumingTransports calll");
   return new Promise((resolve, reject) => {
     socket.emit(
       "createWebRtcTransport",
@@ -172,4 +172,62 @@ export const getConsumerInfo = () => {
     consumerTransports,
     consumingTransports,
   };
+};
+
+// Cleanup functions for proper consumer management
+export const clearConsumingTransports = (): void => {
+  console.log("Clearing consuming transports...");
+  consumingTransports = [];
+};
+
+export const closeAllConsumers = (): void => {
+  console.log("Closing all consumers...");
+
+  // Close all consumer transports and consumers
+  consumerTransports.forEach(({ consumerTransport, consumer, producerId }) => {
+    try {
+      if (consumer && !consumer.closed) {
+        consumer.close();
+        console.log(`Consumer closed for producer: ${producerId}`);
+      }
+      if (consumerTransport && consumerTransport.connectionState !== "closed") {
+        consumerTransport.close();
+        console.log(`Consumer transport closed for producer: ${producerId}`);
+      }
+
+      // Remove audio participant if it's an audio producer
+      removeAudioParticipant(producerId);
+
+      // Clear video if it's the room video owner
+      if (producerId === roomVideoOwner_producerId) {
+        roomVideoOwner_producerId = null;
+        updateRoomVideo({ track: null });
+      }
+    } catch (error) {
+      console.error(
+        `Error closing consumer for producer ${producerId}:`,
+        error
+      );
+    }
+  });
+
+  // Clear the arrays
+  consumerTransports = [];
+  consumingTransports = [];
+  console.log("All consumers and transports cleared");
+};
+
+export const resetConsumerModule = (): void => {
+  console.log("Resetting consumer module...");
+
+  // Close all consumers first
+  closeAllConsumers();
+
+  // Reset device
+  device = null;
+
+  // Reset room video owner
+  roomVideoOwner_producerId = null;
+
+  console.log("Consumer module reset complete");
 };

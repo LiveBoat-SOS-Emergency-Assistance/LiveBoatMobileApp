@@ -29,6 +29,7 @@ import { liveStreamService } from "../../../services/liveStream";
 import { InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
 
 import { userServices } from "../../../services/user";
+import { clearProducer } from "../../../mediaSoup/producer";
 // Extend the Window interface to include setRemoteVideoTrack
 let videotrack: any;
 declare global {
@@ -48,20 +49,6 @@ export function updateRoomVideo(props: any): void {
   return track;
 }
 
-// export function updateCameraStatus(
-//   isCameraOn: boolean,
-//   producerId: string
-// ): void {
-//   if (typeof window !== "undefined" && window.setRemoteVideoTrack) {
-//     console.log("Camera status updated:", isCameraOn, producerId);
-//     if (isCameraOn) {
-//       console.log("Camera is on", videotrack);
-//       window.setRemoteVideoTrack(videotrack);
-//     } else {
-//       window.setRemoteVideoTrack(null);
-//     }
-//   }
-// }
 export function updateCameraStatus(
   isCameraOn: boolean,
   producerId: string
@@ -105,14 +92,22 @@ const PreLive = () => {
   const [viewerCount, setViewerCount] = useState(0);
   const [remoteVideoTrack, setRemoteVideoTrack] = useState<any>(null);
   console.log("isHostBool, sosId", isHostBool, sosId);
-  const [host, setHost] = useState<any>();
-  const [loading, setLoading] = useState(false);
+  const [host, setHost] = useState<any>();  const [loading, setLoading] = useState(false);
   const { userProfile } = useLocalSearchParams<{ userProfile: string }>();
   const [isJoining, setIsJoining] = useState(false);
+  const [hostStreamingStatus, setHostStreamingStatus] = useState<'loading' | 'streaming' | 'not-streaming'>('loading');
   // GET HOST LIVE STREAM
   useEffect(() => {
     if (isHostBool) return;
     const fetchHost = async () => {
+      if (!chatSocket.connected) {
+        chatSocket.connect();
+        console.log("Reconnected chatSocket");
+      }
+      if (!mediaSoupSocket.connected) {
+        mediaSoupSocket.connect();
+        console.log("Reconnected mediaSoupSocket");
+      }
       try {
         if (userProfile) {
           const parsedProfile = JSON.parse(userProfile);
@@ -127,7 +122,6 @@ const PreLive = () => {
     };
     fetchHost();
   }, [isHostBool, userProfile]);
-
   useEffect(() => {
     if (isHostBool) return;
 
@@ -142,9 +136,19 @@ const PreLive = () => {
       updateCameraStatus(isCameraOn, producerId);
     };
 
+    // Listen for new producers (when host starts streaming)
+    const handleNewProducer = (data: any) => {
+      console.log("🎬 New producer detected:", data.producerId);
+      setHostStreamingStatus('streaming');
+      // This will trigger consumption of the new producer
+    };
+
     mediaSoupSocket.on("camera-status", handleCameraStatus);
+    mediaSoupSocket.on("new-producer", handleNewProducer);
+    
     return () => {
       mediaSoupSocket.off("camera-status", handleCameraStatus);
+      mediaSoupSocket.off("new-producer", handleNewProducer);
     };
   }, [isHostBool]);
   // SET SOCKET
@@ -170,13 +174,6 @@ const PreLive = () => {
     };
   }, []);
 
-  // useEffect(() => {
-  //   window.setRemoteVideoTrack = setRemoteVideoTrack;
-  //   return () => {
-  //     window.setRemoteVideoTrack = undefined;
-  //   };
-  // }, []);
-
   // INITIALIZE CHAT SOCKET
   useEffect(() => {
     if (!chatSocket || !groupId) return;
@@ -195,16 +192,34 @@ const PreLive = () => {
   // SROLL CHAT VIEW
 
   useEffect(() => {
-    if (isLiveStreaming && chatScrollViewRef.current) {
-      chatScrollViewRef.current.scrollToEnd({ animated: true });
+    if (chatScrollViewRef.current && chatMessages.length > 0) {
+      requestAnimationFrame(() => {
+        chatScrollViewRef.current?.scrollToEnd({ animated: true });
+      });
     }
-  }, [chatMessages, isLiveStreaming]);
+  }, [chatMessages]);
 
   // SEND MESSAGE
   const handleSendLiveChat = () => {
     if (chatInput.trim()) {
-      sendMessage(chatSocket, chatInput, groupId, profile?.id!);
-      setChatInput("");
+      try {
+        console.log(
+          "params of send message",
+          chatSocket,
+          chatInput,
+          groupId,
+          profile?.id
+        );
+        sendMessage(chatSocket, chatInput, groupId, profile?.id!);
+        setChatInput("");
+        setTimeout(() => {
+          if (chatScrollViewRef.current) {
+            chatScrollViewRef.current.scrollToEnd({ animated: true });
+          }
+        }, 100);
+      } catch (error) {
+        console.log("Error sending message:", error);
+      }
     }
   };
 
@@ -565,6 +580,7 @@ const PreLive = () => {
   //   }
   // };
   const handleJoinLive = async () => {
+    setLoading(true);
     try {
       // Request microphone permission
       const { status: audioStatus } = await Audio.requestPermissionsAsync();
@@ -588,8 +604,8 @@ const PreLive = () => {
         );
         return;
       }
+
       console.log("Audio permission granted");
-      setLoading(true);
 
       // Set audio mode
       await Audio.setAudioModeAsync({
@@ -600,106 +616,115 @@ const PreLive = () => {
         interruptionModeAndroid: InterruptionModeAndroid?.DoNotMix || 1,
         shouldDuckAndroid: true,
       });
+
       console.log("Audio mode set");
 
-      // Get audio-only stream
+      // Connect sockets if needed
+      if (!mediaSoupSocket.connected) {
+        mediaSoupSocket.connect();
+        console.log("Reconnected mediaSoupSocket");
+      }
+      if (!chatSocket.connected) {
+        chatSocket.connect();
+        console.log("Reconnected chatSocket");
+      }
+
+      // Get audio-only stream for viewer
       const stream = await mediaDevices.getUserMedia({
         audio: true,
         video: false,
       });
+
       videoStream.current = stream;
       const audioTrack = stream.getAudioTracks()[0];
+
       if (!audioTrack) {
         console.log("No audio track available");
-        return;
+        throw new Error("No audio track available");
       }
-      // setRemoteVideoTrack(videotrack);
+
       console.log("Audio Track Prelive:", audioTrack);
 
       // Set audio parameters for MediaSoup
       const audioParams = { track: audioTrack };
-      mediaSoupModule.producerModule.setMediaParams({}, audioParams);
+      mediaSoupModule.producerModule.setMediaParams({}, audioParams);      // ✅ SỬA: Viewer nên join với isConsumeOnly: true
+      await mediaSoupModule.joinRoom({
+        isConsumeOnly: true, // ✅ Viewer chỉ consume, không produce video
+        userId: profile?.id,
+        sosId: sosId,
+      });
 
+      console.log("Joined room successfully as viewer");
+
+      // Check if there are existing producers after joining
+      setTimeout(() => {
+        // If no video track is set after 2 seconds, host is probably not streaming
+        if (!remoteVideoTrack) {
+          console.log("⚠️ No video stream detected after joining - host may not be live yet");
+          setHostStreamingStatus('not-streaming');
+        } else {
+          setHostStreamingStatus('streaming');
+        }
+      }, 2000);
+
+      // Set states
       setTryToTurnOffAudio(true);
       setIsJoining(true);
-      try {
-        await mediaSoupModule.joinRoom({
-          isConsumeOnly: false,
-          userId: profile?.id,
-          sosId: sosId,
-        });
-      } catch (error) {
-        console.log("Error joining room:", error);
-        Alert.alert("Error", "Failed to join live stream. Please try again.");
-        // return;
+
+      // ✅ Set remote video track từ global videotrack nếu có
+      if (videotrack) {
+        console.log("Setting existing video track:", videotrack);
+        setRemoteVideoTrack(videotrack);
       }
-      console.log("Joined room successfully", videotrack);
-      setRemoteVideoTrack(videotrack);
-      console.log("Remote after join live stream", remoteVideoTrack);
     } catch (error) {
       console.error("Error in handleJoinLive:", error);
+      Alert.alert("Error", "Failed to join live stream. Please try again.");
+
+      // Cleanup on error
+      setIsJoining(false);
+      setTryToTurnOffAudio(true);
+    } finally {
+      // ✅ SỬA: Đảm bảo luôn tắt loading
+      setLoading(false);
     }
   };
   const handleLeaveLive = async () => {
     try {
-      console.log("Viewer leaving live stream...");
-
-      // 1. Stop and clean up audio stream
-      if (videoStream.current) {
-        const tracks = videoStream.current.getTracks();
-        tracks.forEach((track) => {
-          console.log("Stopping track:", track.kind);
-          track.stop();
-          videoStream.current?.removeTrack(track);
-        });
-        videoStream.current = null;
-      }
-
-      // 2. Close MediaSoup producers if any
+      console.log("Participant leaving live stream...");
       try {
-        const producerInfo = mediaSoupModule.producerModule.getProducerInfo();
-        const { audioProducer } = producerInfo || {};
-
-        if (audioProducer) {
-          audioProducer.close();
-          console.log("Audio producer closed");
+        console.log("Stopping local stream..111.");
+        mediaSoupSocket.off("producer-closed");
+        console.log("Unregistered producer-closed event");
+      } catch (error) {
+        console.log("Stopping local stream..222.");
+        console.log("Error unregistering producer-closed event:", error);
+      }
+      console.log("Stopping local stream..333.");
+      try {
+        if (mediaSoupSocket.connected) {
+          mediaSoupSocket.disconnect();
+          console.log("mediaSoupSocket disconnected");
+        }
+        if (chatSocket.connected) {
+          chatSocket.disconnect();
+          console.log("chatSocket disconnected");
         }
       } catch (error) {
-        console.log("Error closing producers:", error);
+        console.log("Error disconnecting sockets:", error);
       }
-
-      // 3. Leave MediaSoup room
+      // 3. Reset MediaSoup module
       try {
-        mediaSoupSocket.emit("leave-room");
-        console.log("Left MediaSoup room");
+        mediaSoupModule.reset();
+        console.log("MediaSoup module reset");
       } catch (error) {
-        console.log("Error leaving room:", error);
+        console.log("Error resetting MediaSoup module:", error);
       }
-
-      // 4. Reset audio mode
-      try {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: false,
-          staysActiveInBackground: false,
-        });
-        console.log("Audio mode reset");
-      } catch (error) {
-        console.log("Error resetting audio mode:", error);
-      }
-
-      // 5. Reset states
-      setIsJoining(false);
-      setTryToTurnOffAudio(true);
-      setLoading(false);
-
-      console.log("Successfully left live stream");
+      console.log("Participant left live stream successfully");
     } catch (error) {
-      console.error("Error in handleLeaveLive:", error);
-
-      // Ensure state is reset even if there are errors
-      setIsJoining(false);
-      setLoading(false);
+      console.error("Error leaving live stream:", error);
+      Alert.alert("Error", "Failed to leave live stream. Navigating back.");
+    } finally {
+      router.back();
     }
   };
 
@@ -744,14 +769,6 @@ const PreLive = () => {
         console.log("Error closing producers:", error);
       }
 
-      // 3. Notify server and leave room
-      try {
-        mediaSoupSocket.emit("leave-room");
-        console.log("Emitted leave-room");
-      } catch (error) {
-        console.log("Error emitting leave-room:", error);
-      }
-
       // 4. Disconnect sockets
       try {
         mediaSoupSocket.disconnect();
@@ -787,32 +804,7 @@ const PreLive = () => {
       router.back();
     }
   };
-  // const endLive = async () => {
-  //   try {
-  //     console.log("Ending live stream...");
-  //     mediaSoupSocket.disconnect();
-  //     chatSocket.disconnect();
 
-  //     try {
-  //       await liveStreamService.update_livestream_status({
-  //         sosId: Number(sosId),
-  //         hasLivestream: false,
-  //       });
-  //       console.log("Live stream status updated to ended");
-  //     } catch (error) {
-  //       console.log("Error updating live status:", error);
-  //     }
-  //     setIsLiveStreaming(false);
-  //     setIsCameraOn(false);
-  //     setTryToTurnOffAudio(false);
-  //     videoStream.current = null;
-  //     router.back();
-
-  //     console.log("Live stream ended successfully");
-  //   } catch (error) {
-  //     console.error("Error ending live stream:", error);
-  //   }
-  // };
   const handleClose = async () => {
     if (isHostBool) {
       // Host: end live stream
@@ -841,26 +833,17 @@ const PreLive = () => {
       }
     } else {
       // Viewer: leave live stream
-      if (isJoining) {
+      try {
         await handleLeaveLive();
+      } catch (error) {
+        console.error("Error in handleClose (viewer):", error);
+        Alert.alert("Error", "Failed to leave live stream. Navigating back.");
+      } finally {
+        router.back();
       }
-      router.back();
     }
   };
-  // useEffect(() => {
-  //   window.setRemoteVideoTrack = (track: any) => {
-  //     if (track) {
-  //       const stream = new MediaStream();
-  //       stream.addTrack(track);
-  //       setRemoteVideoTrack(stream);
-  //     } else {
-  //       setRemoteVideoTrack(null);
-  //     }
-  //   };
-  //   return () => {
-  //     window.setRemoteVideoTrack = undefined;
-  //   };
-  // }, []);
+
   return (
     <View style={{ flex: 1 }}>
       {isHostBool ? (
@@ -992,14 +975,7 @@ const PreLive = () => {
           </BlurView>
           <TouchableOpacity
             onPress={() => {
-              if (isHostBool) {
-                handleClose();
-              } else {
-                router.back();
-                if (!isHostBool) {
-                  handleLeaveLive();
-                }
-              }
+              handleClose();
             }}
             activeOpacity={0.8}
           >
