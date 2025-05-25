@@ -21,6 +21,11 @@ import Avatar from "../../../components/Image/Avatar";
 import Toast from "react-native-toast-message";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RescuerItem } from "../../../types/rescuerItem";
+import * as mediaSoupModule from "../../../mediaSoup/index";
+import { getChatSocket, getMediaSoupSocket } from "../../../utils/socket";
+import { initializeChatModule } from "../../../sockets/ChatModule";
+import { useAuth } from "../../../context/AuthContext";
+
 interface SOSProfile {
   accuracy: string;
   created_at: string;
@@ -35,6 +40,7 @@ interface SOSProfile {
   reported_count: number;
   status: string;
   user_id: string;
+  has_livestream: boolean;
 }
 interface UserProfile {
   name: string;
@@ -52,18 +58,22 @@ interface UserProfile {
 }
 const ProfileSOS = () => {
   const { id } = useLocalSearchParams();
-  const [profile, setProfile] = useState<SOSProfile | null>(null);
+  const [profileSOS, setProfileSOS] = useState<SOSProfile | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [checkHelping, setCheckHelping] = useState(true);
   const [currentMyRescuer, setCurrentMyRescuer] = useState<RescuerItem | null>(
     null
   );
+  const { profile } = useAuth();
   const [location, setLocation] = useState<{
     longitude: number;
     latitude: number;
     accuracy?: number;
   } | null>(null);
-
+  const chatSocket = getChatSocket();
+  const mediaSoupSocket = getMediaSoupSocket();
+  const [loading, setLoading] = useState(false);
+  const [groupId, setGroupId] = useState<number | null>(null);
   useEffect(() => {
     const getMyRescuerCurrent = async () => {
       try {
@@ -89,6 +99,8 @@ const ProfileSOS = () => {
       const resultUserProfile = await userServices.getUserByID(
         Number(result.data.user_id)
       );
+      const dataGroupId = await sosService.getGroupBySOSID(Number(id));
+
       const loc = await getCurrentLocation();
       if (loc) {
         setLocation({
@@ -97,8 +109,9 @@ const ProfileSOS = () => {
           accuracy: loc.accuracy,
         });
       }
-      setProfile(result.data);
+      setProfileSOS(result.data);
       setUserProfile(resultUserProfile.data);
+      setGroupId(dataGroupId.data);
     };
     if (id) {
       getProfileSOS();
@@ -128,11 +141,11 @@ const ProfileSOS = () => {
   const handleCancelSOS = async () => {
     try {
       // console.log(currentSOS.SOS);
-      if (profile) {
+      if (profileSOS) {
         const result = await rescuerServices.updateRescuer({
-          longitude: profile.longitude,
-          latitude: profile.latitude,
-          accuracy: profile.accuracy,
+          longitude: profileSOS.longitude,
+          latitude: profileSOS.latitude,
+          accuracy: profileSOS.accuracy,
           status: "CANCELED",
         });
       }
@@ -152,6 +165,53 @@ const ProfileSOS = () => {
       });
     }
   };
+
+  const consumeOnly = (): Promise<any> => {
+    console.log("Consume only call");
+    return mediaSoupModule.joinRoom({
+      isConsumeOnly: true,
+      userId: profile?.id,
+      sosId: id,
+    });
+  };
+  const initialize = async () => {
+    try {
+      setLoading(true);
+      const fetchedGroupId = await sosService.getGroupBySOSID(Number(id));
+      // console.log("Fetched group ID:", fetchedGroupId.data);
+      // setGroupId(fetchedGroupId.data);
+
+      if (chatSocket && fetchedGroupId) {
+        console.log("Chat Socket at sos", chatSocket.id);
+        initializeChatModule({
+          chatSocket,
+          groupId: fetchedGroupId.data,
+        });
+      }
+      console.log("before mediaSoupSocket");
+      if (mediaSoupSocket) {
+        mediaSoupModule.initializeMediaSoupModule();
+        consumeOnly();
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Initialization error:", error);
+    }
+  };
+  const handleJoinLiveStream = async () => {
+    initialize();
+    if (!loading) {
+      router.push({
+        pathname: "/(tabs)/home/PreLive",
+        params: {
+          sosId: id,
+          userProfile: JSON.stringify(userProfile),
+          groupId: groupId,
+        },
+      });
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1">
       <ScrollView
@@ -200,11 +260,16 @@ const ProfileSOS = () => {
               </Text>
             </View>
             <View className="flex flex-row gap-2 h-[30px]">
-              <TouchableOpacity className="w-fit px-3 py-2 bg-white border rounded-[20px] border-red-400 flex justify-center items-center">
-                <Text className="text-[11px] text-red-400 font-bold">
-                  Join Live Stream
-                </Text>
-              </TouchableOpacity>
+              {profileSOS?.has_livestream === true && (
+                <TouchableOpacity
+                  onPress={handleJoinLiveStream}
+                  className="w-fit px-3 py-2 bg-white border rounded-[20px] border-red-400 flex justify-center items-center"
+                >
+                  <Text className="text-[11px] text-red-400 font-bold">
+                    Join Live Stream
+                  </Text>
+                </TouchableOpacity>
+              )}
               {checkHelping && currentMyRescuer && (
                 <TouchableOpacity
                   onPress={handleCancelSOS}
@@ -235,7 +300,7 @@ const ProfileSOS = () => {
               </View>
               <Text className="text-white font-bold">Description:</Text>
               <Text className="text-white text-[13px]">
-                {profile?.description}
+                {profileSOS?.description}
               </Text>
             </View>
             <View

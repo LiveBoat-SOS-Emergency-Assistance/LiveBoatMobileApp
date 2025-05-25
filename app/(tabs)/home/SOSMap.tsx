@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   BackHandler,
   Image,
+  StatusBar,
 } from "react-native";
 import { Video } from "lucide-react-native";
 import Map from "../../../components/Map/Map";
@@ -15,7 +16,7 @@ import { AnimatePresence, time } from "framer-motion";
 import BottomModal from "../../../components/Modal/BottomModal";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SlideToCancel from "../../../components/Button/SlideCancelButton";
-import { router, useNavigation } from "expo-router";
+import { router, useFocusEffect, useNavigation } from "expo-router";
 import CustomDialog from "../../../components/Dialog/DialogEditSOS";
 import AddressSOSCard from "../../../components/Card/AddressSOSCard";
 import Avatar from "../../../components/Image/Avatar";
@@ -26,6 +27,49 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sosService } from "../../../services/sos";
 import Toast from "react-native-toast-message";
 import { useSocketContext } from "../../../context/SocketContext";
+import { useAuth } from "../../../context/AuthContext";
+import { getChatSocket, getMediaSoupSocket } from "../../../utils/socket";
+import { initializeChatModule } from "../../../sockets/ChatModule";
+import * as mediaSoupModule from "../../../mediaSoup/index";
+import {
+  mediaDevices,
+  MediaStream,
+  RTCIceCandidate,
+  RTCPeerConnection,
+  RTCSessionDescription,
+} from "react-native-webrtc";
+
+// registerGlobals();
+if (typeof global !== "undefined") {
+  global.RTCPeerConnection = RTCPeerConnection as any;
+  global.RTCSessionDescription = RTCSessionDescription as any;
+  global.RTCIceCandidate = RTCIceCandidate as any;
+  global.MediaStream = MediaStream as any;
+  global.navigator = global.navigator || {};
+  Object.defineProperty(global.navigator, "mediaDevices", {
+    value: mediaDevices,
+    configurable: true,
+    writable: true,
+  });
+}
+// @ts-ignore
+if (
+  typeof RTCPeerConnection !== "undefined" &&
+  // @ts-ignore
+  !RTCPeerConnection.prototype.addStream
+) {
+  // @ts-ignore
+  RTCPeerConnection.prototype.addStream = function (stream: any) {
+    const existingTracks = this.getSenders().map((sender) => sender.track);
+    stream.getTracks().forEach((track: any) => {
+      if (!existingTracks.includes(track)) {
+        this.addTrack(track, stream);
+      }
+    });
+  };
+}
+export const mediaSoupSocket = getMediaSoupSocket();
+export const chatSocket = getChatSocket();
 interface SocketEvents {
   TOCLIENT_HELPER_LOCATIONS: string;
   TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
@@ -38,6 +82,59 @@ export default function SOSMap() {
   const cameraRef = useRef<Camera>(null);
   const [listRescuer, setListRescuer] = useState<any[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [sosId, setSosId] = useState<string | null>(null);
+  const [groupId, setGroupId] = useState<string | null>(null);
+  const { profile } = useAuth();
+  const chatSocket = getChatSocket();
+
+  useEffect(() => {
+    const getSOSId = async () => {
+      try {
+        const sosId = await AsyncStorage.getItem("sosId");
+        setSosId(sosId);
+      } catch (error) {
+        console.log("Error when get SOS ID", error);
+      }
+    };
+    getSOSId();
+  }, []);
+  const consumeOnly = (): Promise<any> => {
+    return mediaSoupModule.joinRoom({
+      isConsumeOnly: true,
+      userId: profile?.id,
+    });
+  };
+  const initialize = async () => {
+    try {
+      const storedSosId = await AsyncStorage.getItem("sosId");
+      setSosId(storedSosId);
+
+      const fetchedGroupId = await sosService.getGroupBySOSID(
+        Number(storedSosId)
+      );
+      console.log("Fetched group ID:", fetchedGroupId.data);
+      setGroupId(fetchedGroupId.data);
+
+      if (chatSocket && fetchedGroupId) {
+        console.log("Chat Socket at sos", chatSocket.id);
+        initializeChatModule({
+          chatSocket,
+          groupId: fetchedGroupId.data,
+        });
+      }
+      console.log("before mediaSoupSocket");
+      if (mediaSoupSocket) {
+        mediaSoupModule.initializeMediaSoupModule();
+      }
+      consumeOnly();
+    } catch (error) {
+      console.error("Initialization error:", error);
+    }
+  };
+
+  useEffect(() => {
+    initialize();
+  }, []);
 
   const handleDisableSOS = () => {
     setIsDisable(true);
@@ -48,6 +145,7 @@ export default function SOSMap() {
     setUserInfo,
     updateLocation,
     otherUserMarkers,
+    setOtherUserMarkers,
     displayOrUpdateMarkers,
     registerCommonSocketEvents,
   } = useSocketContext();
@@ -64,54 +162,73 @@ export default function SOSMap() {
   const handleEditSOS = () => {
     setVisible(true);
   };
+  useFocusEffect(
+    useCallback(() => {
+      registerCommonSocketEvents();
+
+      socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
+        console.log("The Helper locations:", data);
+        Toast.show({
+          type: "info",
+          text1: "Notification",
+          text2: "Someone is coming to support you!",
+          position: "top",
+          visibilityTime: 2000,
+        });
+        displayOrUpdateMarkers(data);
+      });
+      const userType = "SENDER";
+      setUserInfo(userType);
+      const timeout1 = setTimeout(() => {
+        socket.current?.emit(
+          SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+        );
+      }, 3000);
+
+      socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
+      const timeout2 = setTimeout(async () => {
+        const location = await getCurrentLocation();
+        if (location) {
+          updateLocation(
+            location.latitude,
+            location.longitude,
+            location.accuracy ?? 0
+          );
+        }
+      }, 5000);
+      const locationInterval = setInterval(async () => {
+        const location = await getCurrentLocation();
+        if (location) {
+          updateLocation(
+            location.latitude,
+            location.longitude,
+            location.accuracy ?? 0
+          );
+        }
+      }, 10000);
+      return () => {
+        clearInterval(timeout1);
+        clearTimeout(timeout2);
+        clearInterval(locationInterval);
+        console.log("Unsubscribed from socket events");
+        socket.current?.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
+        setOtherUserMarkers([]);
+        socket.current?.off(
+          SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+        );
+      };
+    }, [])
+  );
   useEffect(() => {
-    console.log("Socket at sos", socket);
-    // if (!socket.current) return;
-    registerCommonSocketEvents();
-
-    socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
-      console.log("The Helper locations:", data);
-      displayOrUpdateMarkers(data);
-    });
-    const userType = "SENDER";
-    setUserInfo(userType);
-    const timeout1 = setTimeout(() => {
-      socket.current?.emit(
-        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
-      );
-    }, 3000);
-
-    socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
-    const timeout2 = setTimeout(async () => {
-      const location = await getCurrentLocation();
-      if (location) {
-        updateLocation(
-          location.latitude,
-          location.longitude,
-          location.accuracy ?? 0
-        );
+    const getSOSId = async () => {
+      try {
+        const sosId = await AsyncStorage.getItem("sosId");
+        setSosId(sosId);
+      } catch (error) {
+        console.log("Error when get SOS ID", error);
       }
-    }, 5000);
-    const locationInterval = setInterval(async () => {
-      const location = await getCurrentLocation();
-      if (location) {
-        updateLocation(
-          location.latitude,
-          location.longitude,
-          location.accuracy ?? 0
-        );
-      }
-    }, 10000);
-    return () => {
-      clearInterval(timeout1);
-      clearTimeout(timeout2);
-      clearInterval(locationInterval);
-
-      socket.current?.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
-      socket.current?.off(
-        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
-      );
     };
+    getSOSId();
   }, []);
   useEffect(() => {
     const unsubscribe = navigation.addListener(
@@ -154,21 +271,22 @@ export default function SOSMap() {
     }
   };
 
-  useEffect(() => {
-    const getListRescuer = async () => {
-      try {
-        const sosId = await AsyncStorage.getItem("sosId");
-        const result = await rescuerServices.getRescuerBySOSId(
-          Number(sosId),
-          "ENROUTE"
-        );
-        setListRescuer(result.data);
-      } catch (error: any) {
-        console.log("Error when get List Rescuer", error);
-      }
-    };
-    getListRescuer();
-  }, []);
+  // useEffect(() => {
+  //   const getListRescuer = async () => {
+  //     try {
+  //       const sosId = await AsyncStorage.getItem("sosId");
+  //       console.log("SOS ID", sosId);
+  //       const result = await rescuerServices.getRescuerBySOSId(
+  //         Number(sosId),
+  //         "ENROUTE"
+  //       );
+  //       setListRescuer(result.data);
+  //     } catch (error: any) {
+  //       console.log("Error when get List Rescuer", error);
+  //     }
+  //   };
+  //   getListRescuer();
+  // }, []);
   const handleResolve = async () => {
     try {
       // setLoading(true);
@@ -184,6 +302,7 @@ export default function SOSMap() {
         status: "RESOLVED",
       });
       displayOrUpdateMarkers([]);
+      setOtherUserMarkers({});
       Toast.show({
         type: "info",
         text1: "Notification",
@@ -199,6 +318,7 @@ export default function SOSMap() {
   };
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar hidden={false} barStyle={"dark-content"} />
       <View className="flex-1 bg-white">
         <View className="absolute top-0 left-0 right-0 bg-[#EB4747] py-8 items-center z-10 rounded-b-[30px]">
           <Text className="text-white text-lg font-bold pt-3">
@@ -275,6 +395,13 @@ export default function SOSMap() {
         {/* Action Buttons */}
         <View className="absolute top-[100px] gap-5 left-0 right-0 flex-row justify-center space-x-4">
           <TouchableOpacity
+            onPress={() => {
+              // router.push("/(tabs)/home/PreLive");
+              router.push({
+                pathname: "/(tabs)/home/PreLive",
+                params: { groupId: groupId, sosId: sosId, isHost: "true" },
+              });
+            }}
             activeOpacity={0.8}
             className="flex-row items-center bg-[#EB4747] px-4 py-2 rounded-full"
           >
@@ -282,6 +409,12 @@ export default function SOSMap() {
             <Text className="text-white ml-2">Live Stream</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            onPress={() => {
+              router.push({
+                pathname: "/(tabs)/home/GroupChat",
+                params: { groupId: groupId },
+              });
+            }}
             activeOpacity={0.8}
             className="flex-row items-center bg-[#EB4747] px-4 py-2 rounded-full"
           >
@@ -421,4 +554,9 @@ export default function SOSMap() {
       </View>
     </GestureHandlerRootView>
   );
+}
+
+export async function getRoomName() {
+  const sosId = await AsyncStorage.getItem("sosId");
+  return sosId;
 }

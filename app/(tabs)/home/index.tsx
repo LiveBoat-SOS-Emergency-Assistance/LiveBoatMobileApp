@@ -402,7 +402,6 @@ export default function HomeScreen() {
           }}
           cancelText="Cancel"
         />
-        ;
         {openModalCreateSquad && (
           <View className="absolute top-1/2 left-0">
             <ModalCreateSquad
@@ -430,7 +429,7 @@ export default function HomeScreen() {
                 {selectNamesquad}
               </Text>
             </View>
-            <View className="h-[150px] w-full pr-5">
+            <View className="h-[150px] w-full pr-5 pb-10">
               <ScrollView
                 className="w-full px-7"
                 contentContainerStyle={{ gap: 8 }}

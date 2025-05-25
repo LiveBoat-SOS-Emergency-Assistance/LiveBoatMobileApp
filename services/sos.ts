@@ -99,4 +99,16 @@ export class sosService {
       throw error;
     }
   }
+  static async getGroupBySOSID(sosId: number) {
+    try {
+      const result = await axiosPrivate.get(`/sos/group/${sosId}`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
 }

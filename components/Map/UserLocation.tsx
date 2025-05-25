@@ -18,6 +18,13 @@ interface BreathingAvatarProps {
   coordinate: [number, number];
   avatarUrl?: string | null;
   userType?: "SENDER" | "HELPER" | "NORMAL";
+  onPress?: () => void;
+  userData?: {
+    userId: number;
+    name?: string;
+    phone?: string;
+    accuracy?: number;
+  };
 }
 
 const UserLocation = ({
@@ -26,6 +33,8 @@ const UserLocation = ({
   coordinate,
   avatarUrl,
   userType = "NORMAL",
+  onPress,
+  userData,
 }: BreathingAvatarProps) => {
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(1)).current;
@@ -72,7 +81,6 @@ const UserLocation = ({
       breathingAnimation.stop();
     };
   }, []);
-
   return (
     <MapboxGL.MarkerView
       coordinate={coordinate}
@@ -81,12 +89,16 @@ const UserLocation = ({
       anchor={{ x: 0.5, y: 0.5 }}
     >
       <TouchableOpacity
-        activeOpacity={1}
+        activeOpacity={0.7}
         style={[styles.container, { width: size * 2, height: size * 2 }]}
+        onPress={() => {
+          if (onPress) {
+            onPress();
+          }
+        }}
         onLongPress={() => {
           Vibration.vibrate(100);
-
-          console.log("Marker pressed");
+          console.log("Marker long pressed");
         }}
       >
         <Animated.View

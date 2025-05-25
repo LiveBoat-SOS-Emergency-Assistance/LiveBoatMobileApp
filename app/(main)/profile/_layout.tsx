@@ -16,7 +16,7 @@ export default function Layout() {
       backAction
     );
 
-    return () => backHandler.remove(); // Xóa listener khi component unmount
+    return () => backHandler.remove();
   }, [router]);
 
   return (
@@ -33,6 +33,12 @@ export default function Layout() {
         options={{ headerShown: false, title: "" }}
       />
       <Stack.Screen name="SmartNotification" options={{ headerShown: false }} />
+      <Stack.Screen name="FAQ" options={{ headerShown: false }} />
+      <Stack.Screen name="SOSHistory" options={{ headerShown: false }} />
+      <Stack.Screen name="ManageGroup" options={{ headerShown: false }} />
+      <Stack.Screen name="ShareLocation" options={{ headerShown: false }} />
+      <Stack.Screen name="PrivacyPolicy" options={{ headerShown: false }} />
+      <Stack.Screen name="TermOfService" options={{ headerShown: false }} />
     </Stack>
   );
 }

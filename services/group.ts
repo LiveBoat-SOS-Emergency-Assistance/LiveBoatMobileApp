@@ -30,6 +30,23 @@ export class groupServices {
       throw error;
     }
   }
+  static async getChat(group_type: string) {
+    try {
+      const result = await axiosPrivate.get("/group/user-groups", {
+        params: {
+          group_type: group_type,
+        },
+        headers: {
+          "Content-Type": "application/json",
+        },
+        requiresAuth: true,
+      } as CustomAxiosRequestConfig);
+
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
   static async getMemberByIdGroup(squadId: number) {
     try {
       const result = await axiosPrivate.get(`/group/members/${squadId}`, {

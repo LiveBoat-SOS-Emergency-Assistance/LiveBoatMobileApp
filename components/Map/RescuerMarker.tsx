@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, View, StyleSheet, Image } from "react-native";
+import {
+  Animated,
+  View,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 import { useAuth } from "../../context/AuthContext";
 import Avatar from "../Image/Avatar";
@@ -10,6 +16,11 @@ interface RippleMarkerProps {
   type?: string;
   zoomLevel: number;
   userIDSOS?: number;
+  avatarUrl?: string | null;
+  name?: string;
+  phone?: string;
+
+  onPress?: () => void;
 }
 
 const RescuerMarker = ({
@@ -18,12 +29,12 @@ const RescuerMarker = ({
   type,
   zoomLevel,
   userIDSOS,
+  avatarUrl,
+  phone,
+  onPress,
 }: RippleMarkerProps) => {
   const rippleScale = useRef(new Animated.Value(0)).current;
   const rippleOpacity = useRef(new Animated.Value(1)).current;
-  const [sosProfile, setSOSProfile] = useState<Profile | null>(null);
-  const { profile } = useAuth();
-  // console.log(userIDSOS);
 
   useEffect(() => {
     const createRipple = () => {
@@ -59,7 +70,15 @@ const RescuerMarker = ({
   }, []);
   return (
     <MapboxGL.MarkerView coordinate={coordinate} id={id} allowOverlap={true}>
-      <View style={styles.container}>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => {
+          if (onPress) {
+            onPress();
+          }
+        }}
+        style={styles.container}
+      >
         <Animated.View
           style={[
             styles.ripple,
@@ -70,30 +89,32 @@ const RescuerMarker = ({
             },
           ]}
         />
-        <View style={styles.centerDot}></View>
-      </View>
+        <View style={styles.centerDot}>
+          <Avatar source={avatarUrl!} width={50} height={50}></Avatar>
+        </View>
+      </TouchableOpacity>
     </MapboxGL.MarkerView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    width: 100,
-    height: 100,
+    width: 200,
+    height: 200,
     alignItems: "center",
     justifyContent: "center",
   },
   ripple: {
     position: "absolute",
-    width: 80,
-    height: 80,
-    borderRadius: 85,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   centerDot: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "blue",
+    width: 55,
+    height: 55,
+    borderRadius: 25,
+    backgroundColor: "#80C4E9",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",

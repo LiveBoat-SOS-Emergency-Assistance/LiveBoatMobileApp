@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = 'liveboatapp'
+rootProject.name = 'LiveBoat'
 
 dependencyResolutionManagement {
   versionCatalogs {

@@ -15,6 +15,7 @@ import { groupServices } from "../../../services/group";
 import InviteItem from "../../../components/Invite/InviteItem";
 import { router } from "expo-router";
 import ImageCustom from "../../../components/Image/Image";
+import SystemItem from "../../../components/Card/SystemItem";
 const ChatScreen = () => {
   const [selectedValue, setSelectedValue] = useState<string>("alert");
   const [open, setOpen] = useState(false);
@@ -24,6 +25,7 @@ const ChatScreen = () => {
   );
   const [historyChat, setHistoryChat] = useState<any[]>([]);
   const [listInvite, setListInvite] = useState<any[]>([]);
+  const [systemNotification, setSystemNotification] = useState<any[]>([]);
   const options = [
     { label: "Alert", value: "alert" },
     { label: "Chat", value: "chat" },
@@ -108,36 +110,9 @@ const ChatScreen = () => {
     if (route === "alert") {
       try {
         const result = await notifcationService.get_notification();
+        console.log(result.data);
 
-        const groupedNotifications = (
-          result.data as Array<{
-            Notification: { type: string };
-            created_at: string;
-          }>
-        ).reduce((acc: Record<string, any[]>, item) => {
-          const type = item.Notification.type;
-          if (!acc[type]) {
-            acc[type] = [];
-          }
-          acc[type].push(item);
-          return acc;
-        }, {});
-
-        const groupedList = Object.entries(groupedNotifications).map(
-          ([type, notifications]) => {
-            const sorted = [...notifications].sort(
-              (a, b) =>
-                new Date(b.created_at).getTime() -
-                new Date(a.created_at).getTime()
-            );
-            return {
-              type,
-              notification: sorted[0].Notification,
-            };
-          }
-        );
-
-        setHistoryChat(groupedList);
+        setSystemNotification(result.data);
       } catch (error: any) {
         console.log(error);
       }
@@ -153,7 +128,7 @@ const ChatScreen = () => {
       }
     } else if (route === "squad") {
       try {
-        const result = await groupServices.getGroup();
+        const result = await groupServices.getChat("GROUP");
         console.log(result.data);
         setHistoryChat(result.data);
       } catch (error: any) {
@@ -205,7 +180,7 @@ const ChatScreen = () => {
             className="flex-row items-center gap-2 px-2 py-2 rounded-full bg-gray-50"
           >
             <Users size={20} color="#6B7280" />
-            <Text className="font-medium text-[#EB4242]">
+            <Text className="font-medium text-[#404040]">
               {selectedValue
                 ? options.find((opt) => opt.value === selectedValue)?.label ||
                   "Alert"
@@ -253,9 +228,15 @@ const ChatScreen = () => {
         </View>
       </View>
 
-      <View className="flex-1 justify-center px-5">
+      <View className="flex-1 justify-center  bg-gray-50">
         <FlatList
-          data={selectedValue === "invite" ? listInvite : historyChat}
+          data={
+            selectedValue === "invite"
+              ? listInvite
+              : selectedValue === "squad"
+              ? historyChat
+              : systemNotification.slice().reverse()
+          }
           keyExtractor={(item, index) => `key-${index}`}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) =>
@@ -265,12 +246,24 @@ const ChatScreen = () => {
                 onAccept={handleAcceptInvite}
                 onReject={handleRejectInvite}
               ></InviteItem>
-            ) : (
-              <View className="mb-4">
+            ) : selectedValue === "squad" ? (
+              <View className="mb-4 px-5">
                 <ChatItem
-                  notification={item.notification}
+                  created_at={item?.created_at}
+                  last_message_time={item?.last_message_time}
                   name={item?.name}
                   onPress={() => handlePress(item?.id, item?.name)}
+                />
+              </View>
+            ) : (
+              <View className="w-full ">
+                <SystemItem
+                  notification={item.Notification}
+                  is_read={item.is_read}
+                  notification_id={item.notification_id}
+                  user_id={item.user_id}
+                  // name={item?.name}
+                  // onPress={() => handlePress(item?.id, item?.name)}
                 />
               </View>
             )

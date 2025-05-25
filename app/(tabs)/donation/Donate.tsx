@@ -13,6 +13,7 @@ import { ArrowRightLeft, QrCode } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import QRCode from "react-native-qrcode-svg";
 import { WebView } from "react-native-webview";
+import Toast from "react-native-toast-message";
 
 type ProcessStatus = "pending" | "completed" | "failed";
 
@@ -33,7 +34,12 @@ export default function PaymentInterface() {
     if (url.startsWith("liveboatapp://payment-success")) {
       console.log("Payment successful");
       setProcessStatus("completed");
-      router.replace("(tabs)/donation/DonationSuccessful");
+      Toast.show({
+        type: "success",
+        text1: "Payment Successful",
+        text2: "Thank you for your donation!",
+      });
+      // router.replace("(tabs)/donation/DonatioanSuccessful");
     } else if (url.startsWith("liveboatapp://payment-cancel")) {
       setProcessStatus("failed");
       router.back();
@@ -125,7 +131,7 @@ export default function PaymentInterface() {
       {activeTab === "transfer" && (
         <View style={styles.transferContainer}>
           <Text style={styles.name}>
-            {data?.paymentLinkResponse.accountName || "PHAM VAN TUAN"}
+            {data?.paymentLinkResponse.accountName || "VAN THI BACH DUONG"}
           </Text>
           <View style={styles.bankRow}>
             <View style={styles.bankBadge}>

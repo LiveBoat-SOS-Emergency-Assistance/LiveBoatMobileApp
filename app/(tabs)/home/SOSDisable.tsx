@@ -7,12 +7,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomButton from "../../../components/Button/CustomButton";
 import Toast from "react-native-toast-message";
 import { useSocket } from "../../../hooks/useLiveLocation";
+import { useSocketContext } from "../../../context/SocketContext";
 interface SocketEvents {
   TOSERVER_SOS_FINISHED: string;
 }
 export default function SOSDisable() {
   const [loading, setLoading] = useState(false);
   const { socket, userId, registerCommonSocketEvents } = useSocket();
+  const { setOtherUserMarkers } = useSocketContext();
   const SOCKET_EVENTS: SocketEvents = {
     TOSERVER_SOS_FINISHED: "TOSERVER_SOS_FINISHED",
   };
@@ -39,6 +41,7 @@ export default function SOSDisable() {
         position: "top",
         visibilityTime: 2000,
       });
+      setOtherUserMarkers({});
       router.replace("/(tabs)/home");
       setLoading(false);
     } catch (error: any) {

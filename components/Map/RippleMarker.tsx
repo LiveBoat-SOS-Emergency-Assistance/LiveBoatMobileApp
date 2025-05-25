@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, View, StyleSheet, Image } from "react-native";
+import {
+  Animated,
+  View,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 import { useAuth } from "../../context/AuthContext";
 import Avatar from "../Image/Avatar";
@@ -85,7 +91,19 @@ const RippleMarker = ({
   }, []);
   return (
     <MapboxGL.MarkerView coordinate={coordinate} id={id} allowOverlap={true}>
-      <View style={styles.container}>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => {
+          console.log("RippleMarker pressed!", id);
+          if (onPress) {
+            console.log("Calling onPress callback");
+            onPress();
+          } else {
+            console.log("No onPress callback provided");
+          }
+        }}
+        style={styles.container}
+      >
         <Animated.View
           style={[
             styles.ripple,
@@ -101,20 +119,20 @@ const RippleMarker = ({
         <View style={styles.centerDot}>
           {id === "my-sos-marker" && (
             <Avatar
-              source={profile?.User.avatar_url}
+              source={profile?.User?.avatar_url}
               width={50}
               height={50}
             ></Avatar>
           )}
           {userIDSOS && (
             <Avatar
-              source={sosProfile?.User.avatar_url}
+              source={sosProfile?.User?.avatar_url}
               width={50}
               height={50}
             ></Avatar>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     </MapboxGL.MarkerView>
   );
 };

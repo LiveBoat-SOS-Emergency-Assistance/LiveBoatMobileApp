@@ -37,8 +37,10 @@ const EditProfile = () => {
   const [selectedValue, setSelectedValue] = useState<Record<string, string>>(
     {}
   );
+  // console.log("profile", profile);
   const [oldAddress, setOldAddress] = useState<string>(""); // Thêm state này
-
+  const [name, setName] = useState<string>("");
+  // const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   // Function for open library
@@ -66,34 +68,96 @@ const EditProfile = () => {
     }
   };
   // Function for save avatar
-  const handleConfirmAvatar = async () => {
-    if (profile && imageUri) {
-      const success = await userServices.updateImage({ avatarUrl: imageUri });
-      if (success) {
-        Toast.show({
-          type: "success",
-          text1: "Notification",
-          text2: "Updated Image Successful",
-        });
-        const updatedProfile = {
-          ...profile,
-          User: {
-            ...profile.User,
-            avatar_url: imageUri,
-          },
-        };
-        setProfile(updatedProfile);
-        await AsyncStorage.setItem("profile", JSON.stringify(updatedProfile));
-      } else {
-        alert("Failed to update avatar");
-      }
-    }
-  };
+  // const handleConfirmAvatar = async () => {
+  //   if (profile && imageUri) {
+  //     const success = await userServices.updateImage({ avatarUrl: imageUri });
+  //     if (success) {
+  //       const updatedProfile = {
+  //         ...profile,
+  //         User: {
+  //           ...profile.User,
+  //           avatar_url: imageUri,
+  //         },
+  //       };
+  //       setProfile(updatedProfile);
+  //       await AsyncStorage.setItem("profile", JSON.stringify(updatedProfile));
+  //     } else {
+  //       alert("Failed to update avatar");
+  //     }
+  //   }
+  // };
   const handleUpdateProfile = async () => {
     try {
-      console.log("Selected value", selectedValue);
+      setLoading(true);
+      // Map selectedValue keys to API keys
+      const keyMap: Record<string, string> = {
+        Address: "address",
+        Gender: "gender",
+        "Blood Type": "blood_type",
+      };
+      const mappedSelectedValue: Record<string, string> = {};
+      Object.entries(selectedValue).forEach(([key, value]) => {
+        const apiKey = keyMap[key] || key;
+        // Nếu là gender thì chuyển về lowercase
+        if (apiKey === "gender" && typeof value === "string") {
+          mappedSelectedValue[apiKey] = value.toUpperCase();
+        } else {
+          mappedSelectedValue[apiKey] = value;
+        }
+      });
+      const data = {
+        name: name,
+        allergy: text,
+        ...mappedSelectedValue,
+      };
+
+      const result = await userServices.updateProfile(data);
+      if (imageUri) {
+        await userServices.updateImage({ avatarUrl: imageUri });
+      }
+      console.log("result.data", result);
+      if (result) {
+        if (!profile) return;
+        let updatedProfile;
+        if (imageUri) {
+          updatedProfile = {
+            ...profile,
+            ...data,
+            id: profile.id,
+            user_id: profile.user_id,
+            User: {
+              ...profile.User,
+              avatar_url: imageUri,
+            },
+          };
+        } else {
+          updatedProfile = {
+            ...profile,
+            ...data,
+            id: profile.id,
+            user_id: profile.user_id,
+            User: profile.User,
+          };
+        }
+
+        console.log("updatedProfile", updatedProfile);
+        setProfile(updatedProfile);
+        await AsyncStorage.setItem("profile", JSON.stringify(updatedProfile));
+      }
+      // handleConfirmAvatar();
+      setLoading(false);
+      Toast.show({
+        type: "success",
+        text1: "Notification",
+        text2: "Update profile successfully",
+      });
     } catch (error: any) {
-      console.error("Error updating profile", error);
+      console.error("Error when update profile:", {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+        headers: error?.response?.headers,
+      });
     }
   };
   const scrollToValueIndex = (value: string, options: string[]) => {
@@ -109,12 +173,28 @@ const EditProfile = () => {
       try {
         setMyProfile(profile);
         setImageUri(profile?.User.avatar_url);
+        setName(profile?.name ?? "");
       } catch (error: any) {
         console.error("error of profile", error);
       }
     };
     getProfile();
   }, []);
+  // Khởi tạo selectedValue từ profile nếu có
+  useEffect(() => {
+    if (profile) {
+      setSelectedValue({
+        Address: profile.address || "",
+        Gender: profile.gender
+          ? profile.gender.charAt(0).toUpperCase() +
+            profile.gender.slice(1).toLowerCase()
+          : "",
+        "Blood Type": profile.blood_type || "",
+        // Có thể bổ sung các trường khác nếu cần
+      });
+      setText(profile.allergy || "");
+    }
+  }, [profile]);
   const handleOpenDialog = (field: string) => {
     if (field === "Date of Birth") {
       setShowDatePicker(true);
@@ -140,22 +220,7 @@ const EditProfile = () => {
     }));
     setDialogVisible(false);
   };
-  // const handleDateChange = (event: any, date?: Date) => {
-  //   if (event.type === "set" && date) {
-  //     // Normalize the date to midnight UTC
-  //     const normalizedDate = new Date(date);
-  //     normalizedDate.setUTCHours(0, 0, 0, 0);
-  //     // Format the date as YYYY-MM-DD
-  //     const formattedDate = normalizedDate.toISOString().split("T")[0];
 
-  //     setSelectedDate(normalizedDate);
-  //     setSelectedValue((prev) => ({
-  //       ...prev,
-  //       "Date of Birth": formattedDate,
-  //     }));
-  //   }
-  //   setShowDatePicker(false);
-  // };
   const handleDateChange = (event: any, date?: Date) => {
     if (event.type === "set" && date) {
       // Lấy ngày/tháng/năm theo local thay vì UTC
@@ -191,6 +256,9 @@ const EditProfile = () => {
     if (field === "Blood Type") {
       return ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
     }
+    if (field === "Gender") {
+      return ["Male", "Female", "Other"];
+    }
     return [];
   };
 
@@ -204,32 +272,6 @@ const EditProfile = () => {
           onChange={handleDateChange}
         />
       )}
-      {/* {dialogVisible && (
-        <View className="absolute inset-0 top-0 bg-black/50 z-50 items-center justify-center">
-          <View className="bg-white rounded-lg p-5 w-4/5 max-h-[60%]">
-            <Text className="text-lg font-bold mb-4 text-center">
-              Select {selectedField}
-            </Text>
-            <ScrollView>
-              {getOptions(selectedField).map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  onPress={() => handleSelectValue(option)}
-                  className="p-3 border-b border-gray-200"
-                >
-                  <Text className="text-base text-center">{option}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              onPress={() => setDialogVisible(false)}
-              className="mt-4 self-end"
-            >
-              <Text className="text-red-500">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )} */}
 
       {dialogVisible && (
         <View className="absolute inset-0 top-0 bg-black/50 z-50 items-center justify-center">
@@ -344,7 +386,7 @@ const EditProfile = () => {
             <Text className="text-gray-500 font-semibold justify-start items-start text-start w-[90%]">
               Full name
             </Text>
-            <Input value={myProfile?.name}></Input>
+            <Input value={name} onChangeText={setName}></Input>
           </View>
           <View className=" w-[100%] justify-center items-center gap-3 relative">
             <Text className="text-gray-500 font-semibold justify-start items-start text-start w-[90%]">
@@ -382,7 +424,7 @@ const EditProfile = () => {
               onPress={() => handleOpenDialog("Address")}
               value={selectedValue["Address"] || ""}
             />
-            <MenuItem
+            {/* <MenuItem
               title="Date of Birth"
               onPress={() => handleOpenDialog("Date of Birth")}
               value={selectedValue["Date of Birth"] || ""}
@@ -396,12 +438,18 @@ const EditProfile = () => {
               title="Weight"
               onPress={() => handleOpenDialog("Weight")}
               value={selectedValue["Weight"]}
+            /> */}
+            <MenuItem
+              title="Gender"
+              onPress={() => handleOpenDialog("Gender")}
+              value={selectedValue["Gender"] || ""}
             />
             <MenuItem
               title="Blood Type"
               onPress={() => handleOpenDialog("Blood Type")}
               value={selectedValue["Blood Type"]}
             />
+
             <TextInput
               placeholder="Allergies"
               className="w-full h-[100px] border items-start border-[#d9d9d9] rounded-[5px] justify-start mt-3 p-2"
