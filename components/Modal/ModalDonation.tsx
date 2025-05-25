@@ -68,7 +68,7 @@ const ModalDonation: React.FC<CustomDialogProps> = ({
     }
   };
   return (
-    <Modal transparent={true}>
+    <Modal transparent={true} animationType="fade">
       <View
         className="absolute top-0 left-0 w-full h-full"
         style={{ zIndex: 1000 }}
@@ -78,93 +78,100 @@ const ModalDonation: React.FC<CustomDialogProps> = ({
           style={{ flex: 1 }}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
-          <View className="flex-1 justify-center items-center bg-black/50">
-            <View className="w-11/12 flex flex-col gap-6 bg-white rounded-2xl pt-8 pb-5 px-5 relative">
-              <View className="gap-1">
-                <Text className="text-lg font-normal text-center ">
-                  {title}
-                </Text>
-              </View>
+          <View className="flex-1 justify-center items-center bg-black/40">
+            <View className="w-[90%] bg-white rounded-3xl px-6 pt-8 pb-6 relative shadow-lg">
+              {/* Close button */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={onCancel}
-                className="absolute top-4 right-3"
+                className="absolute top-4 right-4 z-10"
               >
                 <ImageCustom
-                  className=""
-                  width={15}
-                  height={15}
-                  source="https://img.icons8.com/?size=100&id=83981&format=png&color=000000"
-                ></ImageCustom>
+                  width={20}
+                  height={20}
+                  source="https://img.icons8.com/ios-glyphs/30/000000/macos-close.png"
+                />
               </TouchableOpacity>
-              <View className="flex flex-col gap-3 mb-6">
-                <View className="flex flex-col gap-2">
-                  <View className="flex flex-row items-center gap-2">
-                    <ImageCustom
-                      source="https://img.icons8.com/?size=100&id=18962&format=png&color=000000"
-                      width={20}
-                      height={20}
-                    ></ImageCustom>
-                    <Text className="text-[#404040] font-bold">Amount:</Text>
-                  </View>
-                  {/* <Input
-                    errorPassword={amountError}
-                    value={amount}
-                    onChangeText={setAmount}
-                    type="amount"
-                    keyboardType="number-pad"
-                    placeholder="200.000 VNĐ"
-                    className="w-full"
-                  ></Input> */}
-                  <TextInput
-                    style={{
-                      borderWidth: 1,
-                      borderColor: amountError ? "#EF4444" : "#d1d5db",
-                      borderRadius: 6,
-                      padding: 10,
-                      width: "100%",
-                      fontSize: 16,
-                      marginTop: 4,
-                      color: "#222",
-                    }}
-                    value={amount}
-                    onChangeText={setAmount}
-                    keyboardType="number-pad"
-                    placeholder="200.000 VNĐ"
-                    placeholderTextColor="#aaa"
-                  />
-                  {amountError ? (
-                    <Text style={{ color: "#EF4444", fontSize: 12 }}>
-                      {amountError}
-                    </Text>
-                  ) : null}
-                </View>
-              </View>
-              <View className="flex-row justify-between rounded-lg">
-                <TouchableOpacity
-                  onPress={handleDonation}
-                  activeOpacity={0.8}
-                  className="flex-1 py-3 rounded-xl ml-2 w-full bg-red-400"
-                >
-                  <Text className="text-center text-[#fff] font-medium">
-                    {confirmText}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View className="w-full justify-center items-center flex">
-                <View className="flex flex-row px-3 py-1 justify-center items-center bg-gray-100 rounded-[30px] gap-2 w-fit">
+              {/* Title */}
+              <Text className="text-xl font-bold text-center text-[#EB4747] mb-2 tracking-wide">
+                {title}
+              </Text>
+              {/* Message */}
+              {!!message && (
+                <Text className="text-center text-gray-600 mb-4 text-base">
+                  {message}
+                </Text>
+              )}
+              {/* Amount input */}
+              <View className="flex flex-col gap-2 mb-4">
+                <View className="flex flex-row items-center gap-2 mb-1">
                   <ImageCustom
-                    source="https://img.icons8.com/?size=100&id=znpDNZWhQe6p&format=png&color=000000"
+                    source="https://img.icons8.com/?size=100&id=18962&format=png&color=000000"
                     width={20}
                     height={20}
-                  ></ImageCustom>
-                  <Text className="text-[12px]">Secure Payment</Text>
+                  />
+                  <Text className="text-[#404040] font-semibold text-base">
+                    Amount
+                  </Text>
+                </View>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: amountError ? "#EF4444" : "#d1d5db",
+                    borderRadius: 10,
+                    padding: 12,
+                    width: "100%",
+                    fontSize: 16,
+                    color: "#222",
+                    backgroundColor: "#f9fafb",
+                  }}
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="number-pad"
+                  placeholder="200.000 VNĐ"
+                  placeholderTextColor="#aaa"
+                />
+                {amountError ? (
+                  <Text
+                    style={{ color: "#EF4444", fontSize: 13, marginTop: 2 }}
+                  >
+                    {amountError}
+                  </Text>
+                ) : null}
+              </View>
+              {/* Confirm button */}
+              <TouchableOpacity
+                onPress={handleDonation}
+                activeOpacity={0.8}
+                className="py-3 rounded-xl w-full bg-[#EB4747] mb-3"
+                style={{
+                  shadowColor: "#EB4747",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 4,
+                  elevation: 2,
+                }}
+              >
+                <Text className="text-center text-white font-bold text-base tracking-wide">
+                  {confirmText}
+                </Text>
+              </TouchableOpacity>
+              {/* Secure payment info */}
+              <View className="w-full flex flex-row justify-center items-center mt-2">
+                <View className="flex flex-row px-3 py-1 justify-center items-center bg-gray-100 rounded-2xl gap-2">
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=znpDNZWhQe6p&format=png&color=000000"
+                    width={18}
+                    height={18}
+                  />
+                  <Text className="text-[12px] text-gray-500">
+                    Secure Payment
+                  </Text>
                 </View>
               </View>
             </View>
           </View>
         </KeyboardAvoidingView>
-        {/* </TouchableWithoutFeedback> */}
       </View>
     </Modal>
   );

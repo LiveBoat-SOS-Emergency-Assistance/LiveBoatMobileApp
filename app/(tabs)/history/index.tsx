@@ -19,6 +19,8 @@ import ScrollPagination from "../../../components/Pagination/ScrollPagination";
 import { SOSItem } from "../../../types/sosItem";
 import { useAuth } from "../../../context/AuthContext";
 import Avatar from "../../../components/Image/Avatar";
+import { WEATHER_API_KEY } from "@env";
+import axios from "axios";
 export default function History() {
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth / 3;
@@ -28,6 +30,17 @@ export default function History() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const { profile } = useAuth();
+  type WeatherData = {
+    current?: {
+      temp_c?: number;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const API_KEY = WEATHER_API_KEY;
+  const city = "Da Nang";
   const itemsPerPage = 4;
 
   const loadSOS = async (pageNum: number = 1) => {
@@ -56,7 +69,22 @@ export default function History() {
       setIsLoading(false);
     }
   };
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await axios.get(
+          `http://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${city}&lang=en`
+        );
+        setWeather(res.data);
+      } catch (err) {
+        console.error("Lỗi khi lấy dữ liệu thời tiết:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchWeather();
+  }, []);
   useEffect(() => {
     loadSOS(1);
   }, []);
@@ -134,15 +162,20 @@ export default function History() {
                 }}
               >
                 <View className="flex flex-row justify-center items-center">
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=kKxyuLXD4w0n&format=png&color=000000"
+                    width={24}
+                    height={24}
+                  ></ImageCustom>
+
                   <Text className="text-[#404040] text-[8px]">
                     Weather Alert
                   </Text>
                 </View>
-                <ImageCustom
-                  source="https://img.icons8.com/?size=100&id=kKxyuLXD4w0n&format=png&color=000000"
-                  width={30}
-                  height={30}
-                ></ImageCustom>
+
+                <Text className="text-xs">
+                  {weather?.current?.condition.text || "Rain"}
+                </Text>
               </View>
               <View
                 className="w-1/4 bg-white h-[60px] rounded-md shadow flex flex-col gap-2 justify-center items-center"
@@ -162,7 +195,9 @@ export default function History() {
                   ></ImageCustom>
                   <Text className="text-[#404040] text-[8px]">Temperature</Text>
                 </View>
-                <Text>21°C</Text>
+                <Text className="text-xs">
+                  {weather?.current?.temp_c || "20"}°C
+                </Text>
               </View>
 
               <View
@@ -175,12 +210,15 @@ export default function History() {
                   elevation: 5,
                 }}
               >
-                <View className="flex flex-row justify-center items-center">
-                  <Text className="text-[#404040] text-[8px]">
-                    Community Report
+                <View className="flex flex-row justify-center items-center gap-1">
+                  <Text className="text-[10px]">
+                    {weather?.current?.is_day ? "☀️" : "🌙"}
                   </Text>
+                  <Text className="text-[#404040] text-[8px]">Time</Text>
                 </View>
-                <Text>5</Text>
+                <Text className="text-xs">
+                  {weather?.current?.is_day ? "Day" : "Night"}
+                </Text>
               </View>
             </View>
           </View>

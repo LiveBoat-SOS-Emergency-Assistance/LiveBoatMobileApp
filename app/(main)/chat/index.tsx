@@ -110,7 +110,7 @@ const ChatScreen = () => {
     if (route === "alert") {
       try {
         const result = await notifcationService.get_notification();
-        console.log(result.data);
+        // console.log(result.data);
 
         setSystemNotification(result.data);
       } catch (error: any) {
@@ -129,7 +129,7 @@ const ChatScreen = () => {
     } else if (route === "squad") {
       try {
         const result = await groupServices.getChat("GROUP");
-        console.log(result.data);
+        // console.log(result.data);
         setHistoryChat(result.data);
       } catch (error: any) {
         console.log(error);

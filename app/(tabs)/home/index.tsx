@@ -35,6 +35,10 @@ import MemberCard from "../../../components/Card/MemberCard";
 import * as Animatable from "react-native-animatable";
 import { useSocketContext } from "../../../context/SocketContext";
 import CustomAlert from "../../../components/Toast/CustomAlert";
+import messaging from "@react-native-firebase/messaging";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+
 interface SocketEvents {
   TOCLIENT_SOS_LOCATIONS: string;
   TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
@@ -90,7 +94,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!socket.current) return;
 
-    console.log("Socket at home", socket);
+    // console.log("Socket at home", socket);
 
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
       if (!data || data.length === 0) {
@@ -367,6 +371,69 @@ export default function HomeScreen() {
       return newZoom;
     });
   };
+
+  useEffect(() => {
+    // Register for push notifications
+    const registerForPushNotificationsAsync = async () => {
+      if (Device.isDevice) {
+        const { status: existingStatus } =
+          await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== "granted") {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== "granted") {
+          alert("Failed to get push token for push notification!");
+          return;
+        }
+        const fcmToken = await messaging().getToken();
+        console.log("FCM Token:", fcmToken);
+      } else {
+        alert("Must use physical device for Push Notifications");
+      }
+    };
+
+    registerForPushNotificationsAsync();
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+    // Foreground: receive notifications when app is in foreground
+    const unsubscribeForeground = messaging().onMessage(
+      async (remoteMessage) => {
+        console.log("FCM foreground message:", remoteMessage);
+        Notifications.scheduleNotificationAsync({
+          content: {
+            title: remoteMessage.notification?.title || "Thông báo",
+            body: remoteMessage.notification?.body || "",
+          },
+          trigger: null,
+        });
+      }
+    );
+
+    // Background & quit: receive notifications when app is in background or quit
+    const unsubscribeBackground = messaging().setBackgroundMessageHandler(
+      async (remoteMessage) => {
+        console.log("FCM background message:", remoteMessage);
+      }
+    );
+
+    // when user taps on notification
+    const unsubscribeNotificationResponse =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        console.log("User tapped notification:", response);
+      });
+
+    return () => {
+      unsubscribeForeground();
+      unsubscribeNotificationResponse.remove();
+    };
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
