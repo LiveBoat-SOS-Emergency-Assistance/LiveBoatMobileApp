@@ -48,6 +48,7 @@ export const setMediaParams = (
   newVideoParams: any,
   newAudioParams: any
 ): void => {
+  console.log("Setting media params", newVideoParams, newAudioParams);
   videoParams = newVideoParams;
   audioParams = newAudioParams;
 };

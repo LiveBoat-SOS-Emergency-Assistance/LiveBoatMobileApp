@@ -37,25 +37,88 @@ export function addOrUpdateAudioParticipant({
   return audioParticipants[remoteProducerId];
 }
 /**
- * This function should not return JSX. Move UI logic to a React component.
- * If you want to update audio participant state, do it here.
+ * Update audio participant - adds or updates existing participant
  */
 export const updateAudioParticipant = (props: any) => {
-  // TODO: Implement logic to update audio participant in state/store.
-  // This function should not return JSX or use React hooks.
-  // Use this function to update participant data, and render UI in a component.
+  const { remoteProducerId, track, userId, name, avatar } = props;
+
+  console.log("🎤 Updating audio participant:", {
+    remoteProducerId,
+    userId,
+    name,
+  });
+
+  // Store participant data for UI components to consume
+  audioParticipants[remoteProducerId] = {
+    remoteProducerId,
+    track,
+    sound: null, // Will be managed by UI component
+  };
+
+  // Call callback if provided (for UI updates)
+  if (globalAudioParticipantCallback) {
+    globalAudioParticipantCallback("add", {
+      id: remoteProducerId,
+      producerId: remoteProducerId,
+      track,
+      userId,
+      name: name || `User ${remoteProducerId.substring(0, 4)}`,
+      avatar:
+        avatar ||
+        "https://img.icons8.com/?size=100&id=23264&format=png&color=000000",
+      isAudioOn: true,
+    });
+  }
 };
 
 /**
  * Remove an audio participant from the in-memory store.
  */
 export function removeAudioParticipant(remoteProducerId: string) {
+  console.log("🎤 Removing audio participant:", remoteProducerId);
+
   if (audioParticipants[remoteProducerId]) {
     // Optionally unload sound if managed here
     if (audioParticipants[remoteProducerId].sound) {
       audioParticipants[remoteProducerId].sound?.unloadAsync();
     }
     delete audioParticipants[remoteProducerId];
+  }
+
+  // Call callback if provided (for UI updates)
+  if (globalAudioParticipantCallback) {
+    globalAudioParticipantCallback("remove", { producerId: remoteProducerId });
+  }
+}
+
+// Global callback for UI updates - will be set by PreLive component
+let globalAudioParticipantCallback:
+  | ((action: "add" | "remove" | "update", data: any) => void)
+  | null = null;
+
+/**
+ * Set callback for audio participant updates
+ */
+export function setAudioParticipantCallback(
+  callback: (action: "add" | "remove" | "update", data: any) => void
+) {
+  globalAudioParticipantCallback = callback;
+}
+
+/**
+ * Update audio participant status (mute/unmute)
+ */
+export function updateAudioParticipantStatus(
+  remoteProducerId: string,
+  isAudioOn: boolean
+) {
+  console.log("🎤 Updating audio status:", { remoteProducerId, isAudioOn });
+
+  if (globalAudioParticipantCallback) {
+    globalAudioParticipantCallback("update", {
+      producerId: remoteProducerId,
+      isAudioOn,
+    });
   }
 }
 
@@ -80,16 +143,16 @@ export async function playAudioFromUri(uri: string): Promise<Audio.Sound> {
 // --- UI/Component logic stubs ---
 // These should be implemented in React Native components/screens, not here.
 
-export async function updateViewCount() {
-  try {
-    const view = await getRoomPeersAmount();
-    console.log(`Current viewers: ${view}`);
-    return view;
-  } catch (error) {
-    console.error("Error updating view count:", error);
-    return 0;
-  }
-}
+// export async function updateViewCount() {
+//   try {
+//     const view = await getRoomPeersAmount();
+//     console.log(`Current viewers: ${view}`);
+//     return view;
+//   } catch (error) {
+//     console.error("Error updating view count:", error);
+//     return 0;
+//   }
+// }
 
 // export function updateRoomVideo(props: any): void {
 //   // Implement in component: update video stream or fallback image

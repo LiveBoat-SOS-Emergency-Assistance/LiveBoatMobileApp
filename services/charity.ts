@@ -78,12 +78,47 @@ export class charityServices {
   }
   static async get_all_donation_by_charityID(
     charityId?: number,
-    status?: string
+    status?: string,
+    phone?: string,
+    limit?: number,
+    offset?: number
   ) {
     try {
       const params: any = {};
       if (charityId !== undefined) params.charityId = charityId;
       if (status !== undefined) params.status = status;
+      if (phone !== undefined && phone.trim() !== "") params.phone = phone;
+      if (limit !== undefined) params.limit = limit;
+      if (offset !== undefined) params.offset = offset;
+
+      const result = await axiosPrivate.get("/charity-donation/all", {
+        params,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  static async search_donations_by_phone(
+    phone: string,
+    charityId?: number,
+    status: string = "SUCCESS",
+    limit?: number,
+    offset?: number
+  ) {
+    try {
+      const params: any = {
+        status,
+        sort: "amount:desc",
+      };
+
+      if (charityId !== undefined) params.charityId = charityId;
+      if (phone && phone.trim() !== "") params.phone = phone;
+      if (limit !== undefined) params.limit = limit;
+      if (offset !== undefined) params.offset = offset;
 
       const result = await axiosPrivate.get("/charity-donation/all", {
         params,

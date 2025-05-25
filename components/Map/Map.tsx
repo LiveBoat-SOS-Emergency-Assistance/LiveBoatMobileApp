@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Image,
   Text,
+  Linking,
+  Alert,
 } from "react-native";
 import MapboxGL, { MapView, Camera } from "@rnmapbox/maps";
 import { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "@env";
@@ -16,6 +18,7 @@ import { RescuerItem } from "../../types/rescuerItem";
 import { SOSItem } from "../../types/sosItem";
 import { useAuth } from "../../context/AuthContext";
 import RescuerMarker from "./RescuerMarker";
+import MarkerPopup from "./MarkerPopup";
 import { m } from "framer-motion";
 MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN);
 MapboxGL.setTelemetryEnabled(false);
@@ -27,6 +30,14 @@ interface Marker {
   accuracy: number;
   userType: "SENDER" | "HELPER" | "NORMAL";
   avatarUrl: string;
+  name?: string;
+  phone?: string;
+  status?: string;
+  User?: {
+    id: number;
+    avatar_url?: string;
+    phone?: string;
+  };
 }
 
 interface mapProps {
@@ -60,6 +71,9 @@ const Map = ({
     null
   );
   const [selectUser, setSelectUser] = useState<Marker | null>(null);
+  // ✅ THÊM: State cho popup
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
   // console.log("Markers being passed to Map:", otherUserMarkers);
 
   useEffect(() => {
@@ -106,6 +120,44 @@ const Map = ({
       fetchRoute();
     }
   }, [location, sosLocation]);
+
+  // ✅ THÊM: Popup handlers
+  const handleMarkerPress = (marker: Marker) => {
+    setSelectedMarker(marker);
+    setShowPopup(true);
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setSelectedMarker(null);
+  };
+
+  const handleCallUser = () => {
+    if (selectedMarker?.phone) {
+      Linking.openURL(`tel:${selectedMarker.phone}`);
+    } else {
+      Alert.alert(
+        "No phone number",
+        "This user doesn't have a phone number available"
+      );
+    }
+  };
+
+  const handleMessageUser = () => {
+    // Navigate to chat screen or open messaging functionality
+    Alert.alert("Message", "Opening chat functionality...");
+    // You can add navigation logic here
+  };
+
+  const handleGetDirections = () => {
+    if (selectedMarker && location) {
+      const url = `https://maps.google.com/maps?q=${selectedMarker.latitude},${selectedMarker.longitude}`;
+      Linking.openURL(url).catch(() => {
+        Alert.alert("Error", "Could not open map directions");
+      });
+    }
+  };
+
   // console.log("listRescuer", listRescuer)
   return (
     <View style={styles.container}>
@@ -125,14 +177,44 @@ const Map = ({
               animationDuration={500}
             />
             {signal === "sos" ? (
-              <RippleMarker id="my-sos-marker" coordinate={location} />
+              <RippleMarker
+                id="my-sos-marker"
+                coordinate={location}
+                onPress={() => {
+                  if (profile?.User) {
+                    handleMarkerPress({
+                      userId: Number(profile.User.id),
+                      latitude: location[1],
+                      longitude: location[0],
+                      accuracy: 10,
+                      userType: "SENDER",
+                      avatarUrl: profile.User.avatar_url || "",
+                      name: profile.name || `User ${profile.User.id}`,
+                      phone: profile.User.phone || "",
+                      status: "My SOS Signal",
+                    });
+                  }
+                }}
+              />
             ) : (
               <UserLocation
                 coordinate={location}
                 avatarUrl={profile?.User?.avatar_url}
+                onPress={() =>
+                  handleMarkerPress({
+                    userId: Number(profile?.User?.id),
+                    latitude: location[1],
+                    longitude: location[0],
+                    accuracy: 10,
+                    userType: "NORMAL",
+                    avatarUrl: profile?.User?.avatar_url || "",
+                    name: profile?.name || `User ${profile?.User?.id}`,
+                    phone: profile?.User?.phone || "",
+                    status: "My Location",
+                  })
+                }
               />
             )}
-
             {/* When I support others this is the user's location */}
             {sosLocation && checkSOS && (
               <RippleMarker
@@ -142,9 +224,21 @@ const Map = ({
                   parseFloat(sosLocation.SOS.longitude),
                   parseFloat(sosLocation.SOS.latitude),
                 ]}
+                onPress={() =>
+                  handleMarkerPress({
+                    userId: Number(sosLocation.SOS.user_id),
+                    latitude: parseFloat(sosLocation.SOS.latitude),
+                    longitude: parseFloat(sosLocation.SOS.longitude),
+                    accuracy: 10,
+                    userType: "SENDER",
+                    avatarUrl: "",
+                    name: `SOS ${sosLocation.SOS.name}`,
+                    phone: "",
+                    status: "SOS Signal",
+                  })
+                }
               />
             )}
-
             {otherUserMarkers &&
               Object.values(otherUserMarkers).map((marker) => {
                 // const uniqueKey = `${marker.userId}-${marker.latitude}-${marker.longitude}`; // Tạo key duy nhất
@@ -156,6 +250,13 @@ const Map = ({
                       avatarUrl={marker.avatarUrl}
                       userType={marker.userType}
                       size={50}
+                      onPress={() => handleMarkerPress(marker)}
+                      userData={{
+                        userId: marker.userId,
+                        name: marker.name,
+                        phone: marker.phone,
+                        accuracy: marker.accuracy,
+                      }}
                     />
                   );
                 } else if (marker.userType === "HELPER") {
@@ -166,6 +267,22 @@ const Map = ({
                       id={String(marker.userId)}
                       type={marker.userType}
                       zoomLevel={11}
+                      avatarUrl={marker.avatarUrl || marker.User?.avatar_url}
+                      name={marker.name}
+                      onPress={() =>
+                        handleMarkerPress({
+                          userId: Number(marker.userId),
+                          latitude: marker.latitude,
+                          longitude: marker.longitude,
+                          accuracy: 10,
+                          userType: "HELPER",
+                          avatarUrl:
+                            marker.avatarUrl || marker.User?.avatar_url || "",
+                          name: marker.name || `User ${marker.userId}`,
+                          phone: marker.User?.phone || marker?.phone || "",
+                          status: "Rescue",
+                        })
+                      }
                     />
                   );
                 } else if (marker.userType === "SENDER") {
@@ -175,6 +292,7 @@ const Map = ({
                       id={String(marker.userId)}
                       coordinate={[marker.longitude, marker.latitude]}
                       userIDSOS={marker.userId}
+                      onPress={() => handleMarkerPress(marker)}
                     ></RippleMarker>
                   );
                 }
@@ -189,9 +307,7 @@ const Map = ({
                 />
               </MapboxGL.ShapeSource>
             )}
-
             {/* My location */}
-
             {otherSOS && (
               <RippleMarker
                 id={`ripple-marker-${otherSOS.user_id}-${otherSOS.longitude}-${otherSOS.latitude}`}
@@ -200,11 +316,34 @@ const Map = ({
                   parseFloat(otherSOS.longitude),
                   parseFloat(otherSOS.latitude),
                 ]}
+                onPress={() =>
+                  handleMarkerPress({
+                    userId: Number(otherSOS.user_id),
+                    latitude: parseFloat(otherSOS.latitude),
+                    longitude: parseFloat(otherSOS.longitude),
+                    accuracy: 10,
+                    userType: "SENDER",
+                    avatarUrl: "",
+                    name: `SOS User ${otherSOS.user_id}`,
+                    phone: "",
+                    status: "SOS Signal",
+                  })
+                }
               />
             )}
           </>
         )}
       </MapView>
+
+      {/* ✅ ADD: Marker Popup */}
+      <MarkerPopup
+        visible={showPopup}
+        marker={selectedMarker}
+        onClose={handleClosePopup}
+        onCall={handleCallUser}
+        onMessage={handleMessageUser}
+        onGetDirections={handleGetDirections}
+      />
     </View>
   );
 };

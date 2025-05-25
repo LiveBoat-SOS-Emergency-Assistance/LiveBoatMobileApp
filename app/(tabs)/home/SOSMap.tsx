@@ -302,6 +302,7 @@ export default function SOSMap() {
         status: "RESOLVED",
       });
       displayOrUpdateMarkers([]);
+      setOtherUserMarkers({});
       Toast.show({
         type: "info",
         text1: "Notification",

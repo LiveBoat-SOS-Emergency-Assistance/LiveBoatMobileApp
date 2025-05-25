@@ -24,12 +24,13 @@ import { mediaSoupSocket } from "./SOSMap";
 import { MediaStream, RTCView, mediaDevices } from "react-native-webrtc";
 import { getChatSocket } from "../../../utils/socket";
 import { initializeChatModule, sendMessage } from "../../../sockets/ChatModule";
-import { updateViewCount } from "../../../utils/liveStream";
+// import { updateViewCount } from "../../../utils/liveStream";
 import { liveStreamService } from "../../../services/liveStream";
 import { InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
 
 import { userServices } from "../../../services/user";
 import { clearProducer } from "../../../mediaSoup/producer";
+import { setAudioParticipantCallback } from "../../../utils/liveStream";
 // Extend the Window interface to include setRemoteVideoTrack
 let videotrack: any;
 declare global {
@@ -71,6 +72,89 @@ export function updateAudioStatus(
   isAudioOn: boolean,
   producerId: string
 ): void {}
+export async function updateViewCount() {
+  try {
+    const view = await mediaSoupModule.getRoomPeersAmount();
+    console.log(`Current viewers: ${view}`);
+    return view;
+  } catch (error) {
+    console.error("Error updating view count:", error);
+    return 0;
+  }
+}
+
+// ✅ THÊM: AudioParticipant Component
+interface AudioParticipantProps {
+  participant: {
+    id: string;
+    producerId: string;
+    track: any;
+    userId?: string;
+    name?: string;
+    avatar?: string;
+    isAudioOn: boolean;
+  };
+}
+
+const AudioParticipant: React.FC<AudioParticipantProps> = ({ participant }) => {
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  console.log("AudioParticipant mounted:", participant);
+  useEffect(() => {
+    if (!participant.track) return;
+
+    const setupAudio = async () => {
+      try {
+        console.log("🔊 Setting up audio for:", participant.name);
+
+        // Tạo MediaStream từ track
+        const mediaStream = new MediaStream([participant.track]);
+        participant.track.enabled = participant.isAudioOn;
+
+        console.log("🔊 Audio setup completed for:", participant.name);
+      } catch (error) {
+        console.error("Error setting up audio:", error);
+      }
+    };
+
+    setupAudio();
+
+    // Cleanup function
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [participant.track, participant.isAudioOn]);
+  return (
+    <View style={audioParticipantStyles.participantContainer}>
+      <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
+      <View style={audioParticipantStyles.avatarContainer}>
+        <Avatar source={participant.avatar} width={40} height={40} />
+        {/* Audio indicator */}
+        <View
+          style={[
+            audioParticipantStyles.audioIndicator,
+            { backgroundColor: participant.isAudioOn ? "#10B981" : "#EF4444" },
+          ]}
+        >
+          <ImageCustom
+            source={
+              participant.isAudioOn
+                ? "https://img.icons8.com/?size=100&id=85836&format=png&color=000000"
+                : "https://img.icons8.com/?size=100&id=qv2H3YadsNcR&format=png&color=000000"
+            }
+            width={12}
+            height={12}
+            color="white"
+          />
+        </View>
+      </View>
+      <Text style={audioParticipantStyles.participantName} numberOfLines={1}>
+        {participant.name}
+      </Text>
+    </View>
+  );
+};
 
 const PreLive = () => {
   const { isHost } = useLocalSearchParams<{ isHost: string }>();
@@ -81,8 +165,9 @@ const PreLive = () => {
   const cameraRef = useRef<CameraView | null>(null);
   const videoStream = useRef<MediaStream | null>(null);
   const [facing, setFacing] = useState<"front" | "back">("front");
-  const [tryToTurnOffAudio, setTryToTurnOffAudio] = useState(true);
+  // const [tryToTurnOffAudio, setTryToTurnOffAudio] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(true);
+  const [isAudioOn, setIsAudioOn] = useState(true);
   const [isLiveStreaming, setIsLiveStreaming] = useState(false);
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const chatSocket = getChatSocket();
@@ -92,10 +177,27 @@ const PreLive = () => {
   const [viewerCount, setViewerCount] = useState(0);
   const [remoteVideoTrack, setRemoteVideoTrack] = useState<any>(null);
   console.log("isHostBool, sosId", isHostBool, sosId);
-  const [host, setHost] = useState<any>();  const [loading, setLoading] = useState(false);
+  const [host, setHost] = useState<any>();
+  const [loading, setLoading] = useState(false);
   const { userProfile } = useLocalSearchParams<{ userProfile: string }>();
   const [isJoining, setIsJoining] = useState(false);
-  const [hostStreamingStatus, setHostStreamingStatus] = useState<'loading' | 'streaming' | 'not-streaming'>('loading');
+  const [hostStreamingStatus, setHostStreamingStatus] = useState<
+    "loading" | "streaming" | "not-streaming"
+  >("loading");
+
+  // ✅ THÊM: Audio participants state
+  const [audioParticipants, setAudioParticipants] = useState<
+    Array<{
+      id: string;
+      producerId: string;
+      track: any;
+      userId?: string;
+      name?: string;
+      avatar?: string;
+      isAudioOn: boolean;
+    }>
+  >([]);
+
   // GET HOST LIVE STREAM
   useEffect(() => {
     if (isHostBool) return;
@@ -139,20 +241,51 @@ const PreLive = () => {
     // Listen for new producers (when host starts streaming)
     const handleNewProducer = (data: any) => {
       console.log("🎬 New producer detected:", data.producerId);
-      setHostStreamingStatus('streaming');
+      setHostStreamingStatus("streaming");
       // This will trigger consumption of the new producer
     };
 
     mediaSoupSocket.on("camera-status", handleCameraStatus);
     mediaSoupSocket.on("new-producer", handleNewProducer);
-    
+
     return () => {
       mediaSoupSocket.off("camera-status", handleCameraStatus);
       mediaSoupSocket.off("new-producer", handleNewProducer);
     };
-  }, [isHostBool]);
-  // SET SOCKET
+  }, [isHostBool]); // SET SOCKET
   useEffect(() => {
+    // ✅ THÊM: Setup audio participant callback
+    setAudioParticipantCallback((action, data) => {
+      console.log("🎤 Audio participant callback:", action, data);
+
+      if (action === "add") {
+        setAudioParticipants((prev) => {
+          const existingIndex = prev.findIndex(
+            (p) => p.producerId === data.producerId
+          );
+          if (existingIndex >= 0) {
+            const updated = [...prev];
+            updated[existingIndex] = { ...updated[existingIndex], ...data };
+            return updated;
+          } else {
+            return [...prev, data];
+          }
+        });
+      } else if (action === "remove") {
+        setAudioParticipants((prev) =>
+          prev.filter((p) => p.producerId !== data.producerId)
+        );
+      } else if (action === "update") {
+        setAudioParticipants((prev) =>
+          prev.map((p) =>
+            p.producerId === data.producerId
+              ? { ...p, isAudioOn: data.isAudioOn }
+              : p
+          )
+        );
+      }
+    });
+
     window.setRemoteVideoTrack = (track: any) => {
       setRemoteVideoTrack(track);
     };
@@ -300,8 +433,8 @@ const PreLive = () => {
 
   // TOGGLE MIC
   const toggleMute = () => {
-    if (!isLiveStreaming) {
-      setTryToTurnOffAudio((prev) => !prev);
+    if (!isLiveStreaming && !isJoining) {
+      setIsAudioOn((prev) => !prev);
       return;
     }
     const producerInfo = mediaSoupModule.producerModule.getProducerInfo?.();
@@ -317,13 +450,28 @@ const PreLive = () => {
       return;
     }
 
-    const newAudioState = !tryToTurnOffAudio;
-    audioTrack.enabled = newAudioState;
+    // ✅ SỬA: Logic rõ ràng hơn
+    const shouldMute = !isAudioOn; // Nếu đang unmute (tryToTurnOffAudio=false) thì mute
+
+    console.log("Toggling audio - shouldMute:", shouldMute);
+
+    // ✅ Set audio track enabled/disabled
+    audioTrack.enabled = shouldMute; // Nếu shouldMute=true thì enabled=false
+
+    // ✅ Emit đúng trạng thái
     mediaSoupSocket.emit("audio-status", {
-      isAudioOn: newAudioState,
+      isAudioOn: shouldMute, // Nếu shouldMute=true thì isAudioOn=false
       producerId: audioProducer.id,
     });
-    setTryToTurnOffAudio(newAudioState);
+
+    // ✅ Update state
+    setIsAudioOn(shouldMute);
+
+    console.log("Audio toggled - new state:", {
+      tryToTurnOffAudio: shouldMute,
+      audioTrackEnabled: audioTrack.enabled,
+      isAudioOn: !shouldMute,
+    });
   };
   // TOGGLE CAMERA
   const toggleCamera = () => {
@@ -368,25 +516,6 @@ const PreLive = () => {
     }
     setIsCameraOn((prev) => !prev);
   };
-
-  // useEffect(() => {
-  //   if (isHostBool) return;
-  //   const handleCameraStatus = ({
-  //     isCameraOn,
-  //     producerId,
-  //   }: {
-  //     isCameraOn: boolean;
-  //     producerId: string;
-  //   }) => {
-  //     console.log("Camera status received:", isCameraOn, producerId);
-  //     updateCameraStatus(isCameraOn, producerId);
-  //   };
-
-  //   mediaSoupSocket.on("camera-status", handleCameraStatus);
-  //   return () => {
-  //     mediaSoupSocket.off("camera-status", handleCameraStatus);
-  //   };
-  // }, [isHostBool]);
 
   // UPDATE LIVE STATUS
   const handleUpdateStatus = async () => {
@@ -448,7 +577,11 @@ const PreLive = () => {
       }
       await getLocalStream();
       console.log("profileid", profile?.id);
-      mediaSoupModule.joinRoom({ isConsumeOnly: false, userId: profile?.id });
+      mediaSoupModule.joinRoom({
+        isConsumeOnly: false,
+        userId: profile?.id,
+        sosId: sosId,
+      });
       await handleUpdateStatus();
     } catch (error) {
       console.log("Error starting streaming:", error);
@@ -505,83 +638,12 @@ const PreLive = () => {
     );
   }
 
-  // const handleJoinLive = async () => {
-  //   try {
-  //     // Request microphone permission
-  //     const { status: audioStatus } = await Audio.requestPermissionsAsync();
-  //     if (audioStatus !== "granted") {
-  //       Alert.alert(
-  //         "Permission Required",
-  //         "App needs access to your microphone to join the live stream. Please enable it in settings.",
-  //         [
-  //           { text: "Cancel", style: "cancel" },
-  //           {
-  //             text: "Open Settings",
-  //             onPress: () => {
-  //               if (Platform.OS === "ios") {
-  //                 Linking.openURL("app-settings:");
-  //               } else {
-  //                 Linking.openSettings();
-  //               }
-  //             },
-  //           },
-  //         ]
-  //       );
-  //       return;
-  //     }
-  //     console.log("Audio permission granted");
-  //     // Set audio mode
-  //     await Audio.setAudioModeAsync({
-  //       allowsRecordingIOS: true,
-  //       playsInSilentModeIOS: true,
-  //       staysActiveInBackground: true,
-  //       interruptionModeIOS: InterruptionModeIOS?.DoNotMix || 1,
-  //       interruptionModeAndroid: InterruptionModeAndroid?.DoNotMix || 1,
-  //       shouldDuckAndroid: true,
-  //     });
-
-  //     console.log("Audio mode set");
-  //     // Get audio-only stream using react-native-webrtc
-  //     const stream = await mediaDevices.getUserMedia({
-  //       audio: true,
-  //       video: false,
-  //     });
-
-  //     // Store stream in ref
-  //     videoStream.current = stream;
-
-  //     // Get audio track
-  //     const audioTrack = stream.getAudioTracks()[0];
-  //     if (!audioTrack) {
-  //       console.log("No audio track available");
-  //       return;
-  //     }
-  //     console.log("Audio Track Prelive:", audioTrack);
-
-  //     // Set audio parameters for MediaSoup
-  //     const audioParams = { track: audioTrack };
-  //     console.log("Audio Params:", audioParams);
-  //     console.log("HOST Track:", remoteVideoTrack);
-  //     mediaSoupModule.producerModule.setMediaParams({}, audioParams);
-
-  //     // Join room as audio-only participant
-  //     mediaSoupModule.joinRoom({
-  //       isConsumeOnly: false,
-  //       userId: profile?.id,
-  //       sosId: sosId,
-  //     });
-  //     // setRemoteVideoTrack(videotrack);
-  //     // Update audio state
-  //     setTryToTurnOffAudio(true);
-  //     setIsJoining(true);
-  //   } catch (error) {
-  //     console.error("Error in handleJoinLive:", error);
-  //     Alert.alert("Error", "Failed to join live stream. Please try again.");
-  //   }
-  // };
   const handleJoinLive = async () => {
     setLoading(true);
     try {
+      console.log("🧹 Clearing consuming transports for audio join...");
+      mediaSoupModule.consumerModule.clearConsumingTransports();
+
       // Request microphone permission
       const { status: audioStatus } = await Audio.requestPermissionsAsync();
       if (audioStatus !== "granted") {
@@ -631,8 +693,8 @@ const PreLive = () => {
 
       // Get audio-only stream for viewer
       const stream = await mediaDevices.getUserMedia({
-        audio: true,
         video: false,
+        audio: true,
       });
 
       videoStream.current = stream;
@@ -647,9 +709,9 @@ const PreLive = () => {
 
       // Set audio parameters for MediaSoup
       const audioParams = { track: audioTrack };
-      mediaSoupModule.producerModule.setMediaParams({}, audioParams);      // ✅ SỬA: Viewer nên join với isConsumeOnly: true
+      mediaSoupModule.producerModule.setMediaParams({}, audioParams); // ✅ SỬA: Viewer nên join với isConsumeOnly: true
       await mediaSoupModule.joinRoom({
-        isConsumeOnly: true, // ✅ Viewer chỉ consume, không produce video
+        isConsumeOnly: false,
         userId: profile?.id,
         sosId: sosId,
       });
@@ -660,16 +722,20 @@ const PreLive = () => {
       setTimeout(() => {
         // If no video track is set after 2 seconds, host is probably not streaming
         if (!remoteVideoTrack) {
-          console.log("⚠️ No video stream detected after joining - host may not be live yet");
-          setHostStreamingStatus('not-streaming');
+          console.log(
+            "⚠️ No video stream detected after joining - host may not be live yet"
+          );
+          setHostStreamingStatus("not-streaming");
         } else {
-          setHostStreamingStatus('streaming');
+          setHostStreamingStatus("streaming");
         }
       }, 2000);
-
+      console.log("Host streaming status:", hostStreamingStatus);
       // Set states
-      setTryToTurnOffAudio(true);
+      setIsAudioOn(true);
       setIsJoining(true);
+
+      console.log("before setRemoteVideoTrack", remoteVideoTrack);
 
       // ✅ Set remote video track từ global videotrack nếu có
       if (videotrack) {
@@ -682,13 +748,12 @@ const PreLive = () => {
 
       // Cleanup on error
       setIsJoining(false);
-      setTryToTurnOffAudio(true);
     } finally {
       // ✅ SỬA: Đảm bảo luôn tắt loading
       setLoading(false);
     }
   };
-  const handleLeaveLive = async () => {
+  const handleQuit = async () => {
     try {
       console.log("Participant leaving live stream...");
       try {
@@ -724,8 +789,17 @@ const PreLive = () => {
       console.error("Error leaving live stream:", error);
       Alert.alert("Error", "Failed to leave live stream. Navigating back.");
     } finally {
-      router.back();
     }
+  };
+  const handleLeaveLive = async () => {
+    console.log("🧹 Clearing consuming transports for audio join...");
+    mediaSoupModule.consumerModule.clearConsumingTransports();
+    await mediaSoupModule.joinRoom({
+      isConsumeOnly: true,
+      userId: profile?.id,
+      sosId: sosId,
+    });
+    setIsJoining(false);
   };
 
   useEffect(() => {
@@ -792,7 +866,7 @@ const PreLive = () => {
       // 6. Reset states
       setIsLiveStreaming(false);
       setIsCameraOn(false);
-      setTryToTurnOffAudio(false);
+      setIsAudioOn(false);
       setRemoteVideoTrack(null);
       videotrack = null; // Reset global videotrack
       window.setRemoteVideoTrack?.(null); // Clear remote video track
@@ -834,7 +908,7 @@ const PreLive = () => {
     } else {
       // Viewer: leave live stream
       try {
-        await handleLeaveLive();
+        await handleQuit();
       } catch (error) {
         console.error("Error in handleClose (viewer):", error);
         Alert.alert("Error", "Failed to leave live stream. Navigating back.");
@@ -861,6 +935,7 @@ const PreLive = () => {
               active={isCameraOn}
               style={StyleSheet.absoluteFill}
               facing={facing}
+              mute={!isAudioOn}
             ></CameraView>
           )
         ) : (
@@ -992,6 +1067,23 @@ const PreLive = () => {
             </BlurView>
           </TouchableOpacity>
         </View>
+        {/* Audio Participants */}
+        {audioParticipants.length > 0 && (
+          <View style={audioParticipantStyles.container}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={audioParticipantStyles.scrollView}
+            >
+              {audioParticipants.map((participant) => (
+                <AudioParticipant
+                  key={participant.producerId}
+                  participant={participant}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
         {isHostBool ? (
           <View className="absolute right-2 top-1/4 flex flex-col gap-5">
             <TouchableOpacity
@@ -1031,7 +1123,7 @@ const PreLive = () => {
             >
               <ImageCustom
                 source={
-                  tryToTurnOffAudio
+                  isAudioOn
                     ? "https://img.icons8.com/?size=100&id=85836&format=png&color=000000" // Replace with actual muted icon URL
                     : "https://img.icons8.com/?size=100&id=qv2H3YadsNcR&format=png&color=000000" // Replace with actual unmuted icon URL
                 }
@@ -1071,7 +1163,7 @@ const PreLive = () => {
               >
                 <ImageCustom
                   source={
-                    tryToTurnOffAudio
+                    isAudioOn
                       ? "https://img.icons8.com/?size=100&id=85836&format=png&color=000000" // Replace with actual muted icon URL
                       : "https://img.icons8.com/?size=100&id=qv2H3YadsNcR&format=png&color=000000" // Replace with actual unmuted icon URL
                   }
@@ -1084,7 +1176,6 @@ const PreLive = () => {
             )}
           </View>
         )}
-
         <View className="bottom-5 left-0 right-0 absolute px-5">
           {isHostBool && !isLiveStreaming ? (
             <TouchableOpacity
@@ -1178,5 +1269,50 @@ const PreLive = () => {
     </View>
   );
 };
+
+// ✅ THÊM: Audio Participant Styles
+const audioParticipantStyles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    top: 120,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+  },
+  scrollView: {
+    flexDirection: "row",
+  },
+  participantContainer: {
+    alignItems: "center",
+    marginHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  avatarContainer: {
+    position: "relative",
+  },
+  audioIndicator: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "white",
+  },
+  participantName: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 4,
+    textAlign: "center",
+    maxWidth: 60,
+  },
+});
 
 export default PreLive;

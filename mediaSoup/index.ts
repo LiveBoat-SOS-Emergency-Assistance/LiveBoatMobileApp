@@ -42,14 +42,14 @@ export const consumerModule = {
 
 import { Device } from "mediasoup-client";
 import { getRoomName, mediaSoupSocket } from "../app/(tabs)/home/SOSMap";
-import {
-  updateViewCount,
-  // updateCameraStatus,
-  // updateAudioStatus,
-} from "../utils/liveStream";
+import // updateViewCount,
+// updateCameraStatus,
+// updateAudioStatus,
+"../utils/liveStream";
 import {
   updateAudioStatus,
   updateCameraStatus,
+  updateViewCount,
 } from "../app/(tabs)/home/PreLive";
 
 let device: any = null;
