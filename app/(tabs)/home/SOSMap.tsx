@@ -162,6 +162,7 @@ export default function SOSMap() {
   const handleEditSOS = () => {
     setVisible(true);
   };
+
   useFocusEffect(
     useCallback(() => {
       registerCommonSocketEvents();
@@ -196,6 +197,38 @@ export default function SOSMap() {
           );
         }
       }, 5000);
+      // --- Cập nhật location liên tục bằng watchPosition và gọi sos_edit ---
+      let watchId = null;
+      if (navigator.geolocation) {
+        watchId = navigator.geolocation.watchPosition(
+          async (position) => {
+            updateLocation(
+              position.coords.latitude,
+              position.coords.longitude,
+              position.coords.accuracy ?? 0
+            );
+            // Gọi sos_edit để update location SOS trên server
+            if (sosId) {
+              try {
+                await sosService.sos_edit(sosId, {
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  accuracy: position.coords.accuracy ?? 0,
+                  status: "ONGOING",
+                });
+                console.log("update");
+              } catch (err) {
+                console.log("Error updating SOS location:", err);
+              }
+            }
+          },
+          (error) => {
+            console.log("Location watch error:", error);
+          },
+          { enableHighAccuracy: true }
+        );
+      }
+      // Fallback: interval lấy location mỗi 10s (có thể bỏ nếu không cần)
       const locationInterval = setInterval(async () => {
         const location = await getCurrentLocation();
         if (location) {
@@ -204,12 +237,29 @@ export default function SOSMap() {
             location.longitude,
             location.accuracy ?? 0
           );
+          // Gọi sos_edit để update location SOS trên server
+          if (sosId) {
+            try {
+              await sosService.sos_edit(sosId, {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                accuracy: location.accuracy ?? 0,
+                status: "ONGOING",
+              });
+              console.log("update2");
+            } catch (err) {
+              console.log("Error updating SOS location (interval):", err);
+            }
+          }
         }
       }, 10000);
       return () => {
         clearInterval(timeout1);
         clearTimeout(timeout2);
         clearInterval(locationInterval);
+        if (watchId !== null && navigator.geolocation) {
+          navigator.geolocation.clearWatch(watchId);
+        }
         console.log("Unsubscribed from socket events");
         socket.current?.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
         setOtherUserMarkers([]);

@@ -55,4 +55,17 @@ export class rescuerServices {
       throw error;
     }
   }
+  static async getPastRescuer() {
+    try {
+      const result = await axiosPrivate.get("/sos/rescuer/past", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        requiresAuth: true,
+      } as CustomAxiosRequestConfig);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
 }

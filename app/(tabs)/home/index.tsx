@@ -67,6 +67,7 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<boolean>(true); // State to manage active tab
   const [helpingUserId, setHelpingTheUserId] = useState<number | null>(null);
   const [isAlertVisible, setAlertVisible] = useState(false);
+  const [SOS, setSOS] = useState<any>(null);
   const toggleBottomSheet = () => {
     setIsBottomSheetVisible((prev) => !prev); // Đóng/mở BottomSheet
   };
@@ -129,6 +130,15 @@ export default function HomeScreen() {
       clearTimeout(timeout2);
     };
   }, []);
+  const getCurrentSOS = async () => {
+    try {
+      const result = await sosService.getSOSById(currentSOS.SOS.id);
+      console.log("Current SOS:", result.data);
+      setSOS(result.data);
+    } catch (error) {
+      console.error("Error fetching helpingUserId:", error);
+    }
+  };
 
   useEffect(() => {
     if (!socket.current || !currentSOS) return;
@@ -148,12 +158,18 @@ export default function HomeScreen() {
     socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
       if (data.userId === helpingUserId) {
         console.log("Sender disconnected, display offline marker");
-        displayOfflineMarker(data.userId);
+        getCurrentSOS();
+        displayOfflineMarker(data.userId, SOS?.longitude, SOS?.latitude);
       }
     });
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
       if (data.userId === helpingUserId) {
         console.log("Sender finished SOS, complete rescuing");
+        Toast.show({
+          type: "success",
+          text1: "SOS Completed",
+          text2: "You have successfully completed the SOS request.",
+        });
         setAlertVisible(true);
         setHelpingTheUserId(null);
         setCheckSOS(false);
@@ -176,8 +192,9 @@ export default function HomeScreen() {
         SOCKET_EVENTS.TOSERVER_GET_THE_SENDER_LOCATION,
         (response: any) => {
           console.log("Server responded:", response);
+          getCurrentLocation();
           if (response?.status === false && helpingUserId !== null) {
-            displayOfflineMarker(helpingUserId);
+            displayOfflineMarker(helpingUserId, SOS?.longitude, SOS?.latitude);
           }
         }
       );
