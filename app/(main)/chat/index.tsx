@@ -25,10 +25,14 @@ const ChatScreen = () => {
   );
   const [historyChat, setHistoryChat] = useState<any[]>([]);
   const [listInvite, setListInvite] = useState<any[]>([]);
+
   const [systemNotification, setSystemNotification] = useState<any[]>([]);
+  const [selectedSort, setSelectedSort] = useState<"oldest" | "newest">(
+    "oldest"
+  );
   const options = [
     { label: "Alert", value: "alert" },
-    { label: "Chat", value: "chat" },
+    // { label: "Chat", value: "chat" },
     { label: "Squad", value: "squad" },
     { label: "Invite", value: "invite" },
   ];
@@ -110,8 +114,6 @@ const ChatScreen = () => {
     if (route === "alert") {
       try {
         const result = await notifcationService.get_notification();
-        // console.log(result.data);
-
         setSystemNotification(result.data);
       } catch (error: any) {
         console.log(error);
@@ -223,8 +225,17 @@ const ChatScreen = () => {
         {/* Right */}
         <View className="flex-row   items-center gap-2 px-2 py-2 rounded-full bg-[#fafaff]">
           <Filter size={20} color="#6B7280" />
-          <Text className="font-medium">Oldest</Text>
-          <ChevronDown size={16} color="#6B7280" />
+          <TouchableOpacity
+            onPress={() =>
+              setSelectedSort(selectedSort === "oldest" ? "newest" : "oldest")
+            }
+            className="flex-row items-center"
+          >
+            <Text className="font-medium">
+              {selectedSort === "oldest" ? "Newest" : "Oldest"}
+            </Text>
+            <ChevronDown size={16} color="#6B7280" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -234,8 +245,12 @@ const ChatScreen = () => {
             selectedValue === "invite"
               ? listInvite
               : selectedValue === "squad"
-              ? historyChat
-              : systemNotification.slice().reverse()
+              ? selectedSort === "oldest"
+                ? historyChat
+                : [...historyChat].reverse()
+              : selectedSort === "oldest"
+              ? systemNotification.slice().reverse()
+              : systemNotification
           }
           keyExtractor={(item, index) => `key-${index}`}
           showsVerticalScrollIndicator={false}
@@ -262,12 +277,31 @@ const ChatScreen = () => {
                   is_read={item.is_read}
                   notification_id={item.notification_id}
                   user_id={item.user_id}
-                  // name={item?.name}
-                  // onPress={() => handlePress(item?.id, item?.name)}
                 />
               </View>
             )
           }
+          ListEmptyComponent={() => (
+            <View
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: "50%",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#888",
+                  fontSize: 18,
+                  fontWeight: "500",
+                  textAlign: "center",
+                }}
+              >
+                No messages found
+              </Text>
+            </View>
+          )}
         />
       </View>
     </View>

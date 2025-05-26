@@ -32,7 +32,7 @@ const ChatItem = ({
   last_message_time,
 }: ChatProps) => {
   const [isPressed, setIsPressed] = useState(false);
-  console.log("ChatItem", created_at);
+  // console.log("ChatItem", created_at);
   return (
     <TouchableOpacity
       activeOpacity={0.8}
