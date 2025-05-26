@@ -111,4 +111,19 @@ export class sosService {
       throw error;
     }
   }
+  static async getSOSByUserId(userId: number, status?: string) {
+    try {
+      const result = await axiosPrivate.get(`/sos/user/${userId}`, {
+        params: {
+          status: status,
+        },
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
 }

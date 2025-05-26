@@ -294,10 +294,10 @@ export default function Donation() {
                   onPress={() => handleNavidateToDetail(item)}
                 />
               )}
-              contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
               showsHorizontalScrollIndicator={false}
               ListFooterComponent={() => (
-                <View className="h-[100px] flex justify-center items-center pb-8">
+                <View className="h-[100px] flex justify-center items-center ">
                   <TouchableOpacity
                     onPress={() => router.push("/(tabs)/donation/SupportDiary")}
                   >

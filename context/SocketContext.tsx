@@ -35,7 +35,11 @@ interface SocketContextType {
   setUserInfo: (userType: string) => void;
   displayOrUpdateMarkers: (data: Marker[]) => void;
   registerCommonSocketEvents: () => void;
-  displayOfflineMarker: (userId: number) => void;
+  displayOfflineMarker: (
+    userId: number,
+    longitude: number,
+    latitude: number
+  ) => void;
   sendMessage: (
     senderId: number,
     groupId: number,
@@ -190,14 +194,18 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       accuracy,
     });
   };
-  const displayOfflineMarker = (userId: number) => {
+  const displayOfflineMarker = (
+    userId: number,
+    longitude: number,
+    latitude: number
+  ) => {
     setOtherUserMarkers((prev) => ({
       ...prev,
       [userId]: {
         ...prev[userId],
         accuracy: 0,
-        latitude: 0,
-        longitude: 0,
+        latitude: latitude,
+        longitude: longitude,
         userType: "NORMAL",
         avatarUrl: prev[userId]?.avatarUrl || "https://i.pravatar.cc/150",
       },

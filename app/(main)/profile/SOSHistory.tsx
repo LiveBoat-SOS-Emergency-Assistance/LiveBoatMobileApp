@@ -6,9 +6,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   RefreshControl,
+  Modal,
 } from "react-native";
 import { router } from "expo-router";
 import ImageCustom from "../../../components/Image/Image";
+import { useAuth } from "../../../context/AuthContext";
+import { sosService } from "../../../services/sos";
+import MapboxGL from "@rnmapbox/maps";
+import UserLocation from "../../../components/Map/UserLocation";
 
 interface SOSRecord {
   id: string;
@@ -29,60 +34,44 @@ const SOSHistory = () => {
   const [sosRecords, setSosRecords] = useState<SOSRecord[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [refreshing, setRefreshing] = useState(false);
-
-  // Mock data - replace with actual API call
-  const mockData: SOSRecord[] = [
-    {
-      id: "1",
-      timestamp: "2024-12-15 14:30:00",
-      location: "Vũng Tàu Beach, Vietnam",
-      coordinates: { latitude: 10.346, longitude: 107.0843 },
-      status: "resolved",
-      emergencyType: "Water Emergency",
-      responders: 3,
-      duration: "45 minutes",
-      description: "Rescued from strong current",
-    },
-    {
-      id: "2",
-      timestamp: "2024-12-10 09:15:00",
-      location: "Nha Trang Bay, Vietnam",
-      coordinates: { latitude: 12.2388, longitude: 109.1967 },
-      status: "ongoing",
-      emergencyType: "Equipment Failure",
-      responders: 2,
-      description: "Boat engine failure",
-    },
-    {
-      id: "3",
-      timestamp: "2024-12-05 16:45:00",
-      location: "Hạ Long Bay, Vietnam",
-      coordinates: { latitude: 20.9101, longitude: 107.1839 },
-      status: "cancelled",
-      emergencyType: "Medical Emergency",
-      responders: 0,
-      description: "False alarm - resolved independently",
-    },
-    {
-      id: "4",
-      timestamp: "2024-11-28 11:20:00",
-      location: "Phu Quoc Island, Vietnam",
-      coordinates: { latitude: 10.2899, longitude: 103.984 },
-      status: "resolved",
-      emergencyType: "Lost at Sea",
-      responders: 5,
-      duration: "2 hours 15 minutes",
-      description: "Successfully guided back to shore",
-    },
-  ];
+  const [mapModal, setMapModal] = useState({ visible: false, lat: 0, lng: 0 });
+  const { profile } = useAuth();
+  const fetchSOSHistory = async () => {
+    try {
+      const result = await sosService.getSOSByUserId(Number(profile?.id));
+      const apiData = result.data;
+      const mapped: SOSRecord[] = apiData.map((item: any) => ({
+        id: String(item.id),
+        timestamp: item.created_at,
+        location: item.name || item.description || "Unknown location",
+        coordinates: {
+          latitude: Number(item.latitude),
+          longitude: Number(item.longitude),
+        },
+        status:
+          item.status?.toLowerCase() === "canceled"
+            ? "cancelled"
+            : item.status?.toLowerCase() || "ongoing",
+        emergencyType: item.name || "Unknown",
+        responders: item.reported_count || 0,
+        duration: undefined,
+        description: item.description || undefined,
+      }));
+      setSosRecords(mapped);
+    } catch (error) {
+      console.error("Error fetching SOS history:", error);
+    }
+  };
+  useEffect(() => {
+    fetchSOSHistory();
+  }, [profile]);
 
   useEffect(() => {
     loadSOSHistory();
   }, []);
 
   const loadSOSHistory = async () => {
-    // Replace with actual API call
-    setSosRecords(mockData);
+    await fetchSOSHistory();
   };
 
   const onRefresh = async () => {
@@ -357,16 +346,25 @@ const SOSHistory = () => {
 
                 {/* Action Buttons */}
                 <View className="bg-gray-50 px-5 py-3 flex-row space-x-3 gap-2">
-                  <TouchableOpacity
+                  {/* <TouchableOpacity
                     className="flex-1 py-2 rounded-lg"
                     style={{ backgroundColor: "#80C4E9" }}
                   >
                     <Text className="text-white text-center font-medium text-sm">
                       View Details
                     </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity className="flex-1 bg-white border border-gray-200 py-2 rounded-lg">
-                    <Text className="text-gray-700 text-center font-medium text-sm">
+                  </TouchableOpacity> */}
+                  <TouchableOpacity
+                    className="flex-1 bg-[#80C4E9] border border-gray-200 py-2 rounded-lg"
+                    onPress={() =>
+                      setMapModal({
+                        visible: true,
+                        lat: record.coordinates.latitude,
+                        lng: record.coordinates.longitude,
+                      })
+                    }
+                  >
+                    <Text className="text-white text-center font-medium text-sm">
                       Show on Map
                     </Text>
                   </TouchableOpacity>
@@ -376,6 +374,79 @@ const SOSHistory = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Map Modal */}
+      <Modal
+        visible={mapModal.visible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setMapModal({ ...mapModal, visible: false })}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              width: "90%",
+              height: 400,
+              backgroundColor: "#fff",
+              borderRadius: 16,
+              overflow: "hidden",
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <MapboxGL.MapView style={{ flex: 1 }}>
+                <MapboxGL.Camera
+                  centerCoordinate={[mapModal.lng, mapModal.lat]}
+                  zoomLevel={14}
+                />
+                {/* Show user location */}
+                {/* <UserLocation visible={true} showsUserHeadingIndicator={true} /> */}
+                {/* SOS Marker */}
+                <MapboxGL.PointAnnotation
+                  id="sos-marker"
+                  coordinate={[mapModal.lng, mapModal.lat]}
+                >
+                  {/* Custom SOS marker as a pin */}
+                  <View
+                    style={{
+                      width: 30,
+                      height: 30,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <ImageCustom
+                      width={28}
+                      height={28}
+                      source="https://img.icons8.com/ios-filled/50/fa314a/marker.png"
+                    />
+                  </View>
+                </MapboxGL.PointAnnotation>
+              </MapboxGL.MapView>
+            </View>
+            <TouchableOpacity
+              onPress={() => setMapModal({ ...mapModal, visible: false })}
+              style={{ padding: 16, backgroundColor: "#80C4E9" }}
+            >
+              <Text
+                style={{
+                  color: "#fff",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                }}
+              >
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
