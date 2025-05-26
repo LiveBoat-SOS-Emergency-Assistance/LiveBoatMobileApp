@@ -68,6 +68,7 @@ export default function HomeScreen() {
   const [helpingUserId, setHelpingTheUserId] = useState<number | null>(null);
   const [isAlertVisible, setAlertVisible] = useState(false);
   const [SOS, setSOS] = useState<any>(null);
+  const [listMember, setListMember] = useState<any[]>([]);
   const toggleBottomSheet = () => {
     setIsBottomSheetVisible((prev) => !prev); // Đóng/mở BottomSheet
   };
@@ -309,6 +310,7 @@ export default function HomeScreen() {
           if (result && result.data) {
             setGroup(result.data);
             setSelectNameSquad(result.data[0]?.name);
+            setSelectSquad(result.data[0]?.id.toString());
           }
         } catch (error: any) {
           console.log("Error fetching groups:", error);
@@ -451,7 +453,26 @@ export default function HomeScreen() {
       unsubscribeNotificationResponse.remove();
     };
   }, []);
-
+  const getMember = async () => {
+    try {
+      console.log("hi", selectSquad);
+      const result = await groupServices.getMemberByIdGroup(
+        Number(selectSquad)
+      );
+      console.log("Members:", result.data);
+      setListMember(result.data);
+    } catch (error: any) {
+      console.error("Error fetching members:", {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+        headers: error?.response?.headers,
+      });
+    }
+  };
+  useEffect(() => {
+    getMember();
+  }, [selectSquad]);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
@@ -873,9 +894,20 @@ export default function HomeScreen() {
                     }}
                     showsVerticalScrollIndicator={false}
                   >
-                    <MemberCard active />
-                    <MemberCard />
-                    <MemberCard />
+                    {listMember.map((member) => (
+                      <MemberCard
+                        member={member}
+                        key={member.id}
+                        id={member.id}
+                        avatar={member?.User.avatar_url}
+                        // onPress={() => {
+                        //   router.push({
+                        //     pathname: "/(tabs)/profile",
+                        //     params: { id: member.id },
+                        //   });
+                        // }}
+                      />
+                    ))}
                   </ScrollView>
                 )}
               </View>

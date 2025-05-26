@@ -14,6 +14,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { sosService } from "../../../services/sos";
 import MapboxGL from "@rnmapbox/maps";
 import UserLocation from "../../../components/Map/UserLocation";
+import Avatar from "../../../components/Image/Avatar";
 
 interface SOSRecord {
   id: string;
@@ -40,23 +41,28 @@ const SOSHistory = () => {
     try {
       const result = await sosService.getSOSByUserId(Number(profile?.id));
       const apiData = result.data;
-      const mapped: SOSRecord[] = apiData.map((item: any) => ({
-        id: String(item.id),
-        timestamp: item.created_at,
-        location: item.name || item.description || "Unknown location",
-        coordinates: {
-          latitude: Number(item.latitude),
-          longitude: Number(item.longitude),
-        },
-        status:
-          item.status?.toLowerCase() === "canceled"
-            ? "cancelled"
-            : item.status?.toLowerCase() || "ongoing",
-        emergencyType: item.name || "Unknown",
-        responders: item.reported_count || 0,
-        duration: undefined,
-        description: item.description || undefined,
-      }));
+      const mapped: SOSRecord[] = apiData
+        .map((item: any) => ({
+          id: String(item.id),
+          timestamp: item.created_at,
+          location: item.name || item.description || "Unknown location",
+          coordinates: {
+            latitude: Number(item.latitude),
+            longitude: Number(item.longitude),
+          },
+          status:
+            item.status?.toLowerCase() === "canceled"
+              ? "cancelled"
+              : item.status?.toLowerCase() || "ongoing",
+          emergencyType: item.name || "Unknown",
+          responders: item.reported_count || 0,
+          duration: undefined,
+          description: item.description || undefined,
+        }))
+        .sort(
+          (a: SOSRecord, b: SOSRecord) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
       setSosRecords(mapped);
     } catch (error) {
       console.error("Error fetching SOS history:", error);
@@ -346,14 +352,6 @@ const SOSHistory = () => {
 
                 {/* Action Buttons */}
                 <View className="bg-gray-50 px-5 py-3 flex-row space-x-3 gap-2">
-                  {/* <TouchableOpacity
-                    className="flex-1 py-2 rounded-lg"
-                    style={{ backgroundColor: "#80C4E9" }}
-                  >
-                    <Text className="text-white text-center font-medium text-sm">
-                      View Details
-                    </Text>
-                  </TouchableOpacity> */}
                   <TouchableOpacity
                     className="flex-1 bg-[#80C4E9] border border-gray-200 py-2 rounded-lg"
                     onPress={() =>
@@ -400,33 +398,32 @@ const SOSHistory = () => {
             }}
           >
             <View style={{ flex: 1 }}>
-              <MapboxGL.MapView style={{ flex: 1 }}>
+              <MapboxGL.MapView
+                style={{ flex: 1 }}
+                logoEnabled={false}
+                attributionEnabled={false}
+                compassEnabled={true}
+                scaleBarEnabled={false}
+              >
                 <MapboxGL.Camera
                   centerCoordinate={[mapModal.lng, mapModal.lat]}
                   zoomLevel={14}
                 />
-                {/* Show user location */}
-                {/* <UserLocation visible={true} showsUserHeadingIndicator={true} /> */}
-                {/* SOS Marker */}
+
                 <MapboxGL.PointAnnotation
                   id="sos-marker"
                   coordinate={[mapModal.lng, mapModal.lat]}
                 >
-                  {/* Custom SOS marker as a pin */}
                   <View
                     style={{
-                      width: 30,
-                      height: 30,
-                      justifyContent: "center",
-                      alignItems: "center",
+                      width: 40,
+                      height: 40,
+                      backgroundColor: "red",
+                      borderRadius: 20,
+                      borderWidth: 2,
+                      borderColor: "#fff",
                     }}
-                  >
-                    <ImageCustom
-                      width={28}
-                      height={28}
-                      source="https://img.icons8.com/ios-filled/50/fa314a/marker.png"
-                    />
-                  </View>
+                  ></View>
                 </MapboxGL.PointAnnotation>
               </MapboxGL.MapView>
             </View>

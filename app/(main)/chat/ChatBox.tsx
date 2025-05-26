@@ -16,6 +16,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
 import { useChatSocket } from "../../../hooks/useChatSocket";
+import * as ImagePicker from "react-native-image-picker";
+import { uploadFileToGCS } from "../../../utils/uploadAvatar";
+import { Image } from "react-native";
 interface ChatMessageProps {
   data: {
     avatar_url: string;
@@ -30,7 +33,12 @@ const ChatBox = () => {
   const [groupId, setGroupId] = useState(Number(Id));
   const [senderId, setSenderId] = useState(Number(profile?.id));
   const [messageContent, setMessageContent] = useState("");
-  const [mediaFiles, setMediaFiles] = useState([]);
+  type MediaFile = {
+    uri: string | undefined;
+    type: string | undefined;
+    name: string;
+  };
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isSocketReady, setSocketReady] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   console.log("Group ID:", groupId);
@@ -38,7 +46,7 @@ const ChatBox = () => {
     useChatSocket();
 
   useEffect(() => {
-    console.log("Client:", { socket: socket.current, groupId, senderId });
+    // console.log("Client:", { socket: socket.current, groupId, senderId });
     if (socket.current && socket.current.connected && groupId && senderId) {
       joinGroup(groupId, senderId);
     } else {
@@ -47,11 +55,75 @@ const ChatBox = () => {
   }, [socket.current, groupId, senderId]);
 
   useEffect(() => {
-  
+    // console.log("Messages updated:", messages.length, messages);
     if (flatListRef.current && messages.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: true });
+      console.log("Attempting to scroll to end");
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   }, [messages]);
+  const pickImage = async () => {
+    const options = {
+      mediaType: "photo" as const,
+      selectionLimit: 3,
+      includeBase64: false,
+    };
+
+    ImagePicker.launchImageLibrary(options, (response) => {
+      if (response.didCancel) {
+        console.log("User cancelled image picker");
+      } else if (response.errorCode) {
+        Alert.alert("Error", `Image picker error: ${response.errorMessage}`);
+      } else {
+        if (response.assets && Array.isArray(response.assets)) {
+          const selectedImages = response.assets
+            .filter((asset) => {
+              // Chỉ chấp nhận JPG và PNG
+              const type = asset.type?.toLowerCase();
+              return (
+                type?.includes("jpeg") ||
+                type?.includes("jpg") ||
+                type?.includes("png")
+              );
+            })
+            .map((asset) => ({
+              uri: asset.uri,
+              type: asset.type,
+              name:
+                asset.fileName?.replace(/\.heif$/i, ".jpg") ||
+                `image-${Date.now()}.jpg`,
+            }));
+
+          if (selectedImages.length === 0) {
+            Alert.alert("Error", "Please select JPG or PNG images only");
+            return;
+          }
+
+          setMediaFiles((prev) => [...prev, ...selectedImages]);
+        }
+      }
+    });
+  };
+  // Function to upload media files using uploadFileToGCS
+  const uploadMediaFiles = async (files: any[]) => {
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const result = await uploadFileToGCS(file);
+        if (result.success) {
+          return result.fileUrl;
+        } else {
+          throw new Error(`Failed to upload file: ${file.name}`);
+        }
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      return uploadedUrls.filter((url) => url); // Filter out any failed uploads
+    } catch (error) {
+      console.error("Upload error:", error);
+      throw error;
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!messageContent.trim() && mediaFiles.length === 0) {
@@ -60,16 +132,26 @@ const ChatBox = () => {
     }
 
     try {
+      let uploadedMediaUrls: (string | undefined)[] = [];
+      if (mediaFiles.length > 0) {
+        uploadedMediaUrls = await uploadMediaFiles(mediaFiles);
+      }
+      console.log("Uploaded Media URLs:", uploadedMediaUrls);
+      if (!messageContent && uploadedMediaUrls.length === 0) {
+        Alert.alert("Error", "Please enter a message or select media files");
+        return;
+      }
+
       const data = {
         senderId,
         groupId,
         messageContent,
-        mediaFiles,
+        media_url: uploadedMediaUrls,
       };
-      if (!senderId) return;
-      // socket?.current?.emit("send_message", data);
-      sendMessage(senderId, groupId, messageContent, mediaFiles);
+
+      sendMessage(senderId, groupId, messageContent, uploadedMediaUrls);
       setMessageContent("");
+
       setMediaFiles([]);
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -80,6 +162,7 @@ const ChatBox = () => {
   };
   const renderMessage = ({ item }: { item: any }) => {
     const isMyMessage = Number(item.User?.id) === Number(senderId);
+
     return (
       <View
         className={`flex flex-row  gap-3 mb-3 w-full  ${
@@ -88,12 +171,33 @@ const ChatBox = () => {
       >
         {isMyMessage ? (
           <>
-            <View
-              className={`${
-                isMyMessage ? "bg-[#f1f1f1]" : "bg-[#f1f1f1]"
-              } px-4 py-2 rounded-lg max-w-[70%]`}
-            >
-              <Text className="text-sm text-gray-800">{item.content}</Text>
+            {item?.content && (
+              <View
+                className={`${
+                  isMyMessage ? "bg-[#f1f1f1]" : "bg-[#f1f1f1]"
+                } px-4 py-2 rounded-lg max-w-[70%]`}
+              >
+                <Text className="text-sm text-gray-800">{item.content}</Text>
+              </View>
+            )}
+            <View className="flex flex-col space-y-2 mt-2 max-w-[70%]">
+              {item.media_url?.map(
+                (url: any, index: React.Key | null | undefined) => {
+                  // console.log("Media URL:", url);
+                  return (
+                    <Image
+                      key={index}
+                      source={{ uri: url }}
+                      style={{
+                        width: 200,
+                        height: 200,
+                        marginTop: 5,
+                        borderRadius: 8,
+                      }}
+                    />
+                  );
+                }
+              )}
             </View>
 
             <Avatar width={40} height={40} source={profile?.User.avatar_url} />
@@ -107,6 +211,22 @@ const ChatBox = () => {
               } px-4 py-2 rounded-lg max-w-[70%]`}
             >
               <Text className="text-sm text-gray-800">{item.content}</Text>
+              {item.media_url?.length > 0 && (
+                <View className="flex flex-col space-y-2 mt-2 max-w-[70%]">
+                  {item.media_url.map((url: any, index: number) => (
+                    <Image
+                      key={index}
+                      source={{ uri: url }}
+                      style={{
+                        width: "100%",
+                        height: 200,
+                        borderRadius: 8,
+                        resizeMode: "cover",
+                      }}
+                    />
+                  ))}
+                </View>
+              )}
             </View>
           </>
         )}
@@ -120,7 +240,7 @@ const ChatBox = () => {
         <KeyboardAvoidingView
           className="flex-1"
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
         >
           <View className="flex flex-row items-center gap-3 px-5 border-b border-gray-200 pt-4 pb-4">
             <TouchableOpacity
@@ -156,33 +276,52 @@ const ChatBox = () => {
             inverted={false}
             className="flex-1 w-full mb-20 mt-5 px-5"
           />
-          <View className="absolute bottom-2">
-            <View className="flex flex-row w-full px-5 gap-2">
-              <View className="relative w-[85%] h-[40px] border border-gray-200 rounded-full flex-row items-center px-3 py-2">
+          {mediaFiles.length > 0 && (
+            <View className="flex absolute bottom-20 flex-row flex-wrap gap-2 px-5 mb-2">
+              {mediaFiles.map((file, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: file.uri }}
+                  style={{ width: 60, height: 60, borderRadius: 8 }}
+                />
+              ))}
+            </View>
+          )}
+          <View className="absolute bottom-4 w-full px-4">
+            <View className="flex-row items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md border border-gray-200">
+              {/* Input field */}
+              <TextInput
+                value={messageContent}
+                onChangeText={setMessageContent}
+                placeholder="Enter your message..."
+                className="flex-1 h-10 px-4 text-base"
+                placeholderTextColor="#888"
+              />
+
+              {/* Upload image button */}
+              <TouchableOpacity
+                onPress={pickImage}
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100"
+              >
                 <ImageCustom
                   width={20}
                   height={20}
                   color="gray"
-                  className="abosolute left-1"
                   source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
-                ></ImageCustom>
-                <TextInput
-                  value={messageContent}
-                  onChangeText={setMessageContent}
-                  placeholder="Enter message..."
-                  className="w-full h-full pl-2 pr-3 "
-                ></TextInput>
-              </View>
+                />
+              </TouchableOpacity>
+
+              {/* Send message button */}
               <TouchableOpacity
                 onPress={handleSendMessage}
-                className="bg-[#fbdada]  p-3 rounded-full"
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-[#fbdada]"
               >
                 <ImageCustom
                   width={20}
                   height={20}
                   color="#EB4747"
                   source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
-                ></ImageCustom>
+                />
               </TouchableOpacity>
             </View>
           </View>

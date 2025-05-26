@@ -1,10 +1,15 @@
 import { Text, Touchable, TouchableOpacity, View } from "react-native";
 import React from "react";
 import Avatar from "../Image/Avatar";
+import { m } from "framer-motion";
 interface cardProps {
   active?: boolean;
+  member?: any;
+  id?: string;
+  name?: string;
+  avatar?: string;
 }
-const MemberCard = ({ active }: cardProps) => {
+const MemberCard = ({ active, avatar, member }: cardProps) => {
   return (
     <TouchableOpacity
       className={`w-full  rounded-[10px] flex flex-row gap-3 h-[80px] items-center px-5 ${
@@ -19,13 +24,13 @@ const MemberCard = ({ active }: cardProps) => {
       }}
       activeOpacity={0.9}
     >
-      <Avatar width={50} height={50}></Avatar>
+      <Avatar source={avatar} width={50} height={50}></Avatar>
       <View className="flex flex-col gap-2">
         <Text className="font-bold text-[#404040] text-[10px]">
-          {active ? "Bach Duong" : "Phuong Anh"}
+          {member?.User?.UserProfile?.name || "Unknown User"}
         </Text>
         <Text className=" text-[#404040] text-[9px]">
-          214, 216-218, Nguyễn Phước Lan, Hoà Xuân, Đà Nẵng
+          {member?.User.UserProfile?.address || "Unknown Email"}
         </Text>
         <View className="flex flex-row gap-2">
           <View className="w-[22px] h-[11px] border-[#404040] border rounded-[3px]"></View>

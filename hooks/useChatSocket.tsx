@@ -126,20 +126,20 @@ export const useChatSocket = (): UseChatSocketReturn => {
     if (!socketRef.current) return false;
 
     try {
-      if (mediaFiles.length > 3) {
-        throw new Error("You can only upload up to 3 media files.");
-      }
+      // if (mediaFiles.length > 3) {
+      //   throw new Error("You can only upload up to 3 media files.");
+      // }
 
-      let mediaUrls = [];
-      if (mediaFiles.length > 0) {
-        // mediaUrls = await uploadMediaFiles(mediaFiles);
-      }
+      // let mediaUrls = [];
+      // if (mediaFiles.length > 0) {
+      //   // mediaUrls = await uploadMediaFiles(mediaFiles);
+      // }
 
       const data = {
         senderId,
         groupId,
         content,
-        // mediaUrls,
+        mediaUrls: mediaFiles,
       };
       console.log("Socket status:", socketRef.current?.connected);
       socketRef.current.emit(SOCKET_EVENTS.SEND_MESSAGE, data);
