@@ -310,7 +310,7 @@ export default function HomeScreen() {
           if (result && result.data) {
             setGroup(result.data);
             setSelectNameSquad(result.data[0]?.name);
-            setSelectSquad(result.data[0]?.id.toString());
+            setSelectSquad(result.data[0]?.id);
           }
         } catch (error: any) {
           console.log("Error fetching groups:", error);
@@ -456,6 +456,8 @@ export default function HomeScreen() {
   const getMember = async () => {
     try {
       console.log("hi", selectSquad);
+      console.log("hii", selectNamesquad);
+
       const result = await groupServices.getMemberByIdGroup(
         Number(selectSquad)
       );
@@ -554,6 +556,7 @@ export default function HomeScreen() {
                     }}
                     onSelectId={() => {
                       setSelectNameSquad(squad.name);
+                      setSelectSquad(squad.id.toString());
                       topSheetRef.current?.close();
                     }}
                   />

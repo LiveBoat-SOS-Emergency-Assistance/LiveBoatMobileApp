@@ -60,7 +60,7 @@ const SOSCardFilter = ({ data }: cardProps) => {
     }
   };
   return (
-    <Pressable onPress={handlePress} className="w-full bg-white px-1">
+    <Pressable onPress={handlePress} className="w-full bg-white ">
       <View
         style={{
           shadowColor: "#80C4E9",
@@ -69,7 +69,7 @@ const SOSCardFilter = ({ data }: cardProps) => {
           shadowRadius: 4,
           elevation: 5,
         }}
-        className="w-full bg-white rounded-[10px] border-gray-200 border py-2 px-2 flex flex-row justify-start items-start"
+        className="w-full bg-white rounded-[10px] border-gray-200 border py-2 px-5 flex flex-row justify-start items-start"
       >
         <View className="flex flex-row gap-5  justify-center items-center">
           <ImageCustom
