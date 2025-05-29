@@ -205,27 +205,32 @@ const ChatBox = () => {
         ) : (
           <>
             <Avatar width={40} height={40} source={item?.User.avatar_url} />
-            <View
-              className={`${
-                isMyMessage ? "bg-[#f1f1f1]" : "bg-[#f1f1f1]"
-              } px-4 py-2 rounded-lg max-w-[70%]`}
-            >
-              <Text className="text-sm text-gray-800">{item.content}</Text>
-              {item.media_url?.length > 0 && (
-                <View className="flex flex-col space-y-2 mt-2 max-w-[70%]">
-                  {item.media_url.map((url: any, index: number) => (
+            {item?.content && (
+              <View
+                className={`${
+                  isMyMessage ? "bg-[#f1f1f1]" : "bg-[#f1f1f1]"
+                } px-4 py-2 rounded-lg max-w-[70%]`}
+              >
+                <Text className="text-sm text-gray-800">{item.content}</Text>
+              </View>
+            )}
+            <View className="flex flex-col space-y-2 mt-2 max-w-[70%]">
+              {item.media_url?.map(
+                (url: any, index: React.Key | null | undefined) => {
+                  // console.log("Media URL:", url);
+                  return (
                     <Image
                       key={index}
                       source={{ uri: url }}
                       style={{
-                        width: "100%",
+                        width: 200,
                         height: 200,
+                        marginTop: 5,
                         borderRadius: 8,
-                        resizeMode: "cover",
                       }}
                     />
-                  ))}
-                </View>
+                  );
+                }
               )}
             </View>
           </>

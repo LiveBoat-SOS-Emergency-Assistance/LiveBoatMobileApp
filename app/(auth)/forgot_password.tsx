@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../context/AuthContext";
 import Toast from "react-native-toast-message";
 import React from "react";
+import { authen } from "../../services/authentication";
 const forgot_password = () => {
   const [loading, setLoading] = useState(false);
   // const [phone, setPhone] = useState("");
@@ -22,7 +23,7 @@ const forgot_password = () => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
   };
-  const handleSendSMS = async () => {
+  const handleSendEmail = async () => {
     setLoading(true);
     if (!validateEmail(email)) {
       setEmailError(true);
@@ -30,7 +31,7 @@ const forgot_password = () => {
       return;
     }
     try {
-      await send_otp_auth!({ email: email.trim() });
+      await authen.reset_send_otp(email);
       await AsyncStorage.setItem("email", email);
       setEmailError(false);
       setLoading(false);
@@ -39,7 +40,13 @@ const forgot_password = () => {
         params: { type: "forgot_password" },
       });
     } catch (error: any) {
-      console.error(error);
+      // console.error(error);
+      console.error("Error forget password:", {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+        headers: error?.response?.headers,
+      });
       Toast.show({
         type: "info",
         text1: "Notification",
@@ -56,25 +63,25 @@ const forgot_password = () => {
       <View className="flex flex-col bg-white w-full h-full min-h-dvh items-center py-5 gap-5">
         <View className="flex flex-col gap-3 w-full items-center">
           <Text className="font-bold text-[25px] text-[#404040] w-[90%]">
-            Enter the phone number you used to register
+            Enter the email you used to register
           </Text>
         </View>
         <View className="flex flex-col w-full justify-center items-center gap-2 pt-5">
           <Text className="text-start justify-start w-[90%] font-bold">
-            Email/Phone number
+            Email
           </Text>
           <Input
             value={email}
             onChangeText={setEmail}
-            keyboardType="number-pad"
-            placeholder="Số điện thoại"
+            keyboardType="text"
+            placeholder="Enter your email"
             error={emailError}
           ></Input>
         </View>
 
         <View className="w-[90%] pt-5 justify-center items-center gap-8">
           <CustomButton
-            onPress={handleSendSMS}
+            onPress={handleSendEmail}
             primary={true}
             title="Send SMS"
             isLoading={loading}

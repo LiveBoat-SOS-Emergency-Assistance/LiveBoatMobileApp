@@ -249,7 +249,7 @@ export default function History() {
               </View>
             ))}
           </ScrollView>
-          <View className="w-[90%] h-[40px] relative flex shadow-lg border-gray-200 border-[1px] rounded-[10px] bg-white mt-4">
+          <View className="w-[85%] px-5 h-[40px] relative flex shadow-lg border-gray-200 border-[1px] rounded-[10px] bg-white mt-4">
             <TextInput className="w-full h-full px-4"></TextInput>
             <ImageCustom
               className="absolute top-1/2 right-3 -translate-y-1/2"
@@ -259,7 +259,7 @@ export default function History() {
               color="#EB4747"
             ></ImageCustom>
           </View>
-          <View className="flex  flex-row w-[90%] h-[35px] justify-center gap-2 ">
+          <View className="flex  flex-row w-full px-5 h-[35px] justify-center gap-2 space-x-3">
             <View className="w-3/12  flex-row items-center h-full border-gray-200 border-[1px] rounded-[10px] bg-white px-3 py-1 shadow-lg justify-between  relative flex">
               <Text className="text-[12px] text-[#EB4747]">Need help</Text>
               <ImageCustom

@@ -19,6 +19,7 @@ import { aiURL } from "../../../baseUrl";
 import LottieView from "lottie-react-native";
 import { Key } from "lucide-react-native";
 import { Image } from "react-native";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function Chatbot(): JSX.Element {
   const angleAnim = useRef(new Animated.Value(0)).current;
@@ -30,7 +31,7 @@ export default function Chatbot(): JSX.Element {
   const scrollViewRef = useRef<ScrollView>(null);
   const fetchUrl = `${apiUrl.trim()}/api/generate`;
   const [typing, setTyping] = useState(false);
-  // const [chatHistory, setChatHistory] = useState<string[]>([]);
+  const { profile } = useAuth();
   const [chatHistory, setChatHistory] = useState<
     { sender: "user" | "ai" | "error" | "loading"; content: string }[]
   >([]);
@@ -272,7 +273,7 @@ If the input is ambiguous or unclear but could still relate to healthcare, polit
           <View className="flex-1 z-10 justify-center items-center px-5">
             <View className="flex flex-col gap-2 items-center">
               <Text className="font-normal text-2xl text-white">
-                Hello, Bach Duong!
+                Hello, {profile?.name || "User"}!
               </Text>
               <Text className="text-2xl text-white">
                 How can I help you today?

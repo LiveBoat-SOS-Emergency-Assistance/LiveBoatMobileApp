@@ -35,10 +35,9 @@ import MemberCard from "../../../components/Card/MemberCard";
 import * as Animatable from "react-native-animatable";
 import { useSocketContext } from "../../../context/SocketContext";
 import CustomAlert from "../../../components/Toast/CustomAlert";
-import messaging from "@react-native-firebase/messaging";
+// import messaging from "@react-native-firebase/messaging";
 import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
-
+import { initializeNotifications } from "../../../utils/notification";
 interface SocketEvents {
   TOCLIENT_SOS_LOCATIONS: string;
   TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
@@ -310,7 +309,7 @@ export default function HomeScreen() {
           if (result && result.data) {
             setGroup(result.data);
             setSelectNameSquad(result.data[0]?.name);
-            setSelectSquad(result.data[0]?.id.toString());
+            setSelectSquad(result.data[0]?.id);
           }
         } catch (error: any) {
           console.log("Error fetching groups:", error);
@@ -391,71 +390,11 @@ export default function HomeScreen() {
     });
   };
 
-  useEffect(() => {
-    // Register for push notifications
-    const registerForPushNotificationsAsync = async () => {
-      if (Device.isDevice) {
-        const { status: existingStatus } =
-          await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
-        if (existingStatus !== "granted") {
-          const { status } = await Notifications.requestPermissionsAsync();
-          finalStatus = status;
-        }
-        if (finalStatus !== "granted") {
-          alert("Failed to get push token for push notification!");
-          return;
-        }
-        const fcmToken = await messaging().getToken();
-        console.log("FCM Token:", fcmToken);
-      } else {
-        alert("Must use physical device for Push Notifications");
-      }
-    };
-
-    registerForPushNotificationsAsync();
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
-    });
-    // Foreground: receive notifications when app is in foreground
-    const unsubscribeForeground = messaging().onMessage(
-      async (remoteMessage) => {
-        console.log("FCM foreground message:", remoteMessage);
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: remoteMessage.notification?.title || "Thông báo",
-            body: remoteMessage.notification?.body || "",
-          },
-          trigger: null,
-        });
-      }
-    );
-
-    // Background & quit: receive notifications when app is in background or quit
-    const unsubscribeBackground = messaging().setBackgroundMessageHandler(
-      async (remoteMessage) => {
-        console.log("FCM background message:", remoteMessage);
-      }
-    );
-
-    // when user taps on notification
-    const unsubscribeNotificationResponse =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log("User tapped notification:", response);
-      });
-
-    return () => {
-      unsubscribeForeground();
-      unsubscribeNotificationResponse.remove();
-    };
-  }, []);
   const getMember = async () => {
     try {
       console.log("hi", selectSquad);
+      console.log("hii", selectNamesquad);
+
       const result = await groupServices.getMemberByIdGroup(
         Number(selectSquad)
       );
@@ -554,6 +493,7 @@ export default function HomeScreen() {
                     }}
                     onSelectId={() => {
                       setSelectNameSquad(squad.name);
+                      setSelectSquad(squad.id.toString());
                       topSheetRef.current?.close();
                     }}
                   />
@@ -641,7 +581,10 @@ export default function HomeScreen() {
             {/* Message */}
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => router.push("/(main)/chat")}
+              onPress={() => {
+                router.push("/(main)/chat");
+              }}
+              // onPress={() => router.push("/(main)/chat")}
               className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow"
               style={{
                 shadowColor: "#000",

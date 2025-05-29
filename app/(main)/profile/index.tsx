@@ -7,7 +7,7 @@ import CustomButton from "../../../components/Button/CustomButton";
 import { useAuth } from "../../../context/AuthContext";
 import { router, useRouter } from "expo-router";
 import Avatar from "../../../components/Image/Avatar";
-
+import messaging from "@react-native-firebase/messaging";
 export default function Profile() {
   const [loading, setLoading] = useState(false);
   const { logout, profile } = useAuth();
@@ -25,6 +25,8 @@ export default function Profile() {
   const handleLogout = async () => {
     setLoading(true);
     try {
+      messaging().deleteToken();
+
       await logout();
       setLoading(false);
       router.replace("/");
