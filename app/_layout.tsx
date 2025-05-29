@@ -2,12 +2,16 @@ import { Stack, useSegments } from "expo-router";
 import { Image, StatusBar, View } from "react-native";
 import Toast from "react-native-toast-message";
 import AuthProvider from "../context/AuthContext";
-import React from "react";
+import React, { useEffect } from "react";
 import { SCREENS } from "../constants/screens";
 import { SocketProvider } from "../context/SocketContext";
+import { initializeNotifications } from "../utils/notification";
+
 const Layout = () => {
   const isChatScreen = useSegments().includes("(main)/chat/ChatBox");
-
+  useEffect(() => {
+    initializeNotifications();
+  }, []);
   return (
     <AuthProvider>
       {!isChatScreen ? (

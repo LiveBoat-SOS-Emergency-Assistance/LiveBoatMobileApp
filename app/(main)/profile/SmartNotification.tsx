@@ -12,48 +12,87 @@ import {
   checkNotifications,
   requestNotifications,
 } from "react-native-permissions";
-import { getApp, getApps, initializeApp } from "@react-native-firebase/app";
-import { getMessaging } from "@react-native-firebase/messaging";
+// ✅ Sửa import này
+import messaging from "@react-native-firebase/messaging";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import ImageCustom from "../../../components/Image/Image";
+import { notifcationService } from "../../../services/notification";
 
 const SmartNotification = () => {
   const [isEnabled, setIsEnabled] = useState(false);
-  const ensureFirebaseApp = () => {
-    if (getApps().length === 0) {
-      throw new Error(
-        "Firebase app has not been initialized. Make sure native setup is correct."
-      );
-    }
-    return getApp();
-  };
+
   useEffect(() => {
-    const checkPermission = async () => {
-      const { status } = await checkNotifications();
-      if (status === "granted") {
-        try {
-          const app = ensureFirebaseApp();
-          const messaging = getMessaging(app);
-          const token = await messaging.getToken();
-          console.log("FCM Token:", token);
-          setIsEnabled(true);
-        } catch (error) {
-          console.error("Failed to get token:", error);
+    const initNotificationStatus = async () => {
+      try {
+        // ✅ Kiểm tra trạng thái user disable trước
+        const userDisabled = await AsyncStorage.getItem(
+          "user_disabled_notifications"
+        );
+
+        if (userDisabled === "true") {
+          setIsEnabled(false);
+          return;
         }
+
+        // Nếu user chưa disable, check device permission
+        const { status } = await checkNotifications();
+        if (status === "granted") {
+          try {
+            const fcmToken = await messaging().getToken();
+
+            console.log("FCM Token:", fcmToken);
+            setIsEnabled(true);
+          } catch (error) {
+            console.error("Failed to get token:", error);
+            setIsEnabled(false);
+          }
+        } else {
+          setIsEnabled(false);
+        }
+      } catch (error) {
+        console.error("Error initializing notification status:", error);
+        setIsEnabled(false);
       }
     };
 
-    checkPermission();
+    initNotificationStatus();
   }, []);
+
+  // ✅ Sửa function xóa FCM token
+  const deleteFCMToken = async () => {
+    try {
+      // Xóa FCM token từ Firebase
+      await messaging().deleteToken();
+      console.log("FCM Token deleted successfully");
+
+      // Lưu trạng thái user disable
+      await AsyncStorage.setItem("user_disabled_notifications", "true");
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting FCM token:", error);
+      throw error;
+    }
+  };
+
   const toggleSwitch = async () => {
     if (!isEnabled) {
+      // Enable notifications
       const { status } = await requestNotifications(["alert", "sound"]);
       if (status === "granted") {
         try {
-          const app = ensureFirebaseApp();
-          const messaging = getMessaging(app);
-          const token = await messaging.getToken();
-          console.log("FCM Token:", token);
+          // Xóa flag disable
+          await AsyncStorage.removeItem("user_disabled_notifications");
+
+          // Lấy FCM token mới
+          const fcmToken = await messaging().getToken();
+          const result = await notifcationService.update_fcm_token({
+            fcmToken: fcmToken,
+          });
+          console.log("update_fcm_token result:", result.data);
+          console.log("New FCM Token:", fcmToken);
+
           Alert.alert(
             "🎉 Success!",
             "Notifications enabled successfully. You'll receive important rescue and safety updates.",
@@ -79,6 +118,8 @@ const SmartNotification = () => {
         );
       }
     } else {
+      // setIsEnabled(false);
+      // Disable notifications
       Alert.alert(
         "🚫 Disable Notifications",
         "Are you sure you want to disable notifications? You might miss important emergency alerts.",
@@ -87,12 +128,26 @@ const SmartNotification = () => {
           {
             text: "Disable",
             style: "destructive",
-            onPress: () => setIsEnabled(false),
+            onPress: async () => {
+              try {
+                await deleteFCMToken();
+                setIsEnabled(false);
+
+                console.log("Notifications disabled successfully");
+              } catch (error) {
+                Alert.alert(
+                  "🚫 Error",
+                  "Unable to disable notifications completely. Please try again.",
+                  [{ text: "Got it", style: "default" }]
+                );
+              }
+            },
           },
         ]
       );
     }
   };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
       {/* Header */}

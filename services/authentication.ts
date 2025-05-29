@@ -84,4 +84,30 @@ export class authen {
       throw error;
     }
   }
+  static reset_send_otp = async (email: string) => {
+    try {
+      const result = await axiosPrivate.post("/auth/reset-password-otp", {
+        email: email,
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  };
+  static async verify_otp(data: any) {
+    try {
+      const result = await axiosPrivate.post(
+        "/auth/verify-reset-password-otp",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
 }
