@@ -62,14 +62,14 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectSquad, setSelectSquad] = useState<string | null>(null);
   const [selectNamesquad, setSelectNameSquad] = useState<string | null>(null);
-  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false); // State để quản lý BottomSheet
-  const [activeTab, setActiveTab] = useState<boolean>(true); // State to manage active tab
+  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<boolean>(true);
   const [helpingUserId, setHelpingTheUserId] = useState<number | null>(null);
   const [isAlertVisible, setAlertVisible] = useState(false);
   const [SOS, setSOS] = useState<any>(null);
   const [listMember, setListMember] = useState<any[]>([]);
   const toggleBottomSheet = () => {
-    setIsBottomSheetVisible((prev) => !prev); // Đóng/mở BottomSheet
+    setIsBottomSheetVisible((prev) => !prev);
   };
   const {
     socket,
@@ -90,13 +90,8 @@ export default function HomeScreen() {
     TOSERVER_REGISTER_SOS_SENDER: "TOSERVER_REGISTER_SOS_SENDER",
     TOSERVER_GET_THE_SENDER_LOCATION: "TOSERVER_GET_THE_SENDER_LOCATION",
   };
-
-  // useEffect này chạy một lần khi HomeScreen mount
   useEffect(() => {
     if (!socket.current) return;
-
-    // console.log("Socket at home", socket);
-
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
       if (!data || data.length === 0) {
         console.log("No SOS locations received");
@@ -156,14 +151,14 @@ export default function HomeScreen() {
     });
 
     socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
-      if (data.userId === helpingUserId) {
+      if (data.userId == helpingUserId) {
         console.log("Sender disconnected, display offline marker");
         getCurrentSOS();
         displayOfflineMarker(data.userId, SOS?.longitude, SOS?.latitude);
       }
     });
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
-      if (data.userId === helpingUserId) {
+      if (data.userId == helpingUserId) {
         console.log("Sender finished SOS, complete rescuing");
         Toast.show({
           type: "success",
