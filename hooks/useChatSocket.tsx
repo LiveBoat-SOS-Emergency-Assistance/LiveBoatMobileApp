@@ -74,13 +74,12 @@ export const useChatSocket = (): UseChatSocketReturn => {
   const registerSocketEvents = () => {
     socketRef?.current?.on(SOCKET_EVENTS.RECEIVE_MESSAGE, (data) => {
       console.log("Received message in React Native:", data);
-      setMessages((prevMessages) => {
-        const newMessages = [...prevMessages, data];
-        // console.log("Updated messages:", newMessages);
-        return newMessages;
-      });
+      setMessages((prevMessages) => [...prevMessages, data]);
     });
 
+    // socketRef?.current?.on(SOCKET_EVENTS.CHAT_HISTORY, (data) => {
+    //   setMessages(data);
+    // });
     socketRef?.current?.on(SOCKET_EVENTS.CHAT_HISTORY, (data) => {
       setMessages(data);
     });

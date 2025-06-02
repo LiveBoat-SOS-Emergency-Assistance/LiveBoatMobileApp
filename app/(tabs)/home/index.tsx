@@ -97,7 +97,7 @@ export default function HomeScreen() {
         console.log("No SOS locations received");
         return;
       }
-      console.log("SOS locations:", data);
+      // console.log("SOS locations:", data);
       displayOrUpdateMarkers(data);
     });
 
@@ -108,8 +108,7 @@ export default function HomeScreen() {
         SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
       );
     }, 3000);
-
-    const timeout2 = setTimeout(async () => {
+    const timeout3 = setTimeout(async () => {
       const location = await getCurrentLocation();
       if (location) {
         updateLocation(
@@ -118,17 +117,16 @@ export default function HomeScreen() {
           location.accuracy ?? 0
         );
       }
-    }, 5000);
-
+    }, 2000);
     return () => {
       clearTimeout(timeout1);
-      clearTimeout(timeout2);
+      clearTimeout(timeout3);
     };
   }, []);
   const getCurrentSOS = async () => {
     try {
       const result = await sosService.getSOSById(currentSOS.SOS.id);
-      console.log("Current SOS:", result.data);
+      // console.log("Current SOS:", result.data);
       setSOS(result.data);
     } catch (error) {
       console.error("Error fetching helpingUserId:", error);
@@ -141,7 +139,7 @@ export default function HomeScreen() {
     console.log("Rescuer mode active");
 
     socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
-      console.log("The Sender location:", data);
+      // console.log("The Sender location:", data);
       displayOrUpdateMarkers(data);
     });
 
@@ -151,6 +149,8 @@ export default function HomeScreen() {
     });
 
     socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
+      console.log("User disconnected:", data.userId);
+      console.log("Helping User ID:", helpingUserId);
       if (data.userId == helpingUserId) {
         console.log("Sender disconnected, display offline marker");
         getCurrentSOS();
@@ -177,11 +177,22 @@ export default function HomeScreen() {
       socket?.current?.emit(
         SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
       );
+      console.log("178: helpingUserId:", helpingUserId);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_REGISTER_SOS_SENDER, {
-        helpingUserId,
+        helpingTheUserId: helpingUserId,
       });
+      console.log("helpingUserId 181:", helpingUserId);
     }, 1000);
-
+    const timeout3 = setTimeout(async () => {
+      const location = await getCurrentLocation();
+      if (location) {
+        updateLocation(
+          location.latitude,
+          location.longitude,
+          location.accuracy ?? 0
+        );
+      }
+    }, 2000);
     const timeout2 = setTimeout(() => {
       socket?.current?.emit(
         SOCKET_EVENTS.TOSERVER_GET_THE_SENDER_LOCATION,
@@ -189,15 +200,18 @@ export default function HomeScreen() {
           console.log("Server responded:", response);
           getCurrentLocation();
           if (response?.status === false && helpingUserId !== null) {
+            setHelpingTheUserId(helpingUserId);
+            console.log("helpingUserId 200:", helpingUserId);
             displayOfflineMarker(helpingUserId, SOS?.longitude, SOS?.latitude);
           }
         }
       );
-    }, 2000);
+    }, 5000);
 
     return () => {
       clearTimeout(timeout1);
       clearTimeout(timeout2);
+      clearTimeout(timeout3);
     };
   }, [currentSOS]);
 
@@ -276,9 +290,11 @@ export default function HomeScreen() {
       const getSOS = async () => {
         try {
           const current = await rescuerServices.getSOSCurrent();
-          if (current && current.data) {
+          if (current.data) {
             setCurrentSOS(current.data);
+            console.log("Current SOS 292:", current.data);
             setCheckSOS(true);
+            setHelpingTheUserId(current.data.SOS.user_id);
           }
         } catch (error: any) {
           console.error("Error when getting current SOS:", {

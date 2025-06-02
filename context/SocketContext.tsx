@@ -8,6 +8,7 @@ import React, {
 import io, { Socket } from "socket.io-client";
 import Toast from "react-native-toast-message";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { baseURL } from "../baseUrl";
 
 interface Marker {
   userId: number;
@@ -69,7 +70,7 @@ const SOCKET_EVENTS = {
   SEND_MESSAGE: "send_message",
 };
 
-const serverUrl = "https://liveboat-backend.onrender.com";
+const serverUrl = baseURL;
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   children,

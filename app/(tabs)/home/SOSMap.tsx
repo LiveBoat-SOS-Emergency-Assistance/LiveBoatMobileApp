@@ -169,14 +169,17 @@ export default function SOSMap() {
 
       socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
         console.log("The Helper locations:", data);
-        Toast.show({
-          type: "info",
-          text1: "Notification",
-          text2: "Someone is coming to support you!",
-          position: "top",
-          visibilityTime: 2000,
-        });
-        displayOrUpdateMarkers(data);
+        if (data) {
+          Toast.show({
+            type: "info",
+            text1: "Notification",
+            text2: "Someone is coming to support you!",
+            position: "top",
+            visibilityTime: 2000,
+          });
+          setListRescuer(data);
+          displayOrUpdateMarkers(data);
+        }
       });
       const userType = "SENDER";
       setUserInfo(userType);
@@ -197,7 +200,7 @@ export default function SOSMap() {
           );
         }
       }, 5000);
-      // --- Cập nhật location liên tục bằng watchPosition và gọi sos_edit ---
+
       let watchId = null;
       if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(
@@ -426,14 +429,14 @@ export default function SOSMap() {
                   key={index}
                   onPress={() => {
                     handleControl({
-                      latitude: rescuer.latitude,
-                      longitude: rescuer.longitude,
+                      latitude: rescuer?.latitude,
+                      longitude: rescuer?.longitude,
                     });
                   }}
                 >
                   <Avatar
                     key={index}
-                    source={rescuer.User.avatar_url}
+                    source={rescuer?.avatarUrl}
                     width={isExpanded ? 40 : 24}
                     height={isExpanded ? 40 : 24}
                   ></Avatar>

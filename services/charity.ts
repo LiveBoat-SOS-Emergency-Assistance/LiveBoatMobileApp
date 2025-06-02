@@ -17,6 +17,18 @@ export class charityServices {
       throw error;
     }
   }
+  static async get_total_charity_count() {
+    try {
+      const result = await axiosPrivate.get("/charity/total-donation", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
 
   static async get_charity_by_id(charityId: number) {
     try {
