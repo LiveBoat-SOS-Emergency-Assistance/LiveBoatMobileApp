@@ -40,19 +40,20 @@ export function addOrUpdateAudioParticipant({
  * Update audio participant - adds or updates existing participant
  */
 export const updateAudioParticipant = (props: any) => {
-  const { remoteProducerId, track, userId, name, avatar } = props;
+  const { remoteProducerId, track, userInfo } = props;
 
   console.log("🎤 Updating audio participant:", {
     remoteProducerId,
-    userId,
-    name,
+    track,
+    userInfo,
   });
 
   // Store participant data for UI components to consume
   audioParticipants[remoteProducerId] = {
     remoteProducerId,
     track,
-    sound: null, // Will be managed by UI component
+
+    sound: null,
   };
 
   // Call callback if provided (for UI updates)
@@ -61,10 +62,10 @@ export const updateAudioParticipant = (props: any) => {
       id: remoteProducerId,
       producerId: remoteProducerId,
       track,
-      userId,
-      name: name || `User ${remoteProducerId.substring(0, 4)}`,
+      userId: userInfo?.userId,
+      name: userInfo?.name || `User ${remoteProducerId.substring(0, 4)}`,
       avatar:
-        avatar ||
+        userInfo?.avatar_url ||
         "https://img.icons8.com/?size=100&id=23264&format=png&color=000000",
       isAudioOn: true,
     });

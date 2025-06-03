@@ -53,8 +53,13 @@ export const setMediaParams = (
   audioParams = newAudioParams;
 };
 
-export const createSendTransport = (socket: any): Promise<any> => {
+export const createSendTransport = (
+  socket: any,
+  userInfo: any
+): Promise<any> => {
   console.log("device", device);
+
+  console.log("userIdd 61 producer", userInfo?.id);
   if (!device) throw new Error("Device not initialized");
   console.log("createSendTransport");
   return new Promise((resolve, reject) => {
@@ -107,6 +112,7 @@ export const createSendTransport = (socket: any): Promise<any> => {
                   kind: parameters.kind,
                   rtpParameters: parameters.rtpParameters,
                   appData: parameters.appData,
+                  userId: userInfo?.id,
                 },
                 ({ id, producersExist, error }: any) => {
                   if (error) {
@@ -199,24 +205,16 @@ export const getProducerInfo = () => {
 
 export const getProducersThenConsume = (socket: any): void => {
   console.log("🔍 Requesting producers from server...");
-  socket.emit("getProducers", (producerIds: string[]) => {
-    console.log(
-      "📡 getProducersThenConsume received producerIds:",
-      producerIds
+  // socket.emit("getProducers", (producerIds: string[]) => {
+  //   producerIds.forEach((id) => {
+  //     console.log(`📺 Starting consumer for producer: ${id}`);
+  //     signalNewConsumerTransport(socket, id);
+  //   });
+  // });
+  socket.emit("getProducers", (producers: any[]) => {
+    producers.forEach((producer) =>
+      signalNewConsumerTransport(socket, producer.id, producer.userInfo)
     );
-
-    if (!producerIds || producerIds.length === 0) {
-      console.log("⚠️ No producers found! Host may not be streaming yet.");
-      return;
-    }
-
-    console.log(
-      `🎬 Found ${producerIds.length} producers, starting consumption...`
-    );
-    producerIds.forEach((id) => {
-      console.log(`📺 Starting consumer for producer: ${id}`);
-      signalNewConsumerTransport(socket, id);
-    });
   });
 };
 export const clearProducer = (): void => {

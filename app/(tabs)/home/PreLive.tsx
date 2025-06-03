@@ -31,6 +31,7 @@ import { InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
 import { userServices } from "../../../services/user";
 import { clearProducer } from "../../../mediaSoup/producer";
 import { setAudioParticipantCallback } from "../../../utils/liveStream";
+import { u } from "framer-motion/dist/types.d-B50aGbjN";
 // Extend the Window interface to include setRemoteVideoTrack
 let videotrack: any;
 declare global {
@@ -581,6 +582,7 @@ const PreLive = () => {
         isConsumeOnly: false,
         userId: profile?.id,
         sosId: sosId,
+        userInfo: profile,
       });
       await handleUpdateStatus();
     } catch (error) {
@@ -709,11 +711,12 @@ const PreLive = () => {
 
       // Set audio parameters for MediaSoup
       const audioParams = { track: audioTrack };
-      mediaSoupModule.producerModule.setMediaParams({}, audioParams); // ✅ SỬA: Viewer nên join với isConsumeOnly: true
+      mediaSoupModule.producerModule.setMediaParams({}, audioParams); 
       await mediaSoupModule.joinRoom({
         isConsumeOnly: false,
         userId: profile?.id,
         sosId: sosId,
+        userInfo: profile,
       });
 
       console.log("Joined room successfully as viewer");
@@ -798,6 +801,7 @@ const PreLive = () => {
       isConsumeOnly: true,
       userId: profile?.id,
       sosId: sosId,
+      userInfo: profile,
     });
     setIsJoining(false);
   };
