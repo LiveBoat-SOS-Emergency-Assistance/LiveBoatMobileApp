@@ -117,7 +117,7 @@ const RippleMarker = ({
           ]}
         />
         <View style={styles.centerDot}>
-          {id === "my-sos-marker" && (
+          {id === profile?.id && (
             <Avatar
               source={profile?.User?.avatar_url}
               width={50}

@@ -129,18 +129,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }
     );
-    // socketRef?.current?.on(SOCKET_EVENTS.RECEIVE_MESSAGE, (data) => {
-    //   console.log("Received message in React Native:", data);
-    //   setMessages((prevMessages) => {
-    //     const newMessages = [...prevMessages, data];
-    //     // console.log("Updated messages:", newMessages);
-    //     return newMessages;
-    //   });
-    // });
-
-    // socketRef?.current?.on(SOCKET_EVENTS.CHAT_HISTORY, (data) => {
-    //   setMessages(data);
-    // });
   };
 
   const displayOrUpdateMarkers = (data: Marker[]) => {
@@ -207,7 +195,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         accuracy: 0,
         latitude: latitude,
         longitude: longitude,
-        userType: "NORMAL",
+        userType: "SENDER",
         avatarUrl: prev[userId]?.avatarUrl || "https://i.pravatar.cc/150",
       },
     }));

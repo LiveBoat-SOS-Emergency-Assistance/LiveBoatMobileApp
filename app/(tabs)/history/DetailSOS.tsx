@@ -1,4 +1,6 @@
 import {
+  Alert,
+  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -8,7 +10,7 @@ import {
 } from "react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Map from "../../../components/Map/Map";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { rescuerServices } from "../../../services/rescuer";
 import { RescuerItem } from "../../../types/rescuerItem";
 import ImageCustom from "../../../components/Image/Image";
@@ -36,7 +38,6 @@ const DetailSOS = () => {
   const [currentSOS, setCurrentSOS] = useState<any>(null);
   const { userProfile } = useLocalSearchParams();
   const [listRescuer, setListRescuer] = useState<RescuerItem[]>([]);
-  // const parsedProfile = profile ? JSON.parse(profile as string) : null;
   const [isExpanded, setIsExpanded] = useState(false);
   const cameraRef = useRef<Camera>(null);
   const [helpingUserId, setHelpingTheUserId] = useState<number | null>(null);
@@ -56,8 +57,9 @@ const DetailSOS = () => {
     displayOrUpdateMarkers,
   } = useSocketContext();
   console.log("groupId 58Detail sos", groupId);
-  // console.log("otherUserMarkers", otherUserMarkers);
   const [SOS, setSOS] = useState<any>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+
   const SOCKET_EVENTS: SocketEvents = {
     TOCLIENT_SOS_LOCATIONS: "TOCLIENT_SOS_LOCATIONS",
     TOCLIENT_SOS_FINISHED: "TOCLIENT_SOS_FINISHED",
@@ -99,8 +101,8 @@ const DetailSOS = () => {
           groupId,
           profile?.id
         );
-
-        sendMessage(chatSocket, chatInput, groupId, profile?.id!);
+        // console.log("profile", profile);
+        sendMessage(chatSocket, chatInput, groupId, profile?.User?.id!);
         setChatInput("");
         setTimeout(() => {
           if (chatScrollViewRef.current) {
@@ -133,29 +135,29 @@ const DetailSOS = () => {
       console.log("Error getting location", error);
     }
   };
+  const getSOS = async () => {
+    try {
+      const current = await rescuerServices.getSOSCurrent();
+      if (current && current.data) {
+        setCurrentSOS(current.data);
+        console.log("Current SOS 292:", current.data);
+        setCheckSOS(true);
+        setHelpingTheUserId(current.data.SOS.user_id);
+      }
+    } catch (error: any) {
+      console.error("Error when getting current SOS:", {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+        headers: error?.response?.headers,
+      });
+      setCurrentSOS(null);
+      setCheckSOS(false);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
-      const getSOS = async () => {
-        try {
-          const current = await rescuerServices.getSOSCurrent();
-          if (current.data) {
-            setCurrentSOS(current.data);
-            console.log("Current SOS 292:", current.data);
-            setCheckSOS(true);
-            setHelpingTheUserId(current.data.SOS.user_id);
-          }
-        } catch (error: any) {
-          console.error("Error when getting current SOS:", {
-            message: error?.message,
-            status: error?.response?.status,
-            data: error?.response?.data,
-            headers: error?.response?.headers,
-          });
-          setCurrentSOS(null);
-          setCheckSOS(false);
-        }
-      };
-
       getSOS();
     }, [])
   );
@@ -168,6 +170,10 @@ const DetailSOS = () => {
       console.error("Error fetching helpingUserId:", error);
     }
   };
+  // useEffect(() => {
+  //   get
+
+  // }, [])
   useEffect(() => {
     if (!socket.current || !currentSOS) return;
 
@@ -188,6 +194,12 @@ const DetailSOS = () => {
       console.log("Helping User ID:", helpingUserId);
       if (data.userId == helpingUserId) {
         console.log("Sender disconnected, display offline marker");
+        console.log(
+          "191 Detail SOS datauserid, sos coordinate",
+          data.userId,
+          SOS?.longitude,
+          SOS?.latitude
+        );
         getCurrentSOS();
         displayOfflineMarker(data.userId, SOS?.longitude, SOS?.latitude);
       }
@@ -234,10 +246,21 @@ const DetailSOS = () => {
         (response: any) => {
           console.log("Server responded:", response);
           getCurrentLocation();
+          getCurrentSOS();
           if (response?.status === false && helpingUserId !== null) {
             setHelpingTheUserId(helpingUserId);
-            console.log("helpingUserId 200:", helpingUserId);
-            displayOfflineMarker(helpingUserId, SOS?.longitude, SOS?.latitude);
+            console.log(
+              "helpingUserId 200:",
+              helpingUserId,
+              currentSOS?.longitude,
+              currentSOS?.latitude
+            );
+
+            displayOfflineMarker(
+              helpingUserId,
+              currentSOS?.longitude,
+              currentSOS?.latitude
+            );
           }
         }
       );
@@ -249,6 +272,57 @@ const DetailSOS = () => {
       clearTimeout(timeout3);
     };
   }, [currentSOS]);
+  const handleCancelSOS = async () => {
+    try {
+      console.log("Cancel SOS clicked");
+      if (currentSOS) {
+        const result = await rescuerServices.updateRescuer({
+          longitude: currentSOS.SOS.longitude,
+          latitude: currentSOS.SOS.latitude,
+          accuracy: currentSOS.SOS.accuracy,
+          status: "CANCELED",
+        });
+      }
+      setCurrentSOS(null);
+      setCheckSOS(false);
+      setShowCancelDialog(false); // ✅ Close dialog
+      Toast.show({
+        type: "success",
+        text1: "SOS Cancelled",
+        text2: "You have canceled your request for emergency assistance.",
+      });
+    } catch (error: any) {
+      console.log("Error", error.response?.data);
+      Toast.show({
+        type: "error",
+        text1: "Error!",
+        text2: "Error when cancel support!",
+      });
+    }
+  };
+  const showCancelConfirmation = () => {
+    setShowCancelDialog(true);
+  };
+
+  // ✅ Alternative: Native Alert (simpler)
+  const showNativeAlert = () => {
+    Alert.alert(
+      "Cancel SOS Request",
+      "Are you sure you want to cancel this SOS request? This action cannot be undone.",
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Yes, Cancel",
+          style: "destructive",
+          onPress: handleCancelSOS,
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <View className="flex-1  w-full h-full justify-center items-center bg-white relative">
@@ -259,18 +333,32 @@ const DetailSOS = () => {
         listRescuer={listRescuer}
         otherUserMarkers={otherUserMarkers}
       ></Map>
+      <TouchableOpacity
+        onPress={() => router.back()}
+        className="p-2 rounded-full absolute top-12 left-4 bg-gray-100"
+      >
+        <ImageCustom
+          width={20}
+          height={20}
+          source="https://img.icons8.com/?size=100&id=20i9yZTsnnmg&format=png&color=000000"
+        />
+      </TouchableOpacity>
       <View className=" bg-[#EB4747] absolute top-12 rounded-[30px] opacity-90 px-7 py-3 flex justify-center items-center">
         <Text className="font-bold text-white ">Traffic Accident</Text>
       </View>
-      {/* <View className="w-[50px] h-[50px] absolute bottom-10 right-5 bg-[#EB4747] rounded-full flex justify-center items-center">
+
+      <TouchableOpacity
+        onPress={showCancelConfirmation}
+        className="w-[40px] h-[40px] z-50 absolute top-12 right-5 bg-[#EB4747] rounded-full flex justify-center items-center"
+      >
         <ImageCustom
-          width={27}
-          height={27}
+          source="https://img.icons8.com/?size=100&id=82826&format=png&color=000000"
+          width={18}
+          height={18}
           color="white"
-          source="https://img.icons8.com/?size=100&id=2WHX382zjkkB&format=png&color=000000"
-        />
-      </View> */}
-      
+        ></ImageCustom>
+      </TouchableOpacity>
+
       <View
         className={`absolute right-5 ${
           isExpanded ? "w-[50px] h-[180px]" : "w-[30px] h-[135px]"
@@ -353,14 +441,14 @@ const DetailSOS = () => {
                 <View className="flex flex-col gap-0">
                   <Text
                     style={{
-                      color: "#fff",
+                      color: "#000",
                       fontWeight: "bold",
                       marginRight: 6,
                     }}
                   >
                     {msg.name || "You"}:
                   </Text>
-                  <Text style={{ color: "#fff" }}>{msg.content}</Text>
+                  <Text style={{ color: "#000" }}>{msg.content}</Text>
                 </View>
               </View>
             ))}
@@ -368,13 +456,6 @@ const DetailSOS = () => {
         </View>
         <View className="flex flex-row w-full px-5 gap-2">
           <View className="relative w-[85%] h-[40px] border bg-white border-gray-200 rounded-full  flex-row items-center px-3 py-2">
-            <ImageCustom
-              width={20}
-              height={20}
-              color="gray"
-              className="abosolute left-1"
-              source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
-            ></ImageCustom>
             <TextInput
               value={chatInput}
               onChangeText={setChatInput}
@@ -395,6 +476,82 @@ const DetailSOS = () => {
           </TouchableOpacity>
         </View>
       </View>
+      <Modal
+        visible={showCancelDialog}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCancelDialog(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "white",
+              borderRadius: 12,
+              padding: 20,
+              width: "100%",
+              maxWidth: 340,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            {/* Dialog Header */}
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-red-100 rounded-full items-center justify-center mb-3">
+                <ImageCustom
+                  source="https://img.icons8.com/?size=100&id=82826&format=png&color=000000"
+                  width={32}
+                  height={32}
+                  color="#EF4444"
+                />
+              </View>
+              <Text className="text-xl font-bold text-gray-900 text-center">
+                Cancel SOS Request
+              </Text>
+            </View>
+
+            {/* Dialog Content */}
+            <Text className="text-gray-600 text-center mb-6 leading-5">
+              Are you sure you want to cancel this SOS request?
+              {"\n\n"}
+              This will stop emergency assistance and cannot be undone.
+            </Text>
+
+            {/* Dialog Actions */}
+            <View className="flex-row space-x-3">
+              {/* Cancel Button */}
+              <TouchableOpacity
+                onPress={() => setShowCancelDialog(false)}
+                className="flex-1 bg-gray-100 py-3 px-4 rounded-lg"
+              >
+                <Text className="text-gray-700 font-semibold text-center">
+                  Keep Active
+                </Text>
+              </TouchableOpacity>
+
+              {/* Confirm Button */}
+              <TouchableOpacity
+                onPress={handleCancelSOS}
+                className="flex-1 bg-red-500 py-3 px-4 rounded-lg"
+              >
+                <Text className="text-white font-semibold text-center">
+                  Yes, Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

@@ -125,6 +125,7 @@ const Map = ({
 
   // ✅ THÊM: Popup handlers
   const handleMarkerPress = (marker: Marker) => {
+    console.log("Marker pressed:", marker);
     setSelectedMarker(marker);
     setShowPopup(true);
   };

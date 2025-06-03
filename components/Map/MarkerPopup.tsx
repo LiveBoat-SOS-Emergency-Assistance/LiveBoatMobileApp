@@ -42,7 +42,7 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
   onGetDirections,
 }) => {
   if (!visible || !marker) return null;
-
+  console.log("MarkerPopup rendered with marker:", marker);
   const getStatusColor = (userType: string) => {
     switch (userType) {
       case "SENDER":
@@ -168,7 +168,7 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
                   </Text>
                 </TouchableOpacity>
               )}
-              {onMessage && (
+              {onMessage && marker.userType === "SENDER" && (
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={onMessage}
@@ -180,7 +180,7 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
                     color="#3B82F6"
                   />
                   <Text style={[styles.actionText, { color: "#3B82F6" }]}>
-                    Message
+                    Help
                   </Text>
                 </TouchableOpacity>
               )}

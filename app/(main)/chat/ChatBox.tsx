@@ -243,7 +243,7 @@ const ChatBox = () => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <View className="flex flex-row items-center gap-3 px-5 border-b border-gray-200 pt-4 pb-4">
+        <View className="flex flex-row items-center gap-3 px-5 border-b border-gray-200 pt-10 pb-4">
           <TouchableOpacity
             onPress={() => router.back()}
             className="flex-row items-start"

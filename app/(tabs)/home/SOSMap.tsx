@@ -255,7 +255,7 @@ export default function SOSMap() {
             }
           }
         }
-      }, 10000);
+      }, 5000);
       return () => {
         clearInterval(timeout1);
         clearTimeout(timeout2);

@@ -267,6 +267,7 @@ const ChatScreen = () => {
                   created_at={item?.created_at}
                   last_message_time={item?.last_message_time}
                   name={item?.name}
+                  last_message={item?.latest_message}
                   onPress={() => handlePress(item?.id, item?.name)}
                 />
               </View>

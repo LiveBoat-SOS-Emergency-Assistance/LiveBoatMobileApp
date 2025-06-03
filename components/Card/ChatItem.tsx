@@ -21,8 +21,14 @@ interface ChatProps {
   id?: string;
   last_message_time?: string;
   name?: string;
+  last_message?: {
+    content?: string;
+    created_at?: string;
+    sender_id?: number;
+    sender_name?: string;
+    media_url?: string;
+  };
   chatId?: number;
-
   onPress?: () => void;
 }
 const ChatItem = ({
@@ -30,6 +36,7 @@ const ChatItem = ({
   name,
   created_at,
   last_message_time,
+  last_message,
 }: ChatProps) => {
   const [isPressed, setIsPressed] = useState(false);
   // console.log("ChatItem", created_at);
@@ -51,9 +58,16 @@ const ChatItem = ({
             {formatTimeAgo(last_message_time) || "1 days ago"}
           </Text>
         </View>
-        <Text className="text-[#969696] text-[11px] truncate w-[80%] ">
-          Hello, how are you?
-        </Text>
+        {last_message?.content && last_message.content.length > 0 && (
+          <Text className="text-[#969696] text-[11px] truncate w-[80%] ">
+            {last_message.content || "No messages yet"}
+          </Text>
+        )}
+        {last_message?.media_url && last_message.media_url.length > 0 && (
+          <Text className="text-[#969696] text-[11px] truncate w-[80%]">
+            {last_message.sender_name} just sent a photo
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );
