@@ -1,4 +1,13 @@
-import { BackHandler, Image, Text, TouchableOpacity, View } from "react-native";
+import {
+  BackHandler,
+  Image,
+  Keyboard,
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import Input from "../../components/Input/Input";
 import CustomButton from "../../components/Button/CustomButton";
 import Checkbox from "expo-checkbox";
@@ -71,88 +80,97 @@ const Register = () => {
     setLoading(false);
   };
   return (
-    <View className="bg-white w-full h-full min-h-dvh flex flex-col pt-10 relative">
-      <View className="flex gap-3 w-full flex-row items-start px-1  justify-center pb-5">
-        <Text className="font-bold text-[25px] text-[#404040]">
-          Become a LiveBoat member.
-        </Text>
-      </View>
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="bg-white w-full h-full min-h-dvh flex flex-col pt-10 relative">
+          <View className="flex gap-3 w-full flex-row items-start px-1  justify-center pb-5">
+            <Text className="font-bold text-[25px] text-[#404040]">
+              Become a LiveBoat member.
+            </Text>
+          </View>
 
-      <View className="flex flex-col gap-10 justify-center items-center w-full pt-5">
-        <View className="flex flex-col justify-center items-center w-full gap-2">
-          <Text className="text-start justify-start w-[90%] font-bold">
-            Phone number
-          </Text>
-          <Input
-            error={phoneError}
-            value={phone}
-            type="phone"
-            onChangeText={setPhone}
-            keyboardType="number-pad"
-            placeholder="Phone number"
-          ></Input>
-        </View>
-        <View className="flex flex-col justify-center items-center w-full gap-2">
-          <Text className="text-start justify-start w-[90%] font-bold">
-            Password
-          </Text>
-          <Input
-            errorPassword={passwordError}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            type="password"
-          ></Input>
-        </View>
-      </View>
-      <View className="flex flex-col gap-3 justify-center items-center w-full pt-6">
-        <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
-          <Image
-            source={{
-              uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
-            }}
-            style={{ width: 15, height: 15 }}
-          ></Image>
-          <Text className="text-[12px]">At least 10 characters</Text>
-        </View>
-        <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
-          <Image
-            source={{
-              uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
-            }}
-            style={{ width: 15, height: 15 }}
-          ></Image>
-          <Text className="text-[12px]">
-            Password must contain a number, a letter, and a special character
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => setIsChecked(!isChecked)}
-          className="flex flex-row gap-2 text-start justify-start w-[95%] items-start px-2 pt-2 "
-        >
-          <Checkbox value={isChecked} onValueChange={setIsChecked}></Checkbox>
-          <Text className="w-[90%] leading-4 text-[13px]">
-            Yes, inform me on deals & new features. I can opt out of any time
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <View className="flex flex-col gap-10 justify-center items-center w-full pt-5">
+            <View className="flex flex-col justify-center items-center w-full gap-2">
+              <Text className="text-start justify-start w-[90%] font-bold">
+                Phone number
+              </Text>
+              <Input
+                error={phoneError}
+                value={phone}
+                type="phone"
+                onChangeText={setPhone}
+                keyboardType="number-pad"
+                placeholder="Phone number"
+              ></Input>
+            </View>
+            <View className="flex flex-col justify-center items-center w-full gap-2">
+              <Text className="text-start justify-start w-[90%] font-bold">
+                Password
+              </Text>
+              <Input
+                errorPassword={passwordError}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Password"
+                type="password"
+              ></Input>
+            </View>
+          </View>
+          <View className="flex flex-col gap-3 justify-center items-center w-full pt-6">
+            <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
+              <Image
+                source={{
+                  uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
+                }}
+                style={{ width: 15, height: 15 }}
+              ></Image>
+              <Text className="text-[12px]">At least 10 characters</Text>
+            </View>
+            <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
+              <Image
+                source={{
+                  uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
+                }}
+                style={{ width: 15, height: 15 }}
+              ></Image>
+              <Text className="text-[12px]">
+                Password must contain a number, a letter, and a special
+                character
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setIsChecked(!isChecked)}
+              className="flex flex-row gap-2 text-start justify-start w-[95%] items-start px-2 pt-2 "
+            >
+              <Checkbox
+                value={isChecked}
+                onValueChange={setIsChecked}
+              ></Checkbox>
+              <Text className="w-[90%] leading-4 text-[13px]">
+                Yes, inform me on deals & new features. I can opt out of any
+                time
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-      <View className="flex flex-col mx-auto w-[90%] justify-center items-center pt-12 gap-5">
-        <CustomButton
-          primary={true}
-          secondary={false}
-          title="Register"
-          isLoading={loading}
-          onPress={handleRegister}
-        ></CustomButton>
-        <CustomButton
-          primary={false}
-          secondary={true}
-          title="Login"
-          onPress={() => router.replace("/login")}
-        ></CustomButton>
-      </View>
-    </View>
+          <View className="flex flex-col mx-auto w-[90%] justify-center items-center pt-12 gap-5">
+            <CustomButton
+              primary={true}
+              secondary={false}
+              title="Register"
+              isLoading={loading}
+              onPress={handleRegister}
+            ></CustomButton>
+            <CustomButton
+              primary={false}
+              secondary={true}
+              title="Login"
+              onPress={() => router.replace("/login")}
+            ></CustomButton>
+          </View>
+        </View>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 export default Register;

@@ -71,7 +71,11 @@ export const initializeMediaSoupModule = (): void => {
 
   mediaSoupSocket.on("new-producer", (data: any) => {
     console.log("New producer:", data.producerId);
-    signalNewConsumerTransport(mediaSoupSocket, data.producerId);
+    signalNewConsumerTransport(
+      mediaSoupSocket,
+      data.producerId,
+      data?.userInfo
+    );
   });
 
   mediaSoupSocket.on("update-room-peers", () => {
@@ -89,7 +93,10 @@ export const initializeMediaSoupModule = (): void => {
   });
 };
 
-const createDevice = async (isConsumeOnly: boolean = false): Promise<void> => {
+const createDevice = async (
+  isConsumeOnly: boolean = false,
+  userInfo: any
+): Promise<void> => {
   try {
     const device = new Device();
     // device = new Device({ handlerFactory: ReactNative });
@@ -97,7 +104,7 @@ const createDevice = async (isConsumeOnly: boolean = false): Promise<void> => {
     await device.load({
       routerRtpCapabilities: rtpCapabilities,
     });
-
+    
     setProducerDevice(device, rtpCapabilities);
     setConsumerDevice(device);
 
@@ -106,7 +113,10 @@ const createDevice = async (isConsumeOnly: boolean = false): Promise<void> => {
       getProducersThenConsume(mediaSoupSocket);
     } else {
       console.log("Creating send transport...");
-      const { transport } = await createSendTransport(mediaSoupSocket);
+      const { transport } = await createSendTransport(
+        mediaSoupSocket,
+        userInfo
+      );
       console.log("transport calll", transport);
       try {
         console.log("connect send transport in createDevice");
@@ -148,6 +158,7 @@ export const joinRoom = async ({
   isConsumeOnly = false,
   userId = null,
   sosId = null,
+  userInfo,
 }: any): Promise<void> => {
   console.log("Joining room:", sosId ?? roomName, userId);
   mediaSoupSocket.emit(
@@ -155,7 +166,7 @@ export const joinRoom = async ({
     { roomName: sosId ? Number(sosId) : Number(roomName), userId },
     (data: any) => {
       rtpCapabilities = data.rtpCapabilities;
-      createDevice(isConsumeOnly);
+      createDevice(isConsumeOnly, userInfo);
     }
   );
 

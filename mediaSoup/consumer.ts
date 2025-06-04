@@ -16,8 +16,11 @@ export const setConsumerDevice = (newDevice: any): void => {
 
 export const signalNewConsumerTransport = async (
   socket: any,
-  remoteProducerId: string
-): Promise<{ consumer: any; consumerTransport: any } | undefined> => {
+  remoteProducerId: string,
+  userInfo: any
+): Promise<
+  { consumer: any; consumerTransport: any; userInfo: any } | undefined
+> => {
   if (!device) throw new Error("Device not initialized");
   console.log("signalNewConsumerTransport");
   if (consumingTransports.includes(remoteProducerId)) return;
@@ -69,7 +72,8 @@ export const signalNewConsumerTransport = async (
           socket,
           consumerTransport,
           remoteProducerId,
-          params.id
+          params.id,
+          userInfo
         )
           .then(resolve)
           .catch(reject);
@@ -82,8 +86,9 @@ const connectRecvTransport = async (
   socket: any,
   consumerTransport: any,
   remoteProducerId: string,
-  serverConsumerTransportId: string
-): Promise<{ consumer: any; consumerTransport: any }> => {
+  serverConsumerTransportId: string,
+  userInfo: any
+): Promise<{ consumer: any; consumerTransport: any; userInfo: any }> => {
   return new Promise((resolve, reject) => {
     socket.emit(
       "consume",
@@ -122,7 +127,7 @@ const connectRecvTransport = async (
           console.log("CAlll connectRecvTransport 3", track);
 
           if (params.kind === "audio") {
-            updateAudioParticipant({ remoteProducerId, track });
+            updateAudioParticipant({ remoteProducerId, track, userInfo });
           } else {
             console.log("else called ");
             roomVideoOwner_producerId = remoteProducerId;
@@ -132,7 +137,7 @@ const connectRecvTransport = async (
           socket.emit("consumer-resume", {
             serverConsumerId: params.serverConsumerId,
           });
-          resolve({ consumer, consumerTransport });
+          resolve({ consumer, consumerTransport, userInfo });
         } catch (error) {
           console.log("Error in connectRecvTransport", error);
           reject(error);

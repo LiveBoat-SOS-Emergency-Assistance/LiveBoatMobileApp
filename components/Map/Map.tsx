@@ -75,7 +75,7 @@ const Map = ({
   const [showPopup, setShowPopup] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
   // console.log("Markers being passed to Map:", otherUserMarkers);
-
+  // console.log("SOS Location:", currentSOS);
   useEffect(() => {
     const fetchLocation = async () => {
       try {
@@ -111,18 +111,21 @@ const Map = ({
           if (data.routes && data.routes.length > 0) {
             setRoute(data.routes[0].geometry);
           }
+          // console.log("Route fetched successfully:", data);
         } catch (error) {
           console.log("Error fetching route:", error);
         }
       }
     };
-    if (location && sosLocation) {
+    if (location && sosLocation && checkSOS) {
+      console.log("checkSOS", checkSOS);
       fetchRoute();
     }
   }, [location, sosLocation]);
 
   // ✅ THÊM: Popup handlers
   const handleMarkerPress = (marker: Marker) => {
+    console.log("Marker pressed:", marker);
     setSelectedMarker(marker);
     setShowPopup(true);
   };
@@ -178,7 +181,9 @@ const Map = ({
             />
             {signal === "sos" ? (
               <RippleMarker
-                id="my-sos-marker"
+                key="my-sos-marker"
+                // key={profile?.User?.id}
+                id={profile?.User?.id}
                 coordinate={location}
                 onPress={() => {
                   if (profile?.User) {
@@ -198,6 +203,8 @@ const Map = ({
               />
             ) : (
               <UserLocation
+                key="my-location-marker"
+                // key={profile?.User?.id}
                 coordinate={location}
                 avatarUrl={profile?.User?.avatar_url}
                 onPress={() =>
@@ -216,8 +223,9 @@ const Map = ({
               />
             )}
             {/* When I support others this is the user's location */}
-            {sosLocation && checkSOS && (
+            {sosLocation && checkSOS && !otherUserMarkers && (
               <RippleMarker
+                key={sosLocation.SOS.user_id}
                 id="ripple-marker"
                 userIDSOS={Number(sosLocation.SOS.user_id)}
                 coordinate={[
@@ -239,41 +247,49 @@ const Map = ({
                 }
               />
             )}
+            {route && checkSOS && (
+              <MapboxGL.ShapeSource id="routeSource" shape={route}>
+                <MapboxGL.LineLayer
+                  id="routeLayer"
+                  style={{ lineColor: "rgb(48,125,247)", lineWidth: 4 }}
+                />
+              </MapboxGL.ShapeSource>
+            )}
             {otherUserMarkers &&
               Object.values(otherUserMarkers).map((marker) => {
                 // const uniqueKey = `${marker.userId}-${marker.latitude}-${marker.longitude}`; // Tạo key duy nhất
                 if (marker.userType === "NORMAL") {
                   return (
                     <UserLocation
-                      key={marker.userId}
-                      coordinate={[marker.longitude, marker.latitude]}
-                      avatarUrl={marker.avatarUrl}
-                      userType={marker.userType}
+                      key={`user-location-${marker?.userId}`}
+                      coordinate={[marker?.longitude, marker?.latitude]}
+                      avatarUrl={marker?.avatarUrl}
+                      userType={marker?.userType}
                       size={50}
                       onPress={() => handleMarkerPress(marker)}
                       userData={{
-                        userId: marker.userId,
-                        name: marker.name,
-                        phone: marker.phone,
-                        accuracy: marker.accuracy,
+                        userId: marker?.userId,
+                        name: marker?.name,
+                        phone: marker?.phone,
+                        accuracy: marker?.accuracy,
                       }}
                     />
                   );
                 } else if (marker.userType === "HELPER") {
                   return (
                     <RescuerMarker
-                      key={marker.userId}
-                      coordinate={[marker.longitude, marker.latitude]}
-                      id={String(marker.userId)}
-                      type={marker.userType}
+                      key={`rescuer-marker-${marker?.userId}`}
+                      coordinate={[marker?.longitude, marker?.latitude]}
+                      id={String(marker?.userId)}
+                      type={marker?.userType}
                       zoomLevel={11}
-                      avatarUrl={marker.avatarUrl || marker.User?.avatar_url}
-                      name={marker.name}
+                      avatarUrl={marker?.avatarUrl || marker.User?.avatar_url}
+                      name={marker?.name}
                       onPress={() =>
                         handleMarkerPress({
-                          userId: Number(marker.userId),
-                          latitude: marker.latitude,
-                          longitude: marker.longitude,
+                          userId: Number(marker?.userId),
+                          latitude: marker?.latitude,
+                          longitude: marker?.longitude,
                           accuracy: 10,
                           userType: "HELPER",
                           avatarUrl:
@@ -288,7 +304,7 @@ const Map = ({
                 } else if (marker.userType === "SENDER") {
                   return (
                     <RippleMarker
-                      // id="ripple-marker"
+                      key={`sos-marker-${marker?.userId}`}
                       id={String(marker.userId)}
                       coordinate={[marker.longitude, marker.latitude]}
                       userIDSOS={marker.userId}
@@ -299,14 +315,7 @@ const Map = ({
                 return null;
               })}
             {/* When I support others, and this is my path to the SOS signal */}
-            {route && checkSOS && (
-              <MapboxGL.ShapeSource id="routeSource" shape={route}>
-                <MapboxGL.LineLayer
-                  id="routeLayer"
-                  style={{ lineColor: "rgb(48,125,247)", lineWidth: 4 }}
-                />
-              </MapboxGL.ShapeSource>
-            )}
+
             {/* My location */}
             {otherSOS && (
               <RippleMarker

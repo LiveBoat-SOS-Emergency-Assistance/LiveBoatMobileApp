@@ -21,6 +21,10 @@ import { useAuth } from "../../../context/AuthContext";
 import Avatar from "../../../components/Image/Avatar";
 import { WEATHER_API_KEY } from "@env";
 import axios from "axios";
+import MultiSelectDropdown, {
+  FilterOption,
+} from "../../../components/Dropdown/MultiSelectDropdown";
+import { getCurrentLocation } from "../../../utils/location";
 export default function History() {
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth / 3;
@@ -30,6 +34,22 @@ export default function History() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const { profile } = useAuth();
+
+  // Search and filter states
+  const [searchText, setSearchText] = useState<string>("");
+  const [selectedFilters, setSelectedFilters] = useState<string[]>(["nearest"]);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  // Filter options
+  const filterOptions: FilterOption[] = [
+    { label: "Nearest to me", value: "nearest" },
+    { label: "Has rescue", value: "has_rescue" },
+    { label: "No rescue", value: "no_rescue" },
+  ];
+
   type WeatherData = {
     current?: {
       temp_c?: number;
@@ -42,29 +62,64 @@ export default function History() {
   const API_KEY = WEATHER_API_KEY;
   const city = "Da Nang";
   const itemsPerPage = 4;
-
-  const loadSOS = async (pageNum: number = 1) => {
+  const loadSOS = async (
+    pageNum: number = 1,
+    search: string = "",
+    filters: string[] = []
+  ) => {
     if (isLoading || !hasMore) return;
 
     setIsLoading(true);
     try {
       const offset = (pageNum - 1) * itemsPerPage;
-      const result = await sosService.getSOSByStatus(
-        "ONGOING",
-        itemsPerPage,
-        offset
-      );
-      const newData: SOSItem[] = result.data || [];
 
-      if (newData.length < itemsPerPage) {
-        setHasMore(false);
+      // Build filter parameters for API
+      const filterParams: any = {};
+
+      // Handle filter selections
+      filters.forEach((filter) => {
+        switch (filter) {
+          case "nearest":
+            if (userLocation) {
+              filterParams.near_me = true;
+              filterParams.latitude = userLocation.latitude;
+              filterParams.longitude = userLocation.longitude;
+            }
+            break;
+          case "has_rescue":
+            filterParams.has_rescuers = true;
+            break;
+          case "no_rescue":
+            filterParams.no_rescuers = true;
+            break;
+        }
+      }); // Add search parameter
+      if (search.trim()) {
+        filterParams.search = search;
       }
 
-      setListSOS((prev: SOSItem[]) =>
-        pageNum === 1 ? newData : [...prev, ...newData]
-      );
-    } catch (error) {
-      console.error("Error loading SOS:", error);
+      console.log("Sending filterParams:", filterParams);
+
+      const result = await sosService.getSOSByStatus("ONGOING", filterParams);
+      console.log("Received SOS data:", result.data);
+      if (result) {
+        const newData: SOSItem[] = result.data || [];
+
+        if (newData.length < itemsPerPage) {
+          setHasMore(false);
+        }
+
+        setListSOS((prev: SOSItem[]) =>
+          pageNum === 1 ? newData : [...prev, ...newData]
+        );
+      }
+    } catch (error: any) {
+      console.error("Error loading SOS:", {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+        headers: error?.response?.headers,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +132,7 @@ export default function History() {
         );
         setWeather(res.data);
       } catch (err) {
-        console.error("Lỗi khi lấy dữ liệu thời tiết:", err);
+        console.error("Error fetching weather data:", err);
       } finally {
         setLoading(false);
       }
@@ -86,14 +141,38 @@ export default function History() {
     fetchWeather();
   }, []);
   useEffect(() => {
-    loadSOS(1);
+    const getUserLocation = async () => {
+      try {
+        const location = await getCurrentLocation();
+        if (location) {
+          setUserLocation({
+            latitude: location.latitude,
+            longitude: location.longitude,
+          });
+        }
+      } catch (error) {
+        console.error("Error getting user location:", error);
+      }
+    };
+
+    getUserLocation();
   }, []);
 
+  // Only load SOS after we have user location (if needed) or when location is not required
+  useEffect(() => {
+    const needsLocation = selectedFilters.includes("nearest");
+
+    if (!needsLocation || (needsLocation && userLocation)) {
+      console.log("Loading SOS with location:", userLocation);
+      console.log("Selected filters:", selectedFilters);
+      loadSOS(1, searchText, selectedFilters);
+    }
+  }, [userLocation, searchText, selectedFilters]);
   const handleLoadMore = () => {
     if (!isLoading && hasMore) {
       setPage((prev) => {
         const nextPage = prev + 1;
-        loadSOS(nextPage);
+        loadSOS(nextPage, searchText, selectedFilters);
         return nextPage;
       });
     }
@@ -104,7 +183,7 @@ export default function History() {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           className="bg-white h-full flex flex-col pb-12 gap-3 mb-24"
@@ -222,7 +301,7 @@ export default function History() {
               </View>
             </View>
           </View>
-          <Text className="text-[#EB4747] justify-start items-start text-start w-[90%] text-[18px] font-bold py-1">
+          {/* <Text className="text-[#EB4747] justify-start items-start text-start w-[90%] text-[18px] font-bold py-1">
             Incidents around you
           </Text>
 
@@ -248,51 +327,53 @@ export default function History() {
                 <SOSCard />
               </View>
             ))}
-          </ScrollView>
-          <View className="w-[85%] px-5 h-[40px] relative flex shadow-lg border-gray-200 border-[1px] rounded-[10px] bg-white mt-4">
-            <TextInput className="w-full h-full px-4"></TextInput>
-            <ImageCustom
-              className="absolute top-1/2 right-3 -translate-y-1/2"
-              source="https://img.icons8.com/?size=100&id=112468&format=png&color=000000"
-              width={24}
-              height={24}
-              color="#EB4747"
-            ></ImageCustom>
-          </View>
-          <View className="flex  flex-row w-full px-5 h-[35px] justify-center gap-2 space-x-3">
-            <View className="w-3/12  flex-row items-center h-full border-gray-200 border-[1px] rounded-[10px] bg-white px-3 py-1 shadow-lg justify-between  relative flex">
-              <Text className="text-[12px] text-[#EB4747]">Need help</Text>
+          </ScrollView> */}
+          {/* Search and Filter Row */}
+          <View className="w-[90%] flex-row items-center justify-between mt-4 px-2">
+            {/* Search Input */}
+            <View className="flex-1 px-3 h-[40px] relative flex shadow-lg border-gray-200 border-[1px] rounded-[10px] bg-white mr-3">
+              <TextInput
+                className="w-full h-full px-4"
+                placeholder="Search by name..."
+                value={searchText}
+                onChangeText={setSearchText}
+              />
               <ImageCustom
-                className=""
-                source="https://img.icons8.com/?size=100&id=85018&format=png&color=000000"
-                width={18}
-                height={18}
+                className="absolute top-1/2 right-3 -translate-y-1/2"
+                source="https://img.icons8.com/?size=100&id=112468&format=png&color=000000"
+                width={24}
+                height={24}
                 color="#EB4747"
               />
             </View>
-            <View className="w-4/12 flex-row items-center h-full border-gray-200 border-[1px] rounded-[10px] bg-white px-3 py-1 shadow-lg justify-between relative flex">
-              <Text className="text-[12px] text-[#EB4747]">
-                Natural Disaster
-              </Text>
-              <ImageCustom
-                className=""
-                source="https://img.icons8.com/?size=100&id=85018&format=png&color=000000"
-                width={15}
-                height={15}
-                color="#EB4747"
-              ></ImageCustom>
-            </View>
-            <View className="w-4/12  flex-row items-center h-full border-gray-200 border-[1px] rounded-[10px] bg-[#EB4747] px-3 py-1 shadow-lg justify-between relative flex">
-              <Text className="text-[12px] text-white">Da Nang</Text>
-              <ImageCustom
-                className=""
-                source="https://img.icons8.com/?size=100&id=85018&format=png&color=000000"
-                width={18}
-                height={18}
-                color="#ffffff"
-              ></ImageCustom>
+            {/* Filter Dropdown */}
+            <View className="w-[120px] h-[40px]">
+              <MultiSelectDropdown
+                options={filterOptions}
+                selectedValues={selectedFilters}
+                onSelectionChange={setSelectedFilters}
+                placeholder="Select filters"
+              />
             </View>
           </View>
+          {/* Empty State Message */}
+          {!isLoading && listSOS.length === 0 && (
+            <View className="flex-1 justify-center items-center py-16">
+              <View className="bg-green-50 rounded-3xl p-8 mx-6 shadow-sm border border-green-100">
+                <View className="items-center">
+                  <Text className="text-xl font-bold text-green-800 text-center mb-2">
+                    Awesome!
+                  </Text>
+                  <Text className="text-green-700 text-center text-base leading-6">
+                    There is no SOS at the moment
+                  </Text>
+                  <Text className="text-green-600 text-center text-sm mt-2 opacity-80">
+                    Everyone is safe right now 🎉
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
           <ScrollPagination<SOSItem>
             data={listSOS}
             itemsPerPage={itemsPerPage}

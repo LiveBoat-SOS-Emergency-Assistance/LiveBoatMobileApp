@@ -1,4 +1,12 @@
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Image,
+  Keyboard,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import tw from "twrnc";
 import Input from "../../components/Input/Input";
 import CustomButton from "../../components/Button/CustomButton";
@@ -8,6 +16,7 @@ import Toast from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
 import ImageCustom from "../../components/Image/Image";
 import React from "react";
+import { TouchableWithoutFeedback } from "react-native";
 const Login = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -55,89 +64,94 @@ const Login = () => {
     setLoading(false);
   };
   return (
-    <>
-      <StatusBar style="dark"></StatusBar>
-      <View className="bg-white w-full h-full flex flex-col pt-10 relative">
-        <View className="flex gap-3 w-full flex-col items-center px-2  justify-center pb-5">
-          <Text className="font-bold text-[25px] text-[#404040]">
-            Set up a new password
-          </Text>
-          <Text className="text-[#9A9898] text-[14px]">
-            We'll send you password reset instructions.
-          </Text>
-        </View>
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <SafeAreaView className="flex-1 bg-white">
+        <StatusBar style="dark"></StatusBar>
+        <View className="bg-white w-full h-full flex flex-col pt-10 relative">
+          <View className="flex gap-3 w-full flex-col items-center px-2  justify-center pb-5">
+            <Text className="font-bold text-[25px] text-[#404040]">
+              Set up a new password
+            </Text>
+            <Text className="text-[#9A9898] text-[14px]">
+              We'll send you password reset instructions.
+            </Text>
+          </View>
 
-        <View className="flex flex-col gap-10 justify-center items-center w-full pt-5">
-          <View className="flex flex-col justify-center items-center w-full gap-2">
-            <Text className="text-start justify-start w-[90%] font-bold">
-              Password
-            </Text>
-            <Input
-              value={password}
-              errorPassword={passwordError}
-              onChangeText={setPassword}
-              type="password"
-              placeholder="Password"
-            ></Input>
+          <View className="flex flex-col gap-10 justify-center items-center w-full pt-5">
+            <View className="flex flex-col justify-center items-center w-full gap-2">
+              <Text className="text-start justify-start w-[90%] font-bold">
+                Password
+              </Text>
+              <Input
+                value={password}
+                errorPassword={passwordError}
+                onChangeText={setPassword}
+                type="password"
+                placeholder="Password"
+              ></Input>
+            </View>
+            <View className="flex flex-col justify-center items-center w-full gap-2">
+              <Text className="text-start justify-start w-[90%] font-bold">
+                Confirm Password
+              </Text>
+              <Input
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                errorPassword={confirmPasswordError}
+                type="password"
+                placeholder="Password"
+              ></Input>
+            </View>
           </View>
-          <View className="flex flex-col justify-center items-center w-full gap-2">
-            <Text className="text-start justify-start w-[90%] font-bold">
-              Confirm Password
-            </Text>
-            <Input
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              errorPassword={confirmPasswordError}
-              type="password"
-              placeholder="Password"
-            ></Input>
+          <View className="flex flex-col gap-3 justify-center items-center w-full pt-6">
+            <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
+              <Image
+                source={{
+                  uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
+                }}
+                style={{ width: 15, height: 15 }}
+              ></Image>
+              <Text className="text-[12px]">At least 10 characters</Text>
+            </View>
+            <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
+              <Image
+                source={{
+                  uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
+                }}
+                style={{ width: 15, height: 15 }}
+              ></Image>
+              <Text className="text-[12px]">
+                Password must contain a number, a letter, and a special
+                character
+              </Text>
+            </View>
+          </View>
+          <View className="flex flex-col mx-auto w-[90%] justify-center items-center pt-10 gap-5">
+            <CustomButton
+              primary={true}
+              secondary={false}
+              isLoading={loading}
+              title="Reset Password"
+              onPress={handleResetPassword}
+            ></CustomButton>
+            <Pressable
+              className="flex gap-2 flex-row"
+              onPress={() => router.replace("/login")}
+            >
+              <ImageCustom
+                source="https://img.icons8.com/?size=100&id=357&format=png"
+                width={20}
+                height={20}
+                color="#404040"
+              ></ImageCustom>
+              <Text className="text-[#404040] text-[12px]">
+                Return to login
+              </Text>
+            </Pressable>
           </View>
         </View>
-        <View className="flex flex-col gap-3 justify-center items-center w-full pt-6">
-          <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
-            <Image
-              source={{
-                uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
-              }}
-              style={{ width: 15, height: 15 }}
-            ></Image>
-            <Text className="text-[12px]">At least 10 characters</Text>
-          </View>
-          <View className="flex flex-row gap-2 text-start justify-start w-[90%] items-center">
-            <Image
-              source={{
-                uri: "https://img.icons8.com/?size=100&id=21083&format=png&color=000000",
-              }}
-              style={{ width: 15, height: 15 }}
-            ></Image>
-            <Text className="text-[12px]">
-              Password must contain a number, a letter, and a special character
-            </Text>
-          </View>
-        </View>
-        <View className="flex flex-col mx-auto w-[90%] justify-center items-center pt-10 gap-5">
-          <CustomButton
-            primary={true}
-            secondary={false}
-            isLoading={loading}
-            title="Reset Password"
-            onPress={handleResetPassword}
-          ></CustomButton>
-          <Pressable
-            className="flex gap-2 flex-row"
-            onPress={() => router.replace("/login")}
-          >
-            <ImageCustom
-              source="https://img.icons8.com/?size=100&id=357&format=png"
-              width={20}
-              height={20}
-              color="#404040"
-            ></ImageCustom>
-            <Text className="text-[#404040] text-[12px]">Return to login</Text>
-          </Pressable>
-        </View>
-      </View>
-    </>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 export default Login;

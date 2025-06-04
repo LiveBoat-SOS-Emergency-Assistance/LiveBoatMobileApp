@@ -60,7 +60,7 @@ export const sendMessage = (
   chatSocket: Socket | null,
   message: string,
   groupId: string | null,
-  userId: string | null
+  userId: string
 ): void => {
   if (!groupId || !chatSocket || !userId) {
     console.error("Missing params to send message");

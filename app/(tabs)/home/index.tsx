@@ -62,14 +62,14 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectSquad, setSelectSquad] = useState<string | null>(null);
   const [selectNamesquad, setSelectNameSquad] = useState<string | null>(null);
-  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false); // State để quản lý BottomSheet
-  const [activeTab, setActiveTab] = useState<boolean>(true); // State to manage active tab
+  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<boolean>(true);
   const [helpingUserId, setHelpingTheUserId] = useState<number | null>(null);
   const [isAlertVisible, setAlertVisible] = useState(false);
   const [SOS, setSOS] = useState<any>(null);
   const [listMember, setListMember] = useState<any[]>([]);
   const toggleBottomSheet = () => {
-    setIsBottomSheetVisible((prev) => !prev); // Đóng/mở BottomSheet
+    setIsBottomSheetVisible((prev) => !prev);
   };
   const {
     socket,
@@ -90,19 +90,14 @@ export default function HomeScreen() {
     TOSERVER_REGISTER_SOS_SENDER: "TOSERVER_REGISTER_SOS_SENDER",
     TOSERVER_GET_THE_SENDER_LOCATION: "TOSERVER_GET_THE_SENDER_LOCATION",
   };
-
-  // useEffect này chạy một lần khi HomeScreen mount
   useEffect(() => {
     if (!socket.current) return;
-
-    // console.log("Socket at home", socket);
-
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
       if (!data || data.length === 0) {
         console.log("No SOS locations received");
         return;
       }
-      console.log("SOS locations:", data);
+      // console.log("SOS locations:", data);
       displayOrUpdateMarkers(data);
     });
 
@@ -113,8 +108,7 @@ export default function HomeScreen() {
         SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
       );
     }, 3000);
-
-    const timeout2 = setTimeout(async () => {
+    const timeout3 = setTimeout(async () => {
       const location = await getCurrentLocation();
       if (location) {
         updateLocation(
@@ -123,88 +117,130 @@ export default function HomeScreen() {
           location.accuracy ?? 0
         );
       }
-    }, 5000);
-
+    }, 2000);
     return () => {
       clearTimeout(timeout1);
-      clearTimeout(timeout2);
+      clearTimeout(timeout3);
     };
   }, []);
   const getCurrentSOS = async () => {
     try {
       const result = await sosService.getSOSById(currentSOS.SOS.id);
-      console.log("Current SOS:", result.data);
+      // console.log("Current SOS:", result.data);
       setSOS(result.data);
     } catch (error) {
       console.error("Error fetching helpingUserId:", error);
     }
   };
-
-  useEffect(() => {
-    if (!socket.current || !currentSOS) return;
-
-    console.log("Rescuer mode active");
-
-    socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
-      console.log("The Sender location:", data);
-      displayOrUpdateMarkers(data);
-    });
-
-    socket.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
-      console.log("Other helper locations:", data);
-      displayOrUpdateMarkers(data);
-    });
-
-    socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
-      if (data.userId === helpingUserId) {
-        console.log("Sender disconnected, display offline marker");
-        getCurrentSOS();
-        displayOfflineMarker(data.userId, SOS?.longitude, SOS?.latitude);
-      }
-    });
-    socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
-      if (data.userId === helpingUserId) {
-        console.log("Sender finished SOS, complete rescuing");
+  const handleGiveSupport = async (id: string) => {
+    try {
+      const result = await rescuerServices.postRescuer(Number(id), location);
+      if (result) {
         Toast.show({
           type: "success",
-          text1: "SOS Completed",
-          text2: "You have successfully completed the SOS request.",
+          text1: "Help on the way!",
+          text2: "Thank you for responding to the SOS. Stay safe!",
         });
-        setAlertVisible(true);
-        setHelpingTheUserId(null);
-        setCheckSOS(false);
-        setCurrentSOS(null);
+        await AsyncStorage.setItem("SOSID", id.toString());
+
+        router.push({
+          pathname: "/(tabs)/history/DetailSOS",
+          params: {
+            userProfile: JSON.stringify(profile),
+          },
+        });
       }
-    });
-    setUserInfo("HELPER");
-
-    const timeout1 = setTimeout(() => {
-      socket?.current?.emit(
-        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
-      );
-      socket?.current?.emit(SOCKET_EVENTS.TOSERVER_REGISTER_SOS_SENDER, {
-        helpingUserId,
+    } catch (error: any) {
+      Toast.show({
+        type: "error",
+        text1: "Notification!",
+        text2: "You are already assisting another SOS request.",
       });
-    }, 1000);
+      console.log("Error", error.response?.data);
+    }
+  };
 
-    const timeout2 = setTimeout(() => {
-      socket?.current?.emit(
-        SOCKET_EVENTS.TOSERVER_GET_THE_SENDER_LOCATION,
-        (response: any) => {
-          console.log("Server responded:", response);
-          getCurrentLocation();
-          if (response?.status === false && helpingUserId !== null) {
-            displayOfflineMarker(helpingUserId, SOS?.longitude, SOS?.latitude);
-          }
-        }
-      );
-    }, 2000);
+  // useEffect(() => {
+  //   if (!socket.current || !currentSOS) return;
 
-    return () => {
-      clearTimeout(timeout1);
-      clearTimeout(timeout2);
-    };
-  }, [currentSOS]);
+  //   console.log("Rescuer mode active");
+
+  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
+  //     // console.log("The Sender location:", data);
+  //     displayOrUpdateMarkers(data);
+  //   });
+
+  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
+  //     console.log("Other helper locations:", data);
+  //     displayOrUpdateMarkers(data);
+  //   });
+
+  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
+  //     console.log("User disconnected:", data.userId);
+  //     console.log("Helping User ID:", helpingUserId);
+  //     if (data.userId == helpingUserId) {
+  //       console.log("Sender disconnected, display offline marker");
+  //       getCurrentSOS();
+  //       displayOfflineMarker(data.userId, SOS?.longitude, SOS?.latitude);
+  //     }
+  //   });
+  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
+  //     if (data.userId == helpingUserId) {
+  //       console.log("Sender finished SOS, complete rescuing");
+  //       Toast.show({
+  //         type: "success",
+  //         text1: "SOS Completed",
+  //         text2: "You have successfully completed the SOS request.",
+  //       });
+  //       setAlertVisible(true);
+  //       setHelpingTheUserId(null);
+  //       setCheckSOS(false);
+  //       setCurrentSOS(null);
+  //     }
+  //   });
+  //   setUserInfo("HELPER");
+
+  //   const timeout1 = setTimeout(() => {
+  //     socket?.current?.emit(
+  //       SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+  //     );
+  //     console.log("178: helpingUserId:", helpingUserId);
+  //     socket?.current?.emit(SOCKET_EVENTS.TOSERVER_REGISTER_SOS_SENDER, {
+  //       helpingTheUserId: helpingUserId,
+  //     });
+  //     console.log("helpingUserId 181:", helpingUserId);
+  //   }, 1000);
+  //   const timeout3 = setTimeout(async () => {
+  //     const location = await getCurrentLocation();
+  //     if (location) {
+  //       updateLocation(
+  //         location.latitude,
+  //         location.longitude,
+  //         location.accuracy ?? 0
+  //       );
+  //     }
+  //   }, 2000);
+  //   const timeout2 = setTimeout(() => {
+  //     socket?.current?.emit(
+  //       SOCKET_EVENTS.TOSERVER_GET_THE_SENDER_LOCATION,
+  //       (response: any) => {
+  //         console.log("Server responded:", response);
+  //         getCurrentLocation();
+  //         if (response?.status === false && helpingUserId !== null) {
+  //           setHelpingTheUserId(helpingUserId);
+  //           console.log("helpingUserId 200:", helpingUserId);
+  //           displayOfflineMarker(helpingUserId, SOS?.longitude, SOS?.latitude);
+  //         }
+  //       }
+  //     );
+  //   }, 5000);
+
+  //   return () => {
+  //     clearTimeout(timeout1);
+  //     clearTimeout(timeout2);
+  //     clearTimeout(timeout3);
+  //   };
+  // }, [currentSOS]);
 
   // Func to zoom to current location
   const handleControl = async () => {
@@ -281,9 +317,11 @@ export default function HomeScreen() {
       const getSOS = async () => {
         try {
           const current = await rescuerServices.getSOSCurrent();
-          if (current && current.data) {
+          if (current.data) {
             setCurrentSOS(current.data);
+            console.log("Current SOS 292:", current.data);
             setCheckSOS(true);
+            setHelpingTheUserId(current.data.SOS.user_id);
           }
         } catch (error: any) {
           console.error("Error when getting current SOS:", {
@@ -417,20 +455,20 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
       <View className="flex-1 w-full h-full justify-center items-center bg-white relative">
         {/* Header */}
-        {checkSOS ? (
+        {/* {checkSOS ? (
           <Map
             checkSOS={checkSOS}
             sos={currentSOS}
             cameraRef={cameraRef}
             otherUserMarkers={otherUserMarkers}
           ></Map>
-        ) : (
-          <Map
-            signal="normal"
-            cameraRef={cameraRef}
-            otherUserMarkers={otherUserMarkers}
-          ></Map>
-        )}
+        ) : ( */}
+        <Map
+          signal="normal"
+          cameraRef={cameraRef}
+          otherUserMarkers={otherUserMarkers}
+        ></Map>
+        {/* )} */}
         <CustomAlert
           visible={isAlertVisible}
           title="SOS Completed"
@@ -685,37 +723,36 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           {/* Click to open Bottom Sheet */}
-          {!checkSOS && (
-            <TouchableOpacity activeOpacity={0.8} onPress={toggleBottomSheet}>
-              <Animatable.View
-                animation="rubberBand"
-                iterationCount="infinite"
-                duration={1500}
-                style={{
-                  width: 35,
-                  height: 35,
-                  backgroundColor: "#EB4747",
-                  borderRadius: 20,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 5,
-                }}
-              >
-                {isBottomSheetVisible ? (
-                  <ChevronDown size={20} color="white" />
-                ) : (
-                  <ChevronUp size={20} color="white" />
-                )}
-              </Animatable.View>
-            </TouchableOpacity>
-          )}
+
+          <TouchableOpacity activeOpacity={0.8} onPress={toggleBottomSheet}>
+            <Animatable.View
+              animation="rubberBand"
+              iterationCount="infinite"
+              duration={1500}
+              style={{
+                width: 35,
+                height: 35,
+                backgroundColor: "#EB4747",
+                borderRadius: 20,
+                justifyContent: "center",
+                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 5,
+              }}
+            >
+              {isBottomSheetVisible ? (
+                <ChevronDown size={20} color="white" />
+              ) : (
+                <ChevronUp size={20} color="white" />
+              )}
+            </Animatable.View>
+          </TouchableOpacity>
         </View>
         {/* Bottome Sheet for MEMBER AND PLACES */}
-        {checkSOS && (
+        {/* {false && (
           <View
             className="absolute bottom-[100px] w-full flex flex-row gap-2"
             style={{
@@ -766,7 +803,7 @@ export default function HomeScreen() {
               <Text className="text-white font-bold text-[13px]">Detail</Text>
             </TouchableOpacity>
           </View>
-        )}
+        )} */}
         <AnimatePresence>
           {isBottomSheetVisible && (
             <BottomModal>

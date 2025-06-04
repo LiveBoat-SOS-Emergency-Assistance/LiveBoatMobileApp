@@ -7,26 +7,17 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
 } from "react-native";
 import React, { useEffect, useState, useRef } from "react";
 import Avatar from "../../../components/Image/Avatar";
 import { router, useLocalSearchParams } from "expo-router";
 import ImageCustom from "../../../components/Image/Image";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
 import { useChatSocket } from "../../../hooks/useChatSocket";
 import * as ImagePicker from "react-native-image-picker";
 import { uploadFileToGCS } from "../../../utils/uploadAvatar";
 import { Image } from "react-native";
-interface ChatMessageProps {
-  data: {
-    avatar_url: string;
-    sender_name: string;
-    content: string;
-    media_url?: string[];
-  };
-}
 const ChatBox = () => {
   const { Id, name } = useLocalSearchParams();
   const { profile } = useAuth();
@@ -53,16 +44,22 @@ const ChatBox = () => {
       socket.current?.on("connect", () => joinGroup(groupId, senderId));
     }
   }, [socket.current, groupId, senderId]);
-
   useEffect(() => {
-    // console.log("Messages updated:", messages.length, messages);
     if (flatListRef.current && messages.length > 0) {
       console.log("Attempting to scroll to end");
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      }, 500);
     }
   }, [messages]);
+  // useEffect(() => {
+  //   if (flatListRef.current && messages.length > 0) {
+  //     console.log("Attempting to scroll to end");
+  //     setTimeout(() => {
+  //       flatListRef.current?.scrollToEnd({ animated: true });
+  //     }, 500);
+  //   }
+  // }, [messages]);
   const pickImage = async () => {
     const options = {
       mediaType: "photo" as const,
@@ -240,99 +237,97 @@ const ChatBox = () => {
   };
 
   return (
-    <GestureHandlerRootView className="flex-1 bg-white relative">
-      <SafeAreaView className="flex-1 bg-white">
-        <KeyboardAvoidingView
-          className="flex-1"
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-        >
-          <View className="flex flex-row items-center gap-3 px-5 border-b border-gray-200 pt-4 pb-4">
+    <SafeAreaView className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <View className="flex flex-row items-center gap-3 px-5 border-b border-gray-200 pt-10 pb-4">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="flex-row items-start"
+          >
+            <ImageCustom
+              width={25}
+              height={25}
+              source="https://img.icons8.com/?size=100&id=20i9yZTsnnmg&format=png&color=000000"
+            />
+          </TouchableOpacity>
+          <View className="w-[60px] h-[60px] bg-[#fbdada] rounded-full flex justify-center items-center">
+            <Text className="font-bold text-[#EB4747] text-xl">
+              {typeof name === "string" ? name.charAt(0).toUpperCase() : "A"}
+            </Text>
+          </View>
+
+          <View className="flex-1">
+            <Text className="text-2xl font-bold text-[#404040]">{name}</Text>
+            <View className="flex flex-row items-center gap-2">
+              <View className="w-2 h-2 rounded-full bg-[#1fb141]"></View>
+              <Text className="text-sm text-gray-500">Online</Text>
+            </View>
+          </View>
+        </View>
+        {/* Chat Messages */}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item, index) => `message-${index}`}
+          renderItem={renderMessage}
+          inverted={false}
+          className="flex-1 w-full mb-20 mt-5 px-5"
+        />
+        {mediaFiles.length > 0 && (
+          <View className="flex absolute bottom-20 flex-row flex-wrap gap-2 px-5 mb-2">
+            {mediaFiles.map((file, index) => (
+              <Image
+                key={index}
+                source={{ uri: file.uri }}
+                style={{ width: 60, height: 60, borderRadius: 8 }}
+              />
+            ))}
+          </View>
+        )}
+        <View className="absolute bottom-4 w-full px-4">
+          <View className="flex-row items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md border border-gray-200">
+            {/* Input field */}
+            <TextInput
+              value={messageContent}
+              onChangeText={setMessageContent}
+              placeholder="Enter your message..."
+              className="flex-1 h-10 px-4 text-base"
+              placeholderTextColor="#888"
+            />
+
+            {/* Upload image button */}
             <TouchableOpacity
-              onPress={() => router.back()}
-              className="flex-row items-start"
+              onPress={pickImage}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100"
             >
               <ImageCustom
-                width={25}
-                height={25}
-                source="https://img.icons8.com/?size=100&id=20i9yZTsnnmg&format=png&color=000000"
+                width={20}
+                height={20}
+                color="gray"
+                source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
               />
             </TouchableOpacity>
-            <View className="w-[60px] h-[60px] bg-[#fbdada] rounded-full flex justify-center items-center">
-              <Text className="font-bold text-[#EB4747] text-xl">
-                {typeof name === "string" ? name.charAt(0).toUpperCase() : "A"}
-              </Text>
-            </View>
 
-            <View className="flex-1">
-              <Text className="text-2xl font-bold text-[#404040]">{name}</Text>
-              <View className="flex flex-row items-center gap-2">
-                <View className="w-2 h-2 rounded-full bg-[#1fb141]"></View>
-                <Text className="text-sm text-gray-500">Online</Text>
-              </View>
-            </View>
-          </View>
-          {/* Chat Messages */}
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            keyExtractor={(item, index) => `message-${index}`}
-            renderItem={renderMessage}
-            inverted={false}
-            className="flex-1 w-full mb-20 mt-5 px-5"
-          />
-          {mediaFiles.length > 0 && (
-            <View className="flex absolute bottom-20 flex-row flex-wrap gap-2 px-5 mb-2">
-              {mediaFiles.map((file, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: file.uri }}
-                  style={{ width: 60, height: 60, borderRadius: 8 }}
-                />
-              ))}
-            </View>
-          )}
-          <View className="absolute bottom-4 w-full px-4">
-            <View className="flex-row items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md border border-gray-200">
-              {/* Input field */}
-              <TextInput
-                value={messageContent}
-                onChangeText={setMessageContent}
-                placeholder="Enter your message..."
-                className="flex-1 h-10 px-4 text-base"
-                placeholderTextColor="#888"
+            {/* Send message button */}
+            <TouchableOpacity
+              onPress={handleSendMessage}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-[#fbdada]"
+            >
+              <ImageCustom
+                width={20}
+                height={20}
+                color="#EB4747"
+                source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
               />
-
-              {/* Upload image button */}
-              <TouchableOpacity
-                onPress={pickImage}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100"
-              >
-                <ImageCustom
-                  width={20}
-                  height={20}
-                  color="gray"
-                  source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
-                />
-              </TouchableOpacity>
-
-              {/* Send message button */}
-              <TouchableOpacity
-                onPress={handleSendMessage}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-[#fbdada]"
-              >
-                <ImageCustom
-                  width={20}
-                  height={20}
-                  color="#EB4747"
-                  source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
-                />
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </GestureHandlerRootView>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 export default ChatBox;

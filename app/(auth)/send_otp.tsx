@@ -5,6 +5,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  SafeAreaView,
+  Keyboard,
 } from "react-native";
 import PinInput from "../../components/Pin/PinInput";
 import CustomButton from "../../components/Button/CustomButton";
@@ -19,6 +21,7 @@ import Toast from "react-native-toast-message";
 import Input from "../../components/Input/Input"; // ✅ Import Input component
 import React from "react";
 import { authen } from "../../services/authentication";
+import { TouchableWithoutFeedback } from "react-native";
 
 const send_otp = () => {
   const [otp, setOtp] = useState("");
@@ -148,84 +151,92 @@ const send_otp = () => {
     }
   };
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-white"
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-    >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="flex flex-col bg-white w-full min-h-full items-center py-2 gap-5">
-          <View className="flex flex-col gap-3 w-full items-center">
-            <Logo />
-            <Text className="font-bold text-[25px] text-[#404040]">
-              {type === "register_email"
-                ? "Verify Account"
-                : type === "register_phone"
-                ? "Verify Phone Number"
-                : "Reset Password"}
-            </Text>
-            <Text className="text-[#9A9898] text-[14px] text-center w-[80%]">
-              {type === "register_email"
-                ? "Enter the OTP code to complete registration."
-                : type === "register_phone"
-                ? "Enter the OTP code to verify your phone number."
-                : "Enter the OTP code and your new password to reset your password."}
-            </Text>
-          </View>
-          <View className="w-full">
-            <PinInput onComplete={(pin) => setOtp(pin)} />
-          </View>
-          {/* ✅ Thêm input password cho forgot_password */}
-          {type === "forgot_password" && (
-            <View className="flex flex-col w-full justify-center items-center gap-4">
-              <View className="flex flex-col w-full justify-center items-center gap-2">
-                <Text className="text-start justify-start w-[90%] font-bold">
-                  New Password
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <SafeAreaView className="flex-1 bg-white">
+        <KeyboardAvoidingView
+          className="flex-1 bg-white"
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="flex flex-col bg-white w-full min-h-full items-center py-2 gap-5">
+              <View className="flex flex-col gap-3 w-full items-center">
+                <Logo />
+                <Text className="font-bold text-[25px] text-[#404040]">
+                  {type === "register_email"
+                    ? "Verify Account"
+                    : type === "register_phone"
+                    ? "Verify Phone Number"
+                    : "Reset Password"}
                 </Text>
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChangeText={(text) => {
-                    setNewPassword(text);
-                    if (passwordError) setPasswordError(false);
-                  }}
-                  keyboardType="default"
-                  placeholder="Enter new password"
-                  error={passwordError}
+                <Text className="text-[#9A9898] text-[14px] text-center w-[80%]">
+                  {type === "register_email"
+                    ? "Enter the OTP code to complete registration."
+                    : type === "register_phone"
+                    ? "Enter the OTP code to verify your phone number."
+                    : "Enter the OTP code and your new password to reset your password."}
+                </Text>
+              </View>
+              <View className="w-full">
+                <PinInput onComplete={(pin) => setOtp(pin)} />
+              </View>
+              {/* ✅ Thêm input password cho forgot_password */}
+              {type === "forgot_password" && (
+                <View className="flex flex-col w-full justify-center items-center gap-4">
+                  <View className="flex flex-col w-full justify-center items-center gap-2">
+                    <Text className="text-start justify-start w-[90%] font-bold">
+                      New Password
+                    </Text>
+                    <Input
+                      type="password"
+                      value={newPassword}
+                      onChangeText={(text) => {
+                        setNewPassword(text);
+                        if (passwordError) setPasswordError(false);
+                      }}
+                      keyboardType="default"
+                      placeholder="Enter new password"
+                      error={passwordError}
+                    />
+                  </View>
+                </View>
+              )}
+              <View className="w-[90%] pt-5 justify-center items-center gap-8">
+                <CustomButton
+                  onPress={handleCompleteRegister}
+                  primary={true}
+                  title={
+                    type === "forgot_password" ? "Reset Password" : "Continue"
+                  }
+                  isLoading={loading}
                 />
+
+                <OTPCountdown />
+
+                <Pressable
+                  className="flex gap-2 flex-row"
+                  onPress={() => router.replace("/login")}
+                >
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=357&format=png"
+                    width={20}
+                    height={20}
+                    color="#404040"
+                  />
+                  <Text className="text-[#404040] text-[12px]">
+                    Back to login
+                  </Text>
+                </Pressable>
               </View>
             </View>
-          )}
-          <View className="w-[90%] pt-5 justify-center items-center gap-8">
-            <CustomButton
-              onPress={handleCompleteRegister}
-              primary={true}
-              title={type === "forgot_password" ? "Reset Password" : "Continue"}
-              isLoading={loading}
-            />
-
-            <OTPCountdown />
-
-            <Pressable
-              className="flex gap-2 flex-row"
-              onPress={() => router.replace("/login")}
-            >
-              <ImageCustom
-                source="https://img.icons8.com/?size=100&id=357&format=png"
-                width={20}
-                height={20}
-                color="#404040"
-              />
-              <Text className="text-[#404040] text-[12px]">Back to login</Text>
-            </Pressable>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 

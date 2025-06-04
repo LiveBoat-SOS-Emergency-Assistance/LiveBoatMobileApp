@@ -36,8 +36,6 @@ interface Donation {
 
 export default function Donation() {
   const { profile } = useAuth();
-  const screenWidth = Dimensions.get("window").width;
-  const cardWidth = screenWidth / 3;
   const [listCharity, setListCharity] = useState<any[]>([]);
   const [listDonation, setListDonation] = useState<Donation[]>([]);
   const [searchPhone, setSearchPhone] = useState("");
@@ -48,13 +46,16 @@ export default function Donation() {
   const [hasMoreData, setHasMoreData] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ITEMS_PER_PAGE = 10; // Add debounced search phone with longer delay to prevent premature searching
+  const ITEMS_PER_PAGE = 10;
   const debouncedSearchPhone = useDebounce(searchPhone, 1000);
+  const [totalDonation, setTotalDonation] = useState(0);
 
   const fetchCharity = async () => {
     try {
       const result = await charityServices.get_all_charity(3, 0, "ACTIVE");
+      const resultTotal = await charityServices.get_total_charity_count();
       setListCharity(result.data || []);
+      setTotalDonation(resultTotal.data?.total_donation || 0);
     } catch (error: any) {
       console.log("Fetch charity error:", error);
       setError("Failed to load charities. Please try again.");
@@ -318,7 +319,7 @@ export default function Donation() {
                   Total donations:
                 </Text>
                 <Text className="text-[#2D5B75] font-bold text-[15px]">
-                  +5.752.250 VNĐ
+                  +{Number(totalDonation).toLocaleString("vi-VN")} VNĐ
                 </Text>
               </View>
               <View className="flex flex-row items-center gap-2">

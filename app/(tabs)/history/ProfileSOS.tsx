@@ -127,7 +127,14 @@ const ProfileSOS = () => {
           text2: "Thank you for responding to the SOS. Stay safe!",
         });
         await AsyncStorage.setItem("SOSID", id.toString());
-        router.replace("/(tabs)/home");
+
+        setCheckHelping(!checkHelping);
+        router.push({
+          pathname: "/(tabs)/history/DetailSOS",
+          params: {
+            userProfile: JSON.stringify(userProfile),
+          },
+        });
       }
     } catch (error: any) {
       Toast.show({
@@ -155,7 +162,7 @@ const ProfileSOS = () => {
         text1: "SOS Cancelled",
         text2: "You have canceled your request for emergency assistance.",
       });
-      setCheckHelping(false);
+      setCheckHelping(!checkHelping);
     } catch (error: any) {
       console.log("Error", error.response?.data);
       Toast.show({
@@ -226,6 +233,8 @@ const ProfileSOS = () => {
               params: {
                 profile: JSON.stringify(profile),
                 userProfile: JSON.stringify(userProfile),
+                sosId: id,
+                groupId: groupId,
               },
             })
           }
@@ -270,7 +279,7 @@ const ProfileSOS = () => {
                   </Text>
                 </TouchableOpacity>
               )}
-              {checkHelping && currentMyRescuer && (
+              {checkHelping && (
                 <TouchableOpacity
                   onPress={handleCancelSOS}
                   className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"
@@ -280,7 +289,7 @@ const ProfileSOS = () => {
                   </Text>
                 </TouchableOpacity>
               )}
-              {!checkHelping && !currentMyRescuer && (
+              {!checkHelping && (
                 <TouchableOpacity
                   onPress={handleGiveSupport}
                   className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"
