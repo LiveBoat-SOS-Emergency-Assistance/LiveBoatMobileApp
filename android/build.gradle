@@ -51,7 +51,7 @@ allprojects {
             }
             credentials {
                 username = "mapbox"
-                password = project.hasProperty('MAPBOX_DOWNLOADS_TOKEN') ? project.getProperty('MAPBOX_DOWNLOADS_TOKEN') : ""
+                password = System.getenv("MAPBOX_DOWNLOADS_TOKEN") ?: (project.hasProperty('MAPBOX_DOWNLOADS_TOKEN') ? project.getProperty('MAPBOX_DOWNLOADS_TOKEN') : "")
             }
         }
     }

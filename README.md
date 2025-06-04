@@ -127,6 +127,30 @@ You must have Node.js, Java JDK, Android Studio with SDK, and environment variab
 6. **🔐 [Optional] Configure Release Keystore**  
     This step is to sign the APK for release — the APK will become a signed APK and can be uploaded to Google Play (CHPlay)
 
+Some errors may need taken cares of
+1. ``npx react-native codegen`` in root folder before ``gradlew assembleRelease`` to avoid cmake errors
+    if cmake error happen:
+    ```
+        cd android
+        ./gradlew clean
+        cd ..
+        rm -rf android/app/build
+        rm -rf node_modules
+        rm -rf android/app/.cxx
+        rm -rf android/.gradle
+        rm -rf android/build
+        rm -rf android/.cxx
+        rm -rf package-lock.json yarn.lock
+    ```
+    then open cmd with admin perm
+    ```
+        npm i
+        npx react-native codegen
+        gradlew clean
+        gradlew assembleRelease
+    ```
+2. make sure all images are in its true extension
+3. 
 ---
 
 ## 📄 License
