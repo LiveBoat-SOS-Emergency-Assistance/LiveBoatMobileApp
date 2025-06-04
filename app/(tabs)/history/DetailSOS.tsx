@@ -1,5 +1,6 @@
 import {
   Alert,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -347,69 +348,96 @@ const DetailSOS = () => {
         <Text className="font-bold text-white ">Traffic Accident</Text>
       </View>
 
-      <TouchableOpacity
-        onPress={showCancelConfirmation}
-        className="w-[40px] h-[40px] z-50 absolute top-12 right-5 bg-[#EB4747] rounded-full flex justify-center items-center"
-      >
-        <ImageCustom
-          source="https://img.icons8.com/?size=100&id=82826&format=png&color=000000"
-          width={18}
-          height={18}
-          color="white"
-        ></ImageCustom>
-      </TouchableOpacity>
+      <View className="absolute top-12 right-5 flex flex-col gap-3">
+        {checkSOS && (
+          <TouchableOpacity
+            onPress={showCancelConfirmation}
+            className="w-[40px] h-[40px] z-50  bg-[#EB4747] rounded-full flex justify-center items-center"
+          >
+            <ImageCustom
+              source="https://img.icons8.com/?size=100&id=82826&format=png&color=000000"
+              width={18}
+              height={18}
+              color="white"
+            ></ImageCustom>
+          </TouchableOpacity>
+        )}
 
-      <View
-        className={`absolute right-5 ${
-          isExpanded ? "w-[50px] h-[180px]" : "w-[30px] h-[135px]"
-        } flex flex-col items-center gap-1 py-3 top-[100px] bg-[#FFDEDE] rounded-[90px]`}
-        style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-          elevation: 8,
-        }}
-      >
-        <Pressable
-          onPress={() => setIsExpanded(!isExpanded)}
-          className={`${
-            isExpanded ? "w-[40] h-[40]" : "w-[24px] h-[24px]"
-          } rounded-full bg-[#EB4747] flex justify-center items-center gap-2 flex-col`}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => handleControl()}
+          className="w-[40px] h-[40px] bg-white rounded-full flex justify-center items-center shadow "
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 3,
+          }}
         >
-          <ImageCustom
-            source="https://img.icons8.com/?size=100&id=pvGJuQWtxCiV&format=png&color=000000"
-            color="white"
-            width={isExpanded ? 20 : 15}
-            height={isExpanded ? 20 : 15}
-          ></ImageCustom>
-        </Pressable>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="flex-col space-y-2 gap-1">
-            {Object.values(otherUserMarkers)
-              .filter((rescuer) => rescuer.userType === "HELPER")
-              .map((rescuer, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => {
-                    handleControl({
-                      latitude: Number(rescuer?.latitude),
-                      longitude: Number(rescuer.longitude),
-                    });
-                  }}
-                >
-                  <Avatar
-                    source={
-                      rescuer?.avatarUrl || "https://via.placeholder.com/150"
-                    }
-                    width={isExpanded ? 40 : 24}
-                    height={isExpanded ? 40 : 24}
-                  />
-                </TouchableOpacity>
-              ))}
-          </View>
-        </ScrollView>
+          <Image
+            source={{
+              uri: "https://img.icons8.com/?size=100&id=113259&format=png&color=000000",
+            }}
+            style={{
+              width: 24,
+              height: 24,
+              resizeMode: "contain",
+              tintColor: "#EB4747",
+            }}
+          />
+        </TouchableOpacity>
+        <View
+          className={` ${
+            isExpanded ? "w-[50px] h-[180px]" : "w-[30px] h-[135px]"
+          } flex flex-col items-center gap-1 py-3  bg-[#FFDEDE] rounded-[90px]`}
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 8,
+          }}
+        >
+          <Pressable
+            onPress={() => setIsExpanded(!isExpanded)}
+            className={`${
+              isExpanded ? "w-[40] h-[40]" : "w-[24px] h-[24px]"
+            } rounded-full bg-[#EB4747] flex justify-center items-center gap-2 flex-col`}
+          >
+            <ImageCustom
+              source="https://img.icons8.com/?size=100&id=pvGJuQWtxCiV&format=png&color=000000"
+              color="white"
+              width={isExpanded ? 20 : 15}
+              height={isExpanded ? 20 : 15}
+            ></ImageCustom>
+          </Pressable>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View className="flex-col space-y-2 gap-1">
+              {Object.values(otherUserMarkers)
+                .filter((rescuer) => rescuer.userType === "HELPER")
+                .map((rescuer, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      handleControl({
+                        latitude: Number(rescuer?.latitude),
+                        longitude: Number(rescuer.longitude),
+                      });
+                    }}
+                  >
+                    <Avatar
+                      source={
+                        rescuer?.avatarUrl || "https://via.placeholder.com/150"
+                      }
+                      width={isExpanded ? 40 : 24}
+                      height={isExpanded ? 40 : 24}
+                    />
+                  </TouchableOpacity>
+                ))}
+            </View>
+          </ScrollView>
+        </View>
       </View>
+
       <View
         style={{
           position: "absolute",

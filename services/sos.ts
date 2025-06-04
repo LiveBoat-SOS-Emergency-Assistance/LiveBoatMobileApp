@@ -54,15 +54,48 @@ export class sosService {
   }
   static async getSOSByStatus(
     status: string,
-    limit: number = 10,
-    offset: number = 0
+    // limit: number = 10,
+    // offset: number = 0,
+    filters?: {
+      no_rescuers?: boolean;
+      has_rescuers?: boolean;
+      near_me?: boolean;
+      latitude?: number;
+      longitude?: number;
+      search?: string;
+    }
   ) {
     try {
-      const result = await axiosPrivate.get(`/sos/all?status=${status}`, {
-        params: {
-          limit: limit,
-          offset: offset,
-        },
+      const params: any = {
+        status: status,
+        // limit: limit,
+        // offset: offset,
+      };
+
+      // Add filter parameters if provided
+      if (filters) {
+        if (filters.no_rescuers !== undefined) {
+          params.no_rescuers = filters.no_rescuers;
+        }
+        if (filters.has_rescuers !== undefined) {
+          params.has_rescuers = filters.has_rescuers;
+        }
+        if (filters.near_me !== undefined) {
+          params.near_me = filters.near_me;
+        }
+        if (filters.latitude !== undefined) {
+          params.latitude = filters.latitude;
+        }
+        if (filters.longitude !== undefined) {
+          params.longitude = filters.longitude;
+        }
+        if (filters.search && filters.search.trim()) {
+          params.search = filters.search.trim();
+        }
+      }
+      console.log("params", params);
+      const result = await axiosPrivate.get(`/sos/all`, {
+        params: params,
         headers: {
           "Content-Type": "application/json",
         },

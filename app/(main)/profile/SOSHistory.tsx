@@ -15,6 +15,7 @@ import { sosService } from "../../../services/sos";
 import MapboxGL from "@rnmapbox/maps";
 import UserLocation from "../../../components/Map/UserLocation";
 import Avatar from "../../../components/Image/Avatar";
+import { rescuerServices } from "../../../services/rescuer";
 
 interface SOSRecord {
   id: string;
@@ -30,13 +31,37 @@ interface SOSRecord {
   duration?: string;
   description?: string;
 }
-
+interface RescuerData {
+  id: number;
+  user_id: number;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  User: {
+    phone: string;
+    id: number;
+    name: string;
+    email: string;
+    avatar_url?: string;
+  };
+}
 const SOSHistory = () => {
   const [sosRecords, setSosRecords] = useState<SOSRecord[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [refreshing, setRefreshing] = useState(false);
-  const [mapModal, setMapModal] = useState({ visible: false, lat: 0, lng: 0 });
+  const [mapModal, setMapModal] = useState({
+    id: 0,
+    visible: false,
+    lat: 0,
+    lng: 0,
+  });
   const { profile } = useAuth();
+  const [rescuers, setRescuers] = useState<RescuerData[]>([]);
+  const [loadingRescuers, setLoadingRescuers] = useState(false);
+
   const fetchSOSHistory = async () => {
     try {
       const result = await sosService.getSOSByUserId(Number(profile?.id));
@@ -85,7 +110,41 @@ const SOSHistory = () => {
     await loadSOSHistory();
     setRefreshing(false);
   };
+  const getRescuerBySOSId = async (sosId: number) => {
+    try {
+      setLoadingRescuers(true);
+      console.log("Fetching rescuers for SOS ID:", sosId);
+      const statuses = ["ENROUTE", "CANCELED", "ARRIVED"];
+      let allRescuers: RescuerData[] = [];
 
+      for (const status of statuses) {
+        try {
+          const result = await rescuerServices.getRescuerBySOSId(sosId, status);
+          if (result?.data && Array.isArray(result.data)) {
+            allRescuers = [...allRescuers, ...result.data];
+          }
+        } catch (statusError) {
+          console.log(`No rescuers found for status: ${status}`);
+        }
+      }
+
+      // ✅ Remove duplicates based on user_id
+      const uniqueRescuers = allRescuers.filter(
+        (rescuer, index, self) =>
+          index === self.findIndex((r) => r.user_id === rescuer.user_id)
+      );
+
+      console.log("Found rescuers:", uniqueRescuers);
+      setRescuers(uniqueRescuers);
+      return uniqueRescuers;
+    } catch (error) {
+      console.error("Error fetching rescuers:", error);
+      setRescuers([]);
+      return [];
+    } finally {
+      setLoadingRescuers(false);
+    }
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ongoing":
@@ -160,6 +219,30 @@ const SOSHistory = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+  const showMapWithRescuers = async (record: SOSRecord) => {
+    setMapModal({
+      id: Number(record.id),
+      visible: true,
+      lat: record.coordinates.latitude,
+      lng: record.coordinates.longitude,
+    });
+
+    await getRescuerBySOSId(Number(record.id));
+  };
+  const closeMapModal = () => {
+    setMapModal({ ...mapModal, visible: false });
+    setRescuers([]);
+  };
+  const getRescuerMarkerColor = (status: string) => {
+    switch (status?.toUpperCase()) {
+      case "ENROUTE":
+        return "#FFA500";
+      case "ARRIVED":
+        return "#4169E1";
+      default:
+        return "#D3D3D3";
+    }
   };
 
   return (
@@ -354,13 +437,7 @@ const SOSHistory = () => {
                 <View className="bg-gray-50 px-5 py-3 flex-row space-x-3 gap-2">
                   <TouchableOpacity
                     className="flex-1 bg-[#80C4E9] border border-gray-200 py-2 rounded-lg"
-                    onPress={() =>
-                      setMapModal({
-                        visible: true,
-                        lat: record.coordinates.latitude,
-                        lng: record.coordinates.longitude,
-                      })
-                    }
+                    onPress={() => showMapWithRescuers(record)}
                   >
                     <Text className="text-white text-center font-medium text-sm">
                       Show on Map
@@ -378,7 +455,7 @@ const SOSHistory = () => {
         visible={mapModal.visible}
         animationType="slide"
         transparent
-        onRequestClose={() => setMapModal({ ...mapModal, visible: false })}
+        onRequestClose={closeMapModal}
       >
         <View
           style={{
@@ -425,7 +502,100 @@ const SOSHistory = () => {
                     }}
                   ></View>
                 </MapboxGL.PointAnnotation>
+                {rescuers.map((rescuer, index) => (
+                  <MapboxGL.PointAnnotation
+                    key={`rescuer-${rescuer.id}-${index}`}
+                    id={`rescuer-marker-${rescuer.id}-${index}`}
+                    coordinate={[rescuer.longitude, rescuer.latitude]}
+                  >
+                    <View
+                      style={{
+                        width: 45,
+                        height: 45,
+                        backgroundColor: getRescuerMarkerColor(rescuer.status),
+                        borderRadius: 22.5,
+                        borderWidth: 3,
+                        borderColor: "#fff",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 3,
+                        elevation: 4,
+                      }}
+                    >
+                      {rescuer.User?.avatar_url ? (
+                        <Avatar
+                          source={rescuer.User.avatar_url}
+                          width={35}
+                          height={35}
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 16, color: "#fff" }}>👤</Text>
+                      )}
+                    </View>
+                  </MapboxGL.PointAnnotation>
+                ))}
               </MapboxGL.MapView>
+              {rescuers.length > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 20,
+                    left: 20,
+                    right: 20,
+                    backgroundColor: "rgba(255,255,255,0.95)",
+                    borderRadius: 12,
+                    padding: 12,
+                    maxHeight: 150,
+                  }}
+                >
+                  <Text style={{ fontWeight: "bold", marginBottom: 8 }}>
+                    Rescuers ({rescuers.length})
+                  </Text>
+                  <ScrollView showsVerticalScrollIndicator={false}>
+                    {rescuers.map((rescuer, index) => (
+                      <View
+                        key={`rescuer-info-${rescuer.id}-${index}`}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingVertical: 4,
+                          marginBottom: 4,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 12,
+                            height: 12,
+                            backgroundColor: getRescuerMarkerColor(
+                              rescuer.status
+                            ),
+                            borderRadius: 6,
+                            marginRight: 8,
+                          }}
+                        />
+                        <Text style={{ flex: 1, fontSize: 14 }}>
+                          {rescuer.User?.phone || `Rescuer ${rescuer.user_id}`}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#666",
+                            backgroundColor: "#f0f0f0",
+                            paddingHorizontal: 6,
+                            paddingVertical: 2,
+                            borderRadius: 8,
+                          }}
+                        >
+                          {rescuer.status}
+                        </Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
             </View>
             <TouchableOpacity
               onPress={() => setMapModal({ ...mapModal, visible: false })}

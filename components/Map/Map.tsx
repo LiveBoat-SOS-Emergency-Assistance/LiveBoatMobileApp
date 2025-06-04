@@ -223,7 +223,7 @@ const Map = ({
               />
             )}
             {/* When I support others this is the user's location */}
-            {/* {sosLocation && checkSOS && (
+            {sosLocation && checkSOS && !otherUserMarkers && (
               <RippleMarker
                 key={sosLocation.SOS.user_id}
                 id="ripple-marker"
@@ -246,7 +246,7 @@ const Map = ({
                   })
                 }
               />
-            )} */}
+            )}
             {route && checkSOS && (
               <MapboxGL.ShapeSource id="routeSource" shape={route}>
                 <MapboxGL.LineLayer
