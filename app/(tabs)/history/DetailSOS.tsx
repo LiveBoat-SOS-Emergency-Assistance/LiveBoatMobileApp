@@ -203,10 +203,9 @@ const DetailSOS = () => {
     console.log("Rescuer mode active");
 
     socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
-      // console.log("The Sender location:", data);
+      console.log("The Sender ONLINE:");
       displayOrUpdateMarkers(data);
       setCheckRoute(true);
-      
     });
 
     socket.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {

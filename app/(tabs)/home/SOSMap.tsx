@@ -219,7 +219,7 @@ export default function SOSMap() {
                   accuracy: position.coords.accuracy ?? 0,
                   status: "ONGOING",
                 });
-                console.log("update");
+                console.log("SOSMAP 222: update location sos sender ");
               } catch (err) {
                 console.log("Error updating SOS location:", err);
               }
@@ -249,7 +249,7 @@ export default function SOSMap() {
                 accuracy: location.accuracy ?? 0,
                 status: "ONGOING",
               });
-              console.log("update2");
+              console.log("SOSMAP 252: update location sos sender ");
             } catch (err) {
               console.log("Error updating SOS location (interval):", err);
             }
