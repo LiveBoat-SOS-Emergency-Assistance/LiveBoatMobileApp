@@ -133,6 +133,8 @@ const ProfileSOS = () => {
           pathname: "/(tabs)/history/DetailSOS",
           params: {
             userProfile: JSON.stringify(userProfile),
+            sosId: id,
+            groupId: groupId,
           },
         });
       }
@@ -285,7 +287,7 @@ const ProfileSOS = () => {
                   className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"
                 >
                   <Text className="text-[11px] text-white font-bold">
-                    No Help
+                    Cancel Help
                   </Text>
                 </TouchableOpacity>
               )}

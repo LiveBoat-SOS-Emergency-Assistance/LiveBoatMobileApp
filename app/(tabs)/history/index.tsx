@@ -68,7 +68,7 @@ export default function History() {
     filters: string[] = []
   ) => {
     if (isLoading || !hasMore) return;
-
+    console.log("Loading SOS for page:", pageNum, "with search:", filters);
     setIsLoading(true);
     try {
       const offset = (pageNum - 1) * itemsPerPage;
@@ -165,6 +165,9 @@ export default function History() {
     if (!needsLocation || (needsLocation && userLocation)) {
       console.log("Loading SOS with location:", userLocation);
       console.log("Selected filters:", selectedFilters);
+      setPage(1);
+      setHasMore(true);
+      setListSOS([]);
       loadSOS(1, searchText, selectedFilters);
     }
   }, [userLocation, searchText, selectedFilters]);
@@ -351,7 +354,10 @@ export default function History() {
               <MultiSelectDropdown
                 options={filterOptions}
                 selectedValues={selectedFilters}
-                onSelectionChange={setSelectedFilters}
+                onSelectionChange={(newFilters) => {
+                  console.log("New filters selected:", newFilters);
+                  setSelectedFilters(newFilters);
+                }}
                 placeholder="Select filters"
               />
             </View>
