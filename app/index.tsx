@@ -7,6 +7,7 @@ import {
   Pressable,
   LogBox,
   BackHandler,
+  Dimensions,
 } from "react-native";
 import { FONTS } from "../constants/theme";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
@@ -69,6 +70,8 @@ export default function home() {
 
     loading();
   }, []);
+  const screenHeight = Dimensions.get("window").height;
+
   return (
     <>
       <StatusBar style="dark"></StatusBar>
@@ -80,9 +83,12 @@ export default function home() {
         <View className="absolute top-10 flex flex-col justify-center items-center gap-3">
           <Image
             source={require("../assets/images/imageHomepage.png")}
-            style={{ width: 320, height: 350 }}
-            className="object-cover "
-          ></Image>
+            style={{
+              width: "80%",
+              height: screenHeight / 3,
+              resizeMode: "cover",
+            }}
+          />
           <View
             style={tw.style(
               "w-[80px] h-[80px] bg-[#ed5a5a] rounded-[90px] flex justify-center items-center"
