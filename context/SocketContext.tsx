@@ -17,6 +17,7 @@ interface Marker {
   accuracy: number;
   userType: "SENDER" | "HELPER" | "NORMAL";
   avatarUrl: string;
+  isOnline?: boolean;
 }
 
 interface SocketContextType {
@@ -39,7 +40,8 @@ interface SocketContextType {
   displayOfflineMarker: (
     userId: number,
     longitude: number,
-    latitude: number
+    latitude: number,
+    isOnline?: boolean
   ) => void;
   sendMessage: (
     senderId: number,
@@ -142,6 +144,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
           accuracy: user.accuracy,
           userType: user.userType,
           avatarUrl: user.avatarUrl,
+          isOnline: true,
         };
       });
       return updatedMarkers;
@@ -186,7 +189,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const displayOfflineMarker = (
     userId: number,
     longitude: number,
-    latitude: number
+    latitude: number,
+    isOnline: boolean = false
   ) => {
     setOtherUserMarkers((prev) => ({
       ...prev,
@@ -197,6 +201,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         longitude: longitude,
         userType: "SENDER",
         avatarUrl: prev[userId]?.avatarUrl || "https://i.pravatar.cc/150",
+        isOnline: isOnline,
       },
     }));
   };

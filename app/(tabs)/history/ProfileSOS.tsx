@@ -6,12 +6,17 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Map from "../../../components/Map/Map";
 import ImageCustom from "../../../components/Image/Image";
 import { ScrollView } from "react-native";
 import Information from "../../../components/Information/Information";
-import { router, useLocalSearchParams, useRouter } from "expo-router";
+import {
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
 import { sosService } from "../../../services/sos";
 import { rescuerServices } from "../../../services/rescuer";
 import CustomButton from "../../../components/Button/CustomButton";
@@ -74,25 +79,32 @@ const ProfileSOS = () => {
   const mediaSoupSocket = getMediaSoupSocket();
   const [loading, setLoading] = useState(false);
   const [groupId, setGroupId] = useState<number | null>(null);
-  useEffect(() => {
-    const getMyRescuerCurrent = async () => {
-      try {
-        const result = await rescuerServices.getSOSCurrent();
-        if (result && result.data && result.data.sos_id === id) {
-          setCheckHelping(true);
-          setCurrentMyRescuer(result.data);
-        } else {
-          setCheckHelping(false);
-          setCurrentMyRescuer(null);
-        }
-      } catch (error: any) {
-        console.log("Error", error);
+  const getMyRescuerCurrent = async () => {
+    try {
+      const result = await rescuerServices.getSOSCurrent();
+      if (result && result.data && result.data.sos_id === id) {
+        setCheckHelping(true);
+        setCurrentMyRescuer(result.data);
+      } else {
         setCheckHelping(false);
         setCurrentMyRescuer(null);
       }
-    };
-    getMyRescuerCurrent();
-  }, [id]);
+    } catch (error: any) {
+      console.log("Error", error);
+      setCheckHelping(false);
+      setCurrentMyRescuer(null);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log("📱 ProfileSOS screen focused - refreshing helping status");
+      if (id) {
+        getMyRescuerCurrent();
+      }
+    }, [id])
+  );
+
   useEffect(() => {
     const getProfileSOS = async () => {
       const result = await sosService.getSOSById(Number(id));

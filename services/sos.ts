@@ -15,8 +15,9 @@ export class sosService {
     }
   }
   static async sos_edit(sosId: string, data: any) {
+    const id = Number(sosId);
     try {
-      const result = await axiosPrivate.put(`/sos/update/${sosId}`, data, {
+      const result = await axiosPrivate.put(`/sos/update/${id}`, data, {
         headers: {
           "Content-Type": "application/json",
         },

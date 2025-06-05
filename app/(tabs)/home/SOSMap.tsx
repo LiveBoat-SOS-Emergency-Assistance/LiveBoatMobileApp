@@ -83,15 +83,29 @@ export default function SOSMap() {
   const [listRescuer, setListRescuer] = useState<any[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [sosId, setSosId] = useState<string | null>(null);
+  const sosIdRef = useRef<string | null>(null);
+
   const [groupId, setGroupId] = useState<string | null>(null);
   const { profile } = useAuth();
   const chatSocket = getChatSocket();
 
+  // useEffect(() => {
+  //   const getSOSId = async () => {
+  //     try {
+  //       const sosId = await AsyncStorage.getItem("sosId");
+  //       setSosId(sosId);
+  //     } catch (error) {
+  //       console.log("Error when get SOS ID", error);
+  //     }
+  //   };
+  //   getSOSId();
+  // }, []);
   useEffect(() => {
     const getSOSId = async () => {
       try {
-        const sosId = await AsyncStorage.getItem("sosId");
-        setSosId(sosId);
+        const id = await AsyncStorage.getItem("sosId");
+        setSosId(id);
+        sosIdRef.current = id;
       } catch (error) {
         console.log("Error when get SOS ID", error);
       }
@@ -166,9 +180,10 @@ export default function SOSMap() {
   useFocusEffect(
     useCallback(() => {
       registerCommonSocketEvents();
+      console.log("🔄 useFocusEffect triggered with sosId:", sosId);
 
       socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
-        console.log("The Helper locations:", data);
+        // console.log("The Helper locations:", data);
         if (data) {
           Toast.show({
             type: "info",
@@ -249,13 +264,12 @@ export default function SOSMap() {
                 accuracy: location.accuracy ?? 0,
                 status: "ONGOING",
               });
-              console.log("SOSMAP 252: update location sos sender ");
             } catch (err) {
               console.log("Error updating SOS location (interval):", err);
             }
           }
         }
-      }, 5000);
+      }, 10000);
       return () => {
         clearInterval(timeout1);
         clearTimeout(timeout2);
@@ -270,19 +284,19 @@ export default function SOSMap() {
           SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
         );
       };
-    }, [])
+    }, [sosId])
   );
-  useEffect(() => {
-    const getSOSId = async () => {
-      try {
-        const sosId = await AsyncStorage.getItem("sosId");
-        setSosId(sosId);
-      } catch (error) {
-        console.log("Error when get SOS ID", error);
-      }
-    };
-    getSOSId();
-  }, []);
+  // useEffect(() => {
+  //   const getSOSId = async () => {
+  //     try {
+  //       const sosId = await AsyncStorage.getItem("sosId");
+  //       setSosId(sosId);
+  //     } catch (error) {
+  //       console.log("Error when get SOS ID", error);
+  //     }
+  //   };
+  //   getSOSId();
+  // }, []);
   useEffect(() => {
     const unsubscribe = navigation.addListener(
       "beforeRemove",
@@ -324,22 +338,6 @@ export default function SOSMap() {
     }
   };
 
-  // useEffect(() => {
-  //   const getListRescuer = async () => {
-  //     try {
-  //       const sosId = await AsyncStorage.getItem("sosId");
-  //       console.log("SOS ID", sosId);
-  //       const result = await rescuerServices.getRescuerBySOSId(
-  //         Number(sosId),
-  //         "ENROUTE"
-  //       );
-  //       setListRescuer(result.data);
-  //     } catch (error: any) {
-  //       console.log("Error when get List Rescuer", error);
-  //     }
-  //   };
-  //   getListRescuer();
-  // }, []);
   const handleResolve = async () => {
     try {
       // setLoading(true);
@@ -527,8 +525,8 @@ export default function SOSMap() {
                     </Text>
                   </View>
                   <ImageCustom
-                    width={20}
-                    height={20}
+                    width={100}
+                    height={100}
                     source={require("../../../assets/images/imageDisable.png")}
                   ></ImageCustom>
                   <View className="flex flex-col gap-4">

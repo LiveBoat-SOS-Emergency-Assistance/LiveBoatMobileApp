@@ -160,87 +160,16 @@ export default function HomeScreen() {
     }
   };
 
-  // useEffect(() => {
-  //   if (!socket.current || !currentSOS) return;
+  useEffect(() => {
+    if (!socket.current || !currentSOS) return;
 
-  //   console.log("Rescuer mode active");
+    console.log("Rescuer mode active");
 
-  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
-  //     // console.log("The Sender location:", data);
-  //     displayOrUpdateMarkers(data);
-  //   });
-
-  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
-  //     console.log("Other helper locations:", data);
-  //     displayOrUpdateMarkers(data);
-  //   });
-
-  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
-  //     console.log("User disconnected:", data.userId);
-  //     console.log("Helping User ID:", helpingUserId);
-  //     if (data.userId == helpingUserId) {
-  //       console.log("Sender disconnected, display offline marker");
-  //       getCurrentSOS();
-  //       displayOfflineMarker(data.userId, SOS?.longitude, SOS?.latitude);
-  //     }
-  //   });
-  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
-  //     if (data.userId == helpingUserId) {
-  //       console.log("Sender finished SOS, complete rescuing");
-  //       Toast.show({
-  //         type: "success",
-  //         text1: "SOS Completed",
-  //         text2: "You have successfully completed the SOS request.",
-  //       });
-  //       setAlertVisible(true);
-  //       setHelpingTheUserId(null);
-  //       setCheckSOS(false);
-  //       setCurrentSOS(null);
-  //     }
-  //   });
-  //   setUserInfo("HELPER");
-
-  //   const timeout1 = setTimeout(() => {
-  //     socket?.current?.emit(
-  //       SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
-  //     );
-  //     console.log("178: helpingUserId:", helpingUserId);
-  //     socket?.current?.emit(SOCKET_EVENTS.TOSERVER_REGISTER_SOS_SENDER, {
-  //       helpingTheUserId: helpingUserId,
-  //     });
-  //     console.log("helpingUserId 181:", helpingUserId);
-  //   }, 1000);
-  //   const timeout3 = setTimeout(async () => {
-  //     const location = await getCurrentLocation();
-  //     if (location) {
-  //       updateLocation(
-  //         location.latitude,
-  //         location.longitude,
-  //         location.accuracy ?? 0
-  //       );
-  //     }
-  //   }, 2000);
-  //   const timeout2 = setTimeout(() => {
-  //     socket?.current?.emit(
-  //       SOCKET_EVENTS.TOSERVER_GET_THE_SENDER_LOCATION,
-  //       (response: any) => {
-  //         console.log("Server responded:", response);
-  //         getCurrentLocation();
-  //         if (response?.status === false && helpingUserId !== null) {
-  //           setHelpingTheUserId(helpingUserId);
-  //           console.log("helpingUserId 200:", helpingUserId);
-  //           displayOfflineMarker(helpingUserId, SOS?.longitude, SOS?.latitude);
-  //         }
-  //       }
-  //     );
-  //   }, 5000);
-
-  //   return () => {
-  //     clearTimeout(timeout1);
-  //     clearTimeout(timeout2);
-  //     clearTimeout(timeout3);
-  //   };
-  // }, [currentSOS]);
+    socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
+      console.log("The Sender location:", data);
+      displayOrUpdateMarkers(data);
+    });
+  }, [currentSOS]);
 
   // Func to zoom to current location
   const handleControl = async () => {
@@ -448,7 +377,9 @@ export default function HomeScreen() {
     }
   };
   useEffect(() => {
-    getMember();
+    if (selectSquad) {
+      getMember();
+    }
   }, [selectSquad]);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

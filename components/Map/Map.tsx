@@ -38,6 +38,7 @@ interface Marker {
     avatar_url?: string;
     phone?: string;
   };
+  isOnline?: boolean;
 }
 
 interface mapProps {
@@ -72,6 +73,7 @@ const Map = ({
   const [selectedRescuer, setSelectedRescuer] = useState<RescuerItem | null>(
     null
   );
+  console.log("76, Map, OtherUser Marker:", otherUserMarkers);
   const [selectUser, setSelectUser] = useState<Marker | null>(null);
   // ✅ THÊM: State cho popup
   const [showPopup, setShowPopup] = useState(false);
@@ -237,7 +239,9 @@ const Map = ({
                   parseFloat(sosLocation.SOS.longitude),
                   parseFloat(sosLocation.SOS.latitude),
                 ]}
-                onPress={() =>
+                onPress={() => {
+                  console.log("SOS Location pressed:", sosLocation);
+                  // Handle marker press for SOS location
                   handleMarkerPress({
                     userId: Number(sosLocation.SOS.user_id),
                     latitude: parseFloat(sosLocation.SOS.latitude),
@@ -248,8 +252,8 @@ const Map = ({
                     name: `SOS ${sosLocation.SOS.name}`,
                     phone: "",
                     status: "SOS Signal",
-                  })
-                }
+                  });
+                }}
               />
             )}
             {route && checkSOS && (
@@ -309,11 +313,26 @@ const Map = ({
                 } else if (marker.userType === "SENDER") {
                   return (
                     <RippleMarker
+                      marker={marker}
                       key={`sos-marker-${marker?.userId}`}
                       id={String(marker.userId)}
                       coordinate={[marker.longitude, marker.latitude]}
                       userIDSOS={marker.userId}
-                      onPress={() => handleMarkerPress(marker)}
+                      isOnline={marker.isOnline}
+                      onPress={() => {
+                        console.log("SOS Marker pressed 319:", marker);
+                        handleMarkerPress({
+                          userId: Number(marker?.userId),
+                          latitude: marker.latitude,
+                          longitude: marker.longitude,
+                          accuracy: 10,
+                          userType: "SENDER",
+                          avatarUrl: marker.avatarUrl || "",
+                          name: `SOS ${marker.name}`,
+                          phone: "",
+                          status: "SOS Signal",
+                        });
+                      }}
                     ></RippleMarker>
                   );
                 }
