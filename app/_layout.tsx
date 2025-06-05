@@ -15,22 +15,16 @@ import { SCREENS } from "../constants/screens";
 import { SocketProvider } from "../context/SocketContext";
 import { initializeNotifications } from "../utils/notification";
 import { Keyboard } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Layout = () => {
   const isChatScreen = useSegments().includes("(main)/chat/ChatBox");
   useEffect(() => {
     initializeNotifications();
   }, []);
+
   return (
     <AuthProvider>
-      {/* <SafeAreaView style={{ flex: 1 }}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={0}
-        >
-          <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}> */}
-      {/* <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}> */}
       <View style={{ flex: 1 }}>
         {!isChatScreen ? (
           <SocketProvider>

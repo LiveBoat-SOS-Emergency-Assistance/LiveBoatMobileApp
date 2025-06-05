@@ -14,7 +14,7 @@ interface SocketEvents {
 export default function SOSDisable() {
   const [loading, setLoading] = useState(false);
   const { socket, userId, registerCommonSocketEvents } = useSocket();
-  const { setOtherUserMarkers } = useSocketContext();
+  const { setOtherUserMarkers, setUserInfo } = useSocketContext();
   const SOCKET_EVENTS: SocketEvents = {
     TOSERVER_SOS_FINISHED: "TOSERVER_SOS_FINISHED",
   };
@@ -27,6 +27,8 @@ export default function SOSDisable() {
       const accuracy = await AsyncStorage.getItem("accuracySOS");
       const sosId = await AsyncStorage.getItem("sosId");
       console.log("socket emit", userId);
+      const userType = "NORMAL";
+      setUserInfo(userType);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
       await sosService.sos_edit(sosId!, {
         longitude: longitude,

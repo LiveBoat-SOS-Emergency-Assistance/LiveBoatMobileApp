@@ -34,6 +34,7 @@ import { sosService } from "../../../services/sos";
 import { getChatSocket } from "../../../utils/socket";
 import { initializeChatModule, sendMessage } from "../../../sockets/ChatModule";
 import { useAuth } from "../../../context/AuthContext";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 const DetailSOS = () => {
   const [checkSOS, setCheckSOS] = useState(false);
   const [currentSOS, setCurrentSOS] = useState<any>(null);
@@ -49,6 +50,7 @@ const DetailSOS = () => {
   const chatScrollViewRef = useRef<ScrollView>(null);
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const { profile } = useAuth();
+  const { sosId } = useLocalSearchParams<{ sosId: string }>();
   const {
     socket,
     setUserInfo,
@@ -60,7 +62,7 @@ const DetailSOS = () => {
   console.log("groupId 58Detail sos", groupId);
   const [SOS, setSOS] = useState<any>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-
+  const [checkRoute, setCheckRoute] = useState(false);
   const SOCKET_EVENTS: SocketEvents = {
     TOCLIENT_SOS_LOCATIONS: "TOCLIENT_SOS_LOCATIONS",
     TOCLIENT_SOS_FINISHED: "TOCLIENT_SOS_FINISHED",
@@ -139,7 +141,7 @@ const DetailSOS = () => {
   const getSOS = async () => {
     try {
       const current = await rescuerServices.getSOSCurrent();
-      if (current && current.data) {
+      if (current && current.data && current.data.SOS.id == sosId) {
         setCurrentSOS(current.data);
         console.log("Current SOS 292:", current.data);
         setCheckSOS(true);
@@ -156,37 +158,59 @@ const DetailSOS = () => {
       setCheckSOS(false);
     }
   };
+  useEffect(() => {
+    getSOS();
+  }, [sosId]);
 
-  useFocusEffect(
-    useCallback(() => {
-      getSOS();
-    }, [])
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     if (isHelping === "true") {
+  //       // console.log("isHelping is true, fetching SOS by ID:", sosId);
+  //       getCurrentSOS("true");
+  //     }
+  //   }, [])
+  // );
   const getCurrentSOS = async () => {
     try {
-      const result = await sosService.getSOSById(currentSOS.SOS.id);
+      console.log("Fetching SOS by ID:", sosId);
+      const result = await sosService.getSOSById(Number(sosId));
       console.log("Current SOS:", result.data);
       setSOS(result.data);
-    } catch (error) {
-      console.error("Error fetching helpingUserId:", error);
+      console.log(
+        "Display offline marker for userId:",
+        result.data?.user_id,
+        result.data?.longitude,
+        result.data?.latitude
+      );
+      displayOfflineMarker(
+        result.data?.user_id,
+        result.data?.longitude,
+        result.data?.latitude
+      );
+    } catch (error: any) {
+      console.error("Error in Detail SOS 183:", {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+        headers: error?.response?.headers,
+      });
     }
   };
-  // useEffect(() => {
-  //   get
 
-  // }, [])
   useEffect(() => {
-    if (!socket.current || !currentSOS) return;
+    if (!socket.current) return;
 
     console.log("Rescuer mode active");
 
     socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
       // console.log("The Sender location:", data);
       displayOrUpdateMarkers(data);
+      setCheckRoute(true);
+      
     });
 
     socket.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
-      console.log("Other helper locations:", data);
+      // console.log("Other helper locations:", data);
       displayOrUpdateMarkers(data);
     });
 
@@ -195,14 +219,7 @@ const DetailSOS = () => {
       console.log("Helping User ID:", helpingUserId);
       if (data.userId == helpingUserId) {
         console.log("Sender disconnected, display offline marker");
-        console.log(
-          "191 Detail SOS datauserid, sos coordinate",
-          data.userId,
-          SOS?.longitude,
-          SOS?.latitude
-        );
         getCurrentSOS();
-        displayOfflineMarker(data.userId, SOS?.longitude, SOS?.latitude);
       }
     });
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
@@ -262,6 +279,9 @@ const DetailSOS = () => {
               currentSOS?.longitude,
               currentSOS?.latitude
             );
+          } else {
+            console.log("SENDER ONLINE");
+            setCheckRoute(true);
           }
         }
       );
@@ -284,9 +304,9 @@ const DetailSOS = () => {
           status: "CANCELED",
         });
       }
-      setCurrentSOS(null);
+      // setCurrentSOS(null);
       setCheckSOS(false);
-      setShowCancelDialog(false); // ✅ Close dialog
+      setShowCancelDialog(false);
       Toast.show({
         type: "success",
         text1: "SOS Cancelled",
@@ -305,26 +325,6 @@ const DetailSOS = () => {
     setShowCancelDialog(true);
   };
 
-  // ✅ Alternative: Native Alert (simpler)
-  const showNativeAlert = () => {
-    Alert.alert(
-      "Cancel SOS Request",
-      "Are you sure you want to cancel this SOS request? This action cannot be undone.",
-      [
-        {
-          text: "No",
-          style: "cancel",
-        },
-        {
-          text: "Yes, Cancel",
-          style: "destructive",
-          onPress: handleCancelSOS,
-        },
-      ],
-      { cancelable: true }
-    );
-  };
-
   return (
     <View className="flex-1  w-full h-full justify-center items-center bg-white relative">
       <Map
@@ -333,6 +333,7 @@ const DetailSOS = () => {
         cameraRef={cameraRef}
         listRescuer={listRescuer}
         otherUserMarkers={otherUserMarkers}
+        checkRoute={checkRoute}
       ></Map>
       <TouchableOpacity
         onPress={() => router.back()}

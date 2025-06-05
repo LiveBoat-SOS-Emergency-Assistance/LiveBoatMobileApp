@@ -526,9 +526,11 @@ export default function SOSMap() {
                       03:25 minutes
                     </Text>
                   </View>
-                  <Image
+                  <ImageCustom
+                    width={20}
+                    height={20}
                     source={require("../../../assets/images/imageDisable.png")}
-                  ></Image>
+                  ></ImageCustom>
                   <View className="flex flex-col gap-4">
                     <Text className="text-[#EB4747] font-semibold">
                       Are you sure you want to cancel SOS?

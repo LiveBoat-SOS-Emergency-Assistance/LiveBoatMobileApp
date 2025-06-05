@@ -52,6 +52,7 @@ interface mapProps {
     latitude: string;
   };
   otherUserMarkers?: Record<number, Marker>;
+  checkRoute?: boolean;
 }
 const Map = ({
   signal,
@@ -61,6 +62,7 @@ const Map = ({
   listRescuer,
   otherSOS,
   otherUserMarkers,
+  checkRoute = false,
 }: mapProps) => {
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -76,6 +78,8 @@ const Map = ({
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
   // console.log("Markers being passed to Map:", otherUserMarkers);
   // console.log("SOS Location:", currentSOS);
+  // console.log("checkSOS", checkSOS);
+  // console.log("route", route);
   useEffect(() => {
     const fetchLocation = async () => {
       try {
@@ -111,6 +115,7 @@ const Map = ({
           if (data.routes && data.routes.length > 0) {
             setRoute(data.routes[0].geometry);
           }
+          // console.log("Route data:", data);
           // console.log("Route fetched successfully:", data);
         } catch (error) {
           console.log("Error fetching route:", error);
@@ -118,10 +123,10 @@ const Map = ({
       }
     };
     if (location && sosLocation && checkSOS) {
-      console.log("checkSOS", checkSOS);
+      console.log("checkSOS", checkSOS, checkRoute);
       fetchRoute();
     }
-  }, [location, sosLocation]);
+  }, [location, sosLocation, checkRoute]);
 
   // ✅ THÊM: Popup handlers
   const handleMarkerPress = (marker: Marker) => {

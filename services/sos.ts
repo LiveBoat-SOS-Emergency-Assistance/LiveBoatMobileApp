@@ -68,8 +68,6 @@ export class sosService {
     try {
       const params: any = {
         status: status,
-        // limit: limit,
-        // offset: offset,
       };
 
       // Add filter parameters if provided
@@ -93,7 +91,7 @@ export class sosService {
           params.search = filters.search.trim();
         }
       }
-      console.log("params", params);
+
       const result = await axiosPrivate.get(`/sos/all`, {
         params: params,
         headers: {
