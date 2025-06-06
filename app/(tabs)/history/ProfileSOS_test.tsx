@@ -65,13 +65,11 @@ const ProfileSOS = () => {
   const { id } = useLocalSearchParams();
   const [profileSOS, setProfileSOS] = useState<SOSProfile | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [checkHelping, setCheckHelping] = useState("true");
+  const [checkHelping, setCheckHelping] = useState(true);
   const [currentMyRescuer, setCurrentMyRescuer] = useState<RescuerItem | null>(
     null
   );
   const { profile } = useAuth();
-  const [idSender, setIdSender] = useState<string | null>(null);
-
   const [location, setLocation] = useState<{
     longitude: number;
     latitude: number;
@@ -85,15 +83,15 @@ const ProfileSOS = () => {
     try {
       const result = await rescuerServices.getSOSCurrent();
       if (result && result.data && result.data.sos_id === id) {
-        console.log("dang helping");
-        setCheckHelping("true");
+        setCheckHelping(true);
+        setCurrentMyRescuer(result.data);
       } else {
-        console.log("not helping");
-        setCheckHelping("false");
+        setCheckHelping(false);
+        setCurrentMyRescuer(null);
       }
     } catch (error: any) {
       console.log("Error", error);
-      setCheckHelping("false");
+      setCheckHelping(false);
       setCurrentMyRescuer(null);
     }
   };
@@ -123,8 +121,6 @@ const ProfileSOS = () => {
           accuracy: loc.accuracy,
         });
       }
-      console.log("126 ProfileSOS", result.data.user_id);
-      setIdSender(result.data.user_id);
       setProfileSOS(result.data);
       setUserProfile(resultUserProfile.data);
       setGroupId(dataGroupId.data);
@@ -143,7 +139,8 @@ const ProfileSOS = () => {
           text2: "Thank you for responding to the SOS. Stay safe!",
         });
         await AsyncStorage.setItem("SOSID", id.toString());
-        setCheckHelping("true");
+
+        setCheckHelping(!checkHelping);
         router.push({
           pathname: "/(tabs)/history/DetailSOS",
           params: {
@@ -151,9 +148,7 @@ const ProfileSOS = () => {
             userProfile: JSON.stringify(userProfile),
             sosId: id,
             groupId: groupId,
-            idSender: idSender,
-            profileSOS: JSON.stringify(profileSOS),
-            checkHelping: "true",
+            currentSOS: JSON.stringify(currentMyRescuer),
           },
         });
       }
@@ -183,7 +178,7 @@ const ProfileSOS = () => {
         text1: "SOS Cancelled",
         text2: "You have canceled your request for emergency assistance.",
       });
-      setCheckHelping("false");
+      setCheckHelping(!checkHelping);
     } catch (error: any) {
       console.log("Error", error.response?.data);
       Toast.show({
@@ -256,9 +251,7 @@ const ProfileSOS = () => {
                 userProfile: JSON.stringify(userProfile),
                 sosId: id,
                 groupId: groupId,
-                idSender: idSender,
-                profileSOS: JSON.stringify(profileSOS),
-                checkHelping: checkHelping.toString(),
+                currentSOS: JSON.stringify(currentMyRescuer),
               },
             })
           }
@@ -303,7 +296,7 @@ const ProfileSOS = () => {
                   </Text>
                 </TouchableOpacity>
               )}
-              {checkHelping === "true" && (
+              {checkHelping && (
                 <TouchableOpacity
                   onPress={handleCancelSOS}
                   className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"
@@ -313,7 +306,7 @@ const ProfileSOS = () => {
                   </Text>
                 </TouchableOpacity>
               )}
-              {checkHelping === "false" && (
+              {!checkHelping && (
                 <TouchableOpacity
                   onPress={handleGiveSupport}
                   className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"

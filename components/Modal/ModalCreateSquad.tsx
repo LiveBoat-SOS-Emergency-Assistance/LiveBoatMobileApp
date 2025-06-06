@@ -1,4 +1,5 @@
 import {
+  Keyboard,
   Modal,
   Text,
   TouchableOpacity,
@@ -61,7 +62,7 @@ const ModalCreateSquad = ({ onClose, onRefresh }: modalProps) => {
     >
       <TouchableWithoutFeedback onPress={onClose}>
         <View className="flex-1 justify-center items-center bg-black/50 px-6">
-          <TouchableWithoutFeedback>
+          <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
             <View className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl">
               {/* Header */}
               <View className="relative mb-6">

@@ -131,6 +131,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }
     );
+    // setInterval(() => {
+    //   if (socketRef.current) {
+    //     socketRef.current.emit(SOCKET_EVENTS.TOSERVER_HEARTBEAT);
+    //   }
+    // }, 5000);
   };
 
   const displayOrUpdateMarkers = (data: Marker[]) => {

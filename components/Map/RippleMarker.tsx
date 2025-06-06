@@ -20,6 +20,7 @@ interface RippleMarkerProps {
   onPress?: () => void;
   isOnline?: boolean;
   marker?: any;
+  avatarUrl?: string;
 }
 
 const RippleMarker = ({
@@ -31,12 +32,13 @@ const RippleMarker = ({
   onPress,
   isOnline = true,
   marker,
+  avatarUrl,
 }: RippleMarkerProps) => {
   const rippleScale = useRef(new Animated.Value(0)).current;
   const rippleOpacity = useRef(new Animated.Value(1)).current;
   const [sosProfile, setSOSProfile] = useState<Profile | null>(null);
   const { profile } = useAuth();
-  console.log(isOnline);
+  // console.log(isOnline);
 
   useEffect(() => {
     const getSOSProfile = async () => {
@@ -143,6 +145,7 @@ const RippleMarker = ({
               source={sosProfile?.User?.avatar_url}
               width={50}
               height={50}
+              className={`${isOnline ? "" : "opacity-50"}`}
             ></Avatar>
           )}
         </View>
