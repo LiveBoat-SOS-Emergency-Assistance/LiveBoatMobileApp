@@ -8,6 +8,7 @@ import {
   BackHandler,
   TouchableOpacity,
   Alert,
+  Modal,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { ChevronDown, ChevronUp, Minus, Plus } from "lucide-react-native";
@@ -66,7 +67,9 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<boolean>(true);
   const [helpingUserId, setHelpingTheUserId] = useState<number | null>(null);
   const [isAlertVisible, setAlertVisible] = useState(false);
-  const [SOS, setSOS] = useState<any>(null);
+  const [showRescueDialog, setShowRescueDialog] = useState(false);
+  const [rescueData, setRescueData] = useState<any>(null);
+
   const [listMember, setListMember] = useState<any[]>([]);
   const toggleBottomSheet = () => {
     setIsBottomSheetVisible((prev) => !prev);
@@ -97,7 +100,7 @@ export default function HomeScreen() {
         console.log("No SOS locations received");
         return;
       }
-      // console.log("SOS locations:", data);
+      console.log("Received SOS locations:", data);
       displayOrUpdateMarkers(data);
     });
 
@@ -123,15 +126,7 @@ export default function HomeScreen() {
       clearTimeout(timeout3);
     };
   }, []);
-  const getCurrentSOS = async () => {
-    try {
-      const result = await sosService.getSOSById(currentSOS.SOS.id);
-      // console.log("Current SOS:", result.data);
-      setSOS(result.data);
-    } catch (error) {
-      console.error("Error fetching helpingUserId:", error);
-    }
-  };
+
   const handleGiveSupport = async (id: string) => {
     try {
       const result = await rescuerServices.postRescuer(Number(id), location);
@@ -160,87 +155,15 @@ export default function HomeScreen() {
     }
   };
 
-  // useEffect(() => {
-  //   if (!socket.current || !currentSOS) return;
+  useEffect(() => {
+    if (!socket.current || !currentSOS) return;
 
-  //   console.log("Rescuer mode active");
+    console.log("Rescuer mode active");
 
-  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
-  //     // console.log("The Sender location:", data);
-  //     displayOrUpdateMarkers(data);
-  //   });
-
-  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
-  //     console.log("Other helper locations:", data);
-  //     displayOrUpdateMarkers(data);
-  //   });
-
-  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
-  //     console.log("User disconnected:", data.userId);
-  //     console.log("Helping User ID:", helpingUserId);
-  //     if (data.userId == helpingUserId) {
-  //       console.log("Sender disconnected, display offline marker");
-  //       getCurrentSOS();
-  //       displayOfflineMarker(data.userId, SOS?.longitude, SOS?.latitude);
-  //     }
-  //   });
-  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
-  //     if (data.userId == helpingUserId) {
-  //       console.log("Sender finished SOS, complete rescuing");
-  //       Toast.show({
-  //         type: "success",
-  //         text1: "SOS Completed",
-  //         text2: "You have successfully completed the SOS request.",
-  //       });
-  //       setAlertVisible(true);
-  //       setHelpingTheUserId(null);
-  //       setCheckSOS(false);
-  //       setCurrentSOS(null);
-  //     }
-  //   });
-  //   setUserInfo("HELPER");
-
-  //   const timeout1 = setTimeout(() => {
-  //     socket?.current?.emit(
-  //       SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
-  //     );
-  //     console.log("178: helpingUserId:", helpingUserId);
-  //     socket?.current?.emit(SOCKET_EVENTS.TOSERVER_REGISTER_SOS_SENDER, {
-  //       helpingTheUserId: helpingUserId,
-  //     });
-  //     console.log("helpingUserId 181:", helpingUserId);
-  //   }, 1000);
-  //   const timeout3 = setTimeout(async () => {
-  //     const location = await getCurrentLocation();
-  //     if (location) {
-  //       updateLocation(
-  //         location.latitude,
-  //         location.longitude,
-  //         location.accuracy ?? 0
-  //       );
-  //     }
-  //   }, 2000);
-  //   const timeout2 = setTimeout(() => {
-  //     socket?.current?.emit(
-  //       SOCKET_EVENTS.TOSERVER_GET_THE_SENDER_LOCATION,
-  //       (response: any) => {
-  //         console.log("Server responded:", response);
-  //         getCurrentLocation();
-  //         if (response?.status === false && helpingUserId !== null) {
-  //           setHelpingTheUserId(helpingUserId);
-  //           console.log("helpingUserId 200:", helpingUserId);
-  //           displayOfflineMarker(helpingUserId, SOS?.longitude, SOS?.latitude);
-  //         }
-  //       }
-  //     );
-  //   }, 5000);
-
-  //   return () => {
-  //     clearTimeout(timeout1);
-  //     clearTimeout(timeout2);
-  //     clearTimeout(timeout3);
-  //   };
-  // }, [currentSOS]);
+    socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
+      displayOrUpdateMarkers(data);
+    });
+  }, [currentSOS]);
 
   // Func to zoom to current location
   const handleControl = async () => {
@@ -318,10 +241,21 @@ export default function HomeScreen() {
         try {
           const current = await rescuerServices.getSOSCurrent();
           if (current.data) {
-            setCurrentSOS(current.data);
             console.log("Current SOS 292:", current.data);
+
+            // ✅ Lưu data và hiển thị dialog
+            setRescueData(current.data);
+            setShowRescueDialog(true);
+
+            // Set state nhưng chưa navigate
+            setCurrentSOS(current.data);
             setCheckSOS(true);
             setHelpingTheUserId(current.data.SOS.user_id);
+          } else {
+            // Reset states nếu không có SOS đang cứu
+            setCurrentSOS(null);
+            setCheckSOS(false);
+            setRescueData(null);
           }
         } catch (error: any) {
           console.error("Error when getting current SOS:", {
@@ -332,12 +266,53 @@ export default function HomeScreen() {
           });
           setCurrentSOS(null);
           setCheckSOS(false);
+          setRescueData(null);
         }
       };
 
       getSOS();
     }, [])
   );
+  // Handler khi user chọn "Go to Rescue"
+  const handleGoToRescue = async () => {
+    try {
+      setShowRescueDialog(false);
+
+      // Lưu sosId vào AsyncStorage
+      await AsyncStorage.setItem("SOSID", rescueData.SOS.id.toString());
+
+      Toast.show({
+        type: "info",
+        text1: "Redirecting...",
+        text2: "Taking you to the rescue page.",
+      });
+
+      // Navigate to DetailSOS
+      router.replace({
+        pathname: "/(tabs)/history/ProfileSOS",
+        params: { id: rescueData.SOS.id },
+      });
+    } catch (error) {
+      console.error("Error navigating to rescue page:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to navigate to rescue page.",
+      });
+    }
+  };
+
+  // Handler khi user chọn "Stay Here"
+  const handleStayOnHome = () => {
+    setShowRescueDialog(false);
+    console.log("User chose to stay on home page");
+
+    Toast.show({
+      type: "info",
+      text1: "Staying on Home",
+      text2: "You can access rescue details anytime from notifications.",
+    });
+  };
   // Func to get SQUAD
   useFocusEffect(
     useCallback(() => {
@@ -345,9 +320,11 @@ export default function HomeScreen() {
         try {
           const result = await groupServices.getGroup();
           if (result && result.data) {
-            setGroup(result.data);
-            setSelectNameSquad(result.data[0]?.name);
-            setSelectSquad(result.data[0]?.id);
+            const reversedData = result.data.reverse();
+            // console.log("Groups:", reversedData);
+            setGroup(reversedData);
+            setSelectNameSquad(reversedData[0]?.name);
+            setSelectSquad(reversedData[0]?.id);
           }
         } catch (error: any) {
           console.log("Error fetching groups:", error);
@@ -358,34 +335,6 @@ export default function HomeScreen() {
       setIsRefreshing(false);
     }, [isRefreshing])
   );
-  // Func to cancel support
-  const handleCancelSOS = async () => {
-    try {
-      // console.log(currentSOS.SOS);
-      if (currentSOS) {
-        const result = await rescuerServices.updateRescuer({
-          longitude: currentSOS.SOS.longitude,
-          latitude: currentSOS.SOS.latitude,
-          accuracy: currentSOS.SOS.accuracy,
-          status: "CANCELED",
-        });
-      }
-      setCurrentSOS(null);
-      setCheckSOS(false);
-      Toast.show({
-        type: "success",
-        text1: "SOS Cancelled",
-        text2: "You have canceled your request for emergency assistance.",
-      });
-    } catch (error: any) {
-      console.log("Error", error.response?.data);
-      Toast.show({
-        type: "error",
-        text1: "Error!",
-        text2: "Error when cancel support!",
-      });
-    }
-  };
 
   // Check if the user is creating the SOS signal
   useFocusEffect(
@@ -448,7 +397,9 @@ export default function HomeScreen() {
     }
   };
   useEffect(() => {
-    getMember();
+    if (selectSquad) {
+      getMember();
+    }
   }, [selectSquad]);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -538,7 +489,7 @@ export default function HomeScreen() {
                 ))}
               </ScrollView>
             </View>
-            <View className="absolute w-full justify-around flex flex-row bottom-0 bg-white">
+            <View className="absolute w-full justify-end px-5 flex flex-row bottom-0 bg-white">
               <Pressable
                 onPress={() => setOpenModalCreateSquad(true)}
                 className="w-[40%] h-[43px] bg-white rounded-[40px] flex justify-center items-center relative border border-[#80C4E9]"
@@ -557,7 +508,7 @@ export default function HomeScreen() {
                   Create a squad
                 </Text>
               </Pressable>
-              <Pressable
+              {/* <Pressable
                 className="w-[40%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative"
                 style={{
                   shadowColor: "#000",
@@ -573,7 +524,7 @@ export default function HomeScreen() {
                 >
                   Join a squad
                 </Text>
-              </Pressable>
+              </Pressable> */}
             </View>
           </View>
         </TopSheet>
@@ -894,6 +845,104 @@ export default function HomeScreen() {
             </BottomModal>
           )}
         </AnimatePresence>
+        {/* ✅ Rescue Alert Dialog */}
+        <Modal
+          visible={showRescueDialog}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowRescueDialog(false)}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 20,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                borderRadius: 12,
+                padding: 20,
+                width: "100%",
+                maxWidth: 340,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 8,
+              }}
+            >
+              {/* Dialog Header */}
+              <View className="items-center mb-4">
+                <View className="w-16 h-16 bg-red-100 rounded-full items-center justify-center mb-3">
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=99921&format=png&color=000000"
+                    width={32}
+                    height={32}
+                    color="#EF4444"
+                  />
+                </View>
+                <Text className="text-xl font-bold text-gray-900 text-center">
+                  Active Rescue Mission
+                </Text>
+              </View>
+
+              {/* Dialog Content */}
+              <View className="mb-6">
+                <Text className="text-gray-600 text-center mb-4 leading-5">
+                  You are currently helping someone in an emergency situation.
+                </Text>
+
+                {rescueData && (
+                  <View className="bg-gray-50 p-3 rounded-lg mb-4">
+                    <Text className="text-sm text-gray-700 mb-1">
+                      <Text className="font-semibold">SOS ID:</Text> #
+                      {rescueData.SOS.id}
+                    </Text>
+                    <Text className="text-sm text-gray-700 mb-1">
+                      <Text className="font-semibold">Status:</Text>{" "}
+                      {rescueData.SOS.status || "Active"}
+                    </Text>
+                    <Text className="text-sm text-gray-700">
+                      <Text className="font-semibold">Location:</Text>{" "}
+                      {rescueData.SOS.address || "Emergency Location"}
+                    </Text>
+                  </View>
+                )}
+
+                <Text className="text-gray-600 text-center leading-5">
+                  Would you like to go to the rescue page to continue helping?
+                </Text>
+              </View>
+
+              {/* Dialog Actions */}
+              <View className="flex-row space-x-3 gap-2">
+                {/* Stay Button */}
+                <TouchableOpacity
+                  onPress={handleStayOnHome}
+                  className="flex-1 bg-gray-100 py-3 px-4 rounded-lg"
+                >
+                  <Text className="text-gray-700 font-semibold text-center">
+                    Stay Here
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Go to Rescue Button */}
+                <TouchableOpacity
+                  onPress={handleGoToRescue}
+                  className="flex-1 bg-red-500 py-3 px-4 rounded-lg"
+                >
+                  <Text className="text-white font-semibold text-center">
+                    Go to Rescue
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </GestureHandlerRootView>
   );

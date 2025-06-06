@@ -25,6 +25,22 @@ export interface SOSItem {
   status: string;
   user_id: string;
 }
+export interface SOSProfile {
+  accuracy: string;
+  created_at: string;
+  credibility: number;
+  description: string;
+  group_id: string;
+  id: string;
+  latitude: string;
+  location_updated_at: string;
+  longitude: string;
+  name: string;
+  reported_count: number;
+  status: string;
+  user_id: string;
+  has_livestream: boolean;
+}
 export interface InfiniteScrollPaginationProps<T> {
   data: T[];
   itemsPerPage: number;

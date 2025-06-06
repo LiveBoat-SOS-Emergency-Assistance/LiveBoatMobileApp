@@ -15,11 +15,14 @@ import UserLocation from "./UserLocation";
 import { getCurrentLocation } from "../../utils/location";
 import RippleMarker from "./RippleMarker";
 import { RescuerItem } from "../../types/rescuerItem";
-import { SOSItem } from "../../types/sosItem";
+// import { SOSItem } from "../../types/sosItem";
 import { useAuth } from "../../context/AuthContext";
 import RescuerMarker from "./RescuerMarker";
 import MarkerPopup from "./MarkerPopup";
 import { m } from "framer-motion";
+import { SOSProfile } from "../../types/sosItem";
+import { userServices } from "../../services/user";
+import { Profile } from "../../types/Profile";
 MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN);
 MapboxGL.setTelemetryEnabled(false);
 
@@ -38,11 +41,12 @@ interface Marker {
     avatar_url?: string;
     phone?: string;
   };
+  isOnline?: boolean;
 }
 
 interface mapProps {
   signal?: string;
-  sos?: SOSItem;
+  sos?: SOSProfile;
   checkSOS?: boolean;
   cameraRef?: React.RefObject<Camera>;
   listRescuer?: RescuerItem[];
@@ -53,6 +57,7 @@ interface mapProps {
   };
   otherUserMarkers?: Record<number, Marker>;
   checkRoute?: boolean;
+  idSender?: string;
 }
 const Map = ({
   signal,
@@ -63,23 +68,16 @@ const Map = ({
   otherSOS,
   otherUserMarkers,
   checkRoute = false,
+  idSender = "",
 }: mapProps) => {
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [sosLocation, setSOSLocation] = useState<SOSItem | null>(null);
+  const [sosLocation, setSOSLocation] = useState<SOSProfile | null>(null);
   const [route, setRoute] = useState<any>(null);
   const { profile } = useAuth();
-  const [selectedRescuer, setSelectedRescuer] = useState<RescuerItem | null>(
-    null
-  );
-  const [selectUser, setSelectUser] = useState<Marker | null>(null);
-  // ✅ THÊM: State cho popup
   const [showPopup, setShowPopup] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
-  // console.log("Markers being passed to Map:", otherUserMarkers);
-  // console.log("SOS Location:", currentSOS);
-  // console.log("checkSOS", checkSOS);
-  // console.log("route", route);
+  const [sosSender, setSOSSender] = useState<Profile | null>(null);
   useEffect(() => {
     const fetchLocation = async () => {
       try {
@@ -104,8 +102,8 @@ const Map = ({
       if (location && sosLocation) {
         const origin = location;
         const destination = [
-          parseFloat(sosLocation.SOS.longitude),
-          parseFloat(sosLocation.SOS.latitude),
+          parseFloat(sosLocation.longitude),
+          parseFloat(sosLocation.latitude),
         ];
         const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]}%2C${origin[1]}%3B${destination[0]}%2C${destination[1]}?alternatives=true&geometries=geojson&language=en&overview=full&steps=true&access_token=${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`;
 
@@ -150,7 +148,19 @@ const Map = ({
       );
     }
   };
-
+  const getSOSSender = async () => {
+    try {
+      const result = await userServices.getUserByID(Number(idSender));
+      setSOSSender(result.data);
+    } catch (error: any) {
+      console.error("Error getting SOS sender:", error);
+    }
+  };
+  useEffect(() => {
+    if (idSender) {
+      getSOSSender();
+    }
+  }, [idSender]);
   const handleMessageUser = () => {
     // Navigate to chat screen or open messaging functionality
     Alert.alert("Message", "Opening chat functionality...");
@@ -230,26 +240,28 @@ const Map = ({
             {/* When I support others this is the user's location */}
             {sosLocation && checkSOS && !otherUserMarkers && (
               <RippleMarker
-                key={sosLocation.SOS.user_id}
+                key={sosLocation.user_id}
                 id="ripple-marker"
-                userIDSOS={Number(sosLocation.SOS.user_id)}
+                userIDSOS={Number(sosLocation.user_id)}
                 coordinate={[
-                  parseFloat(sosLocation.SOS.longitude),
-                  parseFloat(sosLocation.SOS.latitude),
+                  parseFloat(sosLocation.longitude),
+                  parseFloat(sosLocation.latitude),
                 ]}
-                onPress={() =>
+                onPress={() => {
+                  console.log("SOS Location pressed:", sosLocation);
+                  // Handle marker press for SOS location
                   handleMarkerPress({
-                    userId: Number(sosLocation.SOS.user_id),
-                    latitude: parseFloat(sosLocation.SOS.latitude),
-                    longitude: parseFloat(sosLocation.SOS.longitude),
+                    userId: Number(sosLocation.user_id),
+                    latitude: parseFloat(sosLocation.latitude),
+                    longitude: parseFloat(sosLocation.longitude),
                     accuracy: 10,
                     userType: "SENDER",
                     avatarUrl: "",
-                    name: `SOS ${sosLocation.SOS.name}`,
+                    name: `SOS ${sosLocation.name}`,
                     phone: "",
                     status: "SOS Signal",
-                  })
-                }
+                  });
+                }}
               />
             )}
             {route && checkSOS && (
@@ -309,11 +321,35 @@ const Map = ({
                 } else if (marker.userType === "SENDER") {
                   return (
                     <RippleMarker
-                      key={`sos-marker-${marker?.userId}`}
-                      id={String(marker.userId)}
+                      marker={marker}
+                      key={`sos-marker-${marker?.userId || sosSender?.user_id}`}
+                      id={String(marker.userId || sosSender?.user_id)}
                       coordinate={[marker.longitude, marker.latitude]}
-                      userIDSOS={marker.userId}
-                      onPress={() => handleMarkerPress(marker)}
+                      userIDSOS={marker.userId || Number(sosSender?.user_id)}
+                      isOnline={marker.isOnline}
+                      onPress={() => {
+                        console.log(
+                          "SOS Marker pressed 319:",
+                          marker.longitude,
+                          marker.latitude
+                        );
+                        handleMarkerPress({
+                          userId: Number(marker?.userId || sosSender?.user_id),
+                          latitude: Number(marker.latitude),
+                          longitude: Number(marker.longitude),
+                          accuracy: Number(marker.accuracy) || 10,
+                          userType: "SENDER",
+                          avatarUrl:
+                            sosSender?.User?.avatar_url ||
+                            marker.avatarUrl ||
+                            "",
+                          name: `${
+                            marker.name || sosSender?.name || `${marker.userId}`
+                          }`,
+                          phone: sosSender?.User?.phone,
+                          status: "SOS Signal",
+                        });
+                      }}
                     ></RippleMarker>
                   );
                 }

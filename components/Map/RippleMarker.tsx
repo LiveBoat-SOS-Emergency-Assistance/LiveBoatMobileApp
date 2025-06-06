@@ -18,6 +18,9 @@ interface RippleMarkerProps {
   userIDSOS?: number;
   isRescuer?: boolean;
   onPress?: () => void;
+  isOnline?: boolean;
+  marker?: any;
+  avatarUrl?: string;
 }
 
 const RippleMarker = ({
@@ -27,12 +30,15 @@ const RippleMarker = ({
   userIDSOS,
   isRescuer,
   onPress,
+  isOnline = true,
+  marker,
+  avatarUrl,
 }: RippleMarkerProps) => {
   const rippleScale = useRef(new Animated.Value(0)).current;
   const rippleOpacity = useRef(new Animated.Value(1)).current;
   const [sosProfile, setSOSProfile] = useState<Profile | null>(null);
   const { profile } = useAuth();
-  // console.log(userIDSOS);
+  // console.log(isOnline);
 
   useEffect(() => {
     const getSOSProfile = async () => {
@@ -112,11 +118,21 @@ const RippleMarker = ({
               opacity: rippleOpacity,
               backgroundColor: isRescuer
                 ? "rgba(0, 0, 255, 0.4)"
-                : "rgba(255, 0, 0, 0.4)",
+                : !isRescuer && isOnline
+                ? "rgba(255, 0, 0, 0.4)"
+                : "rgba(200, 200, 200, 1)",
             },
           ]}
         />
-        <View style={styles.centerDot}>
+
+        <View
+          style={[
+            styles.centerDot,
+            {
+              backgroundColor: isOnline ? "red" : "#808080",
+            },
+          ]}
+        >
           {id === profile?.id && (
             <Avatar
               source={profile?.User?.avatar_url}
@@ -129,6 +145,7 @@ const RippleMarker = ({
               source={sosProfile?.User?.avatar_url}
               width={50}
               height={50}
+              className={`${isOnline ? "" : "opacity-50"}`}
             ></Avatar>
           )}
         </View>
@@ -149,13 +166,12 @@ const styles = StyleSheet.create({
     width: 170,
     height: 170,
     borderRadius: 85,
-    // backgroundColor: "rgba(255, 0, 0, 0.4)",
   },
   centerDot: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "red",
+    // backgroundColor: "red",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",

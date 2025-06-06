@@ -25,7 +25,6 @@ interface SocketEvents {
   TOSERVER_REGISTER_SOS_SENDER: string;
   TOSERVER_GET_THE_SENDER_LOCATION: string;
 }
-
 import { getCurrentLocation, LocationResult } from "../../../utils/location";
 import { Camera } from "@rnmapbox/maps";
 import Avatar from "../../../components/Image/Avatar";
@@ -36,32 +35,38 @@ import { getChatSocket } from "../../../utils/socket";
 import { initializeChatModule, sendMessage } from "../../../sockets/ChatModule";
 import { useAuth } from "../../../context/AuthContext";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
-import { SOSProfile } from "../../../types/sosItem";
 const DetailSOS = () => {
   const [checkSOS, setCheckSOS] = useState(false);
+
+  // const { userProfile } = useLocalSearchParams();
   const [listRescuer, setListRescuer] = useState<RescuerItem[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const cameraRef = useRef<Camera>(null);
   const [helpingUserId, setHelpingTheUserId] = useState<number | null>(null);
   const helpingUserIdRef = useRef<number | null>(null);
-  const [currentSOS, setCurrentSOS] = useState<SOSProfile | null>(null);
+
+  // Helper function to set helpingUserId and sync with ref
   const setHelpingUserId = (value: number | null) => {
     console.log(`DetailSOS: Setting helpingUserId to ${value}`);
     setHelpingTheUserId(value);
     helpingUserIdRef.current = value;
   };
-  const { sosId, userProfile, profileSOS } = useLocalSearchParams();
-  const { idSender } = useLocalSearchParams<{ idSender: string }>();
-  const { checkHelping } = useLocalSearchParams<{ checkHelping: string }>();
-  console.log("checkHelping", checkHelping);
-  const { groupId } = useLocalSearchParams<{ groupId: string }>();
+  const { groupId, sosId, userProfile, currentSOS } = useLocalSearchParams<{
+    groupId: string;
+    sosId: string;
+    userProfile: string;
+    currentSOS: string;
+  }>();
+  const [currentSOSData, setCurrentSOSData] = useState<any>(null);
 
   const [isAlertVisible, setAlertVisible] = useState(false);
   const chatSocket = getChatSocket();
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState("");
   const chatScrollViewRef = useRef<ScrollView>(null);
+  // const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const { profile } = useAuth();
+  // const { sosId } = useLocalSearchParams<{ sosId: string }>();
   const {
     socket,
     setUserInfo,
@@ -71,8 +76,7 @@ const DetailSOS = () => {
     displayOrUpdateMarkers,
     registerCommonSocketEvents,
   } = useSocketContext();
-  // console.log("checkHelping", checkHelping);
-  // console.log("groupId 58Detail sos", groupId);
+  console.log("groupId 58Detail sos", groupId);
   const [SOS, setSOS] = useState<any>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [checkRoute, setCheckRoute] = useState(false);
@@ -118,12 +122,7 @@ const DetailSOS = () => {
           profile?.id
         );
         // console.log("profile", profile);
-        sendMessage(
-          chatSocket,
-          chatInput,
-          Array.isArray(groupId) ? groupId[0] : groupId,
-          profile?.User?.id!
-        );
+        sendMessage(chatSocket, chatInput, groupId, profile?.User?.id!);
         setChatInput("");
         setTimeout(() => {
           if (chatScrollViewRef.current) {
@@ -156,45 +155,51 @@ const DetailSOS = () => {
       console.log("Error getting location", error);
     }
   };
+  const getSOS = async () => {
+    if (currentSOSData) return;
 
-  // useEffect(() => {
-  //   if (sosId) {
-  //     console.log("163 Helping User ID:", idSender);
-  //     setHelpingTheUserId(Number(idSender));
-  //     setCurrentSOS(profileSOS);
-  //   }
-  // }, [sosId]);
-  // Parse profileSOS and set currentSOS, helpingUserId
-  useEffect(() => {
-    if (sosId && profileSOS) {
-      try {
-        const profileSOSString = Array.isArray(profileSOS)
-          ? profileSOS[0]
-          : profileSOS;
-        const parsedSOS = JSON.parse(profileSOSString) as SOSProfile;
-        setCurrentSOS(parsedSOS);
-        console.log("163 Helping User ID:", idSender);
-        setHelpingUserId(Number(idSender));
-        setCheckSOS(checkHelping === "true");
-        displayOfflineMarker(
-          Number(idSender),
-          Number(parsedSOS.longitude),
-          Number(parsedSOS.latitude),
-          false
-        );
-      } catch (error) {
-        console.error("Error parsing profileSOS:", error);
-        setCurrentSOS(null);
+    try {
+      const current = await rescuerServices.getSOSCurrent();
+      if (current && current.data && current.data.SOS.id == sosId) {
+        setCurrentSOSData(current.data);
+        console.log("Current SOS from API:", current.data);
+        setCheckSOS(true);
+        setHelpingUserId(current.data.SOS.user_id);
       }
+    } catch (error: any) {
+      console.error("Error when getting current SOS:", error);
+      setCurrentSOSData(null);
+      setCheckSOS(false);
     }
-  }, [sosId, profileSOS, idSender, checkHelping, profile]);
+  };
+  useEffect(() => {
+    // Kiểm tra xem có currentSOS từ params không
+    if (currentSOS && currentSOS !== "null") {
+      try {
+        const parsedCurrentSOS = JSON.parse(currentSOS);
+        setCurrentSOSData(parsedCurrentSOS);
+        setCheckSOS(true);
+        setHelpingUserId(
+          parsedCurrentSOS.SOS?.user_id || parsedCurrentSOS.user_id
+        );
+        console.log("Using currentSOS from ProfileSOS:", parsedCurrentSOS);
+      } catch (error) {
+        console.error("Error parsing currentSOS:", error);
+        // Fallback to getSOS if parsing fails
+        getSOS();
+      }
+    } else {
+      // Không có currentSOS từ params, gọi getSOS như bình thường
+      getSOS();
+    }
+  }, [sosId, currentSOS]);
+
   const getCurrentSOS = async () => {
     try {
       console.log("Fetching SOS by ID:", sosId);
       const result = await sosService.getSOSById(Number(sosId));
-      console.log("Current SOS:", profileSOS);
-      // setSOS(result.data);
-      setSOS(profileSOS);
+      console.log("Current SOS:", result.data);
+      setSOS(result.data);
       if (helpingUserId === null) {
         setHelpingUserId(result.data?.user_id);
       }
@@ -228,7 +233,7 @@ const DetailSOS = () => {
     console.log("Rescuer mode active");
 
     socket?.current?.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
-      // console.log("The Sender location:", data);
+      console.log("The Sender location:", data);
       displayOrUpdateMarkers(data);
       setCheckRoute(true);
     });
@@ -259,6 +264,7 @@ const DetailSOS = () => {
         setAlertVisible(true);
         setHelpingUserId(null);
         setCheckSOS(false);
+        setCurrentSOSData(null);
       }
     });
 
@@ -270,7 +276,7 @@ const DetailSOS = () => {
       );
       console.log("178: helpingUserId:", helpingUserId);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_REGISTER_SOS_SENDER, {
-        helpingTheUserId: Number(idSender),
+        helpingTheUserId: helpingUserId,
       });
       console.log("helpingUserId 181:", helpingUserId);
     }, 1000);
@@ -297,15 +303,14 @@ const DetailSOS = () => {
             console.log(
               "helpingUserId 200:",
               helpingUserId,
-              currentSOS?.longitude,
-              currentSOS?.latitude
+              currentSOSData?.longitude,
+              currentSOSData?.latitude
             );
 
             displayOfflineMarker(
               helpingUserId,
-              Number(currentSOS?.longitude),
-              Number(currentSOS?.latitude),
-              false
+              currentSOSData?.longitude,
+              currentSOSData?.latitude
             );
           } else {
             console.log("SENDER ONLINE");
@@ -322,15 +327,113 @@ const DetailSOS = () => {
       clearTimeout(timeout3);
     };
   }, []);
+  // );
+  // useEffect(() => {
+  //   registerCommonSocketEvents();
+  //   if (!socket.current) return;
+
+  //   console.log("Rescuer mode active");
+
+  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
+  //     console.log("The Sender location:", data);
+  //     displayOrUpdateMarkers(data);
+  //     setCheckRoute(true);
+  //   });
+
+  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
+  //     console.log("Other helper locations:", data);
+  //     displayOrUpdateMarkers(data);
+  //   });
+
+  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
+  //     console.log("User disconnected:", data.userId);
+  //     console.log("Helping User ID (from ref):", helpingUserIdRef.current);
+  //     console.log("Helping User ID (from state):", helpingUserId);
+  //     if (data.userId == helpingUserIdRef.current) {
+  //       console.log("Sender disconnected, display offline marker");
+  //       getCurrentSOS();
+  //     }
+  //   });
+  //   socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
+  //     if (data.userId == helpingUserIdRef.current) {
+  //       console.log("Sender finished SOS, complete rescuing");
+  //       Toast.show({
+  //         type: "success",
+  //         text1: "SOS Completed",
+  //         text2: "You have successfully completed the SOS request.",
+  //       });
+  //       setAlertVisible(true);
+  //       setHelpingUserId(null);
+  //       setCheckSOS(false);
+  //       setCurrentSOS(null);
+  //     }
+  //   });
+  //   setUserInfo("HELPER");
+
+  //   const timeout1 = setTimeout(() => {
+  //     socket?.current?.emit(
+  //       SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
+  //     );
+  //     console.log("178: helpingUserId:", helpingUserId);
+  //     socket?.current?.emit(SOCKET_EVENTS.TOSERVER_REGISTER_SOS_SENDER, {
+  //       helpingTheUserId: helpingUserId,
+  //     });
+  //     console.log("helpingUserId 181:", helpingUserId);
+  //   }, 1000);
+  //   const timeout3 = setTimeout(async () => {
+  //     const location = await getCurrentLocation();
+  //     if (location) {
+  //       updateLocation(
+  //         location.latitude,
+  //         location.longitude,
+  //         location.accuracy ?? 0
+  //       );
+  //     }
+  //   }, 2000);
+  //   const timeout2 = setTimeout(() => {
+  //     socket?.current?.emit(
+  //       SOCKET_EVENTS.TOSERVER_GET_THE_SENDER_LOCATION,
+  //       (response: any) => {
+  //         console.log("Server responded:", response);
+  //         getCurrentLocation();
+  //         getCurrentSOS();
+  //         if (response?.status === false && helpingUserId !== null) {
+  //           // No need to set helpingUserId to itself
+  //           console.log(
+  //             "helpingUserId 200:",
+  //             helpingUserId,
+  //             currentSOS?.longitude,
+  //             currentSOS?.latitude
+  //           );
+
+  //           displayOfflineMarker(
+  //             helpingUserId,
+  //             currentSOS?.longitude,
+  //             currentSOS?.latitude
+  //           );
+  //         } else {
+  //           console.log("SENDER ONLINE");
+  //           setCheckRoute(true);
+  //         }
+  //       }
+  //     );
+  //   }, 5000);
+
+  //   return () => {
+  //     clearTimeout(timeout1);
+  //     clearTimeout(timeout2);
+  //     clearTimeout(timeout3);
+  //   };
+  // }, [currentSOS]);
 
   const handleCancelSOS = async () => {
     try {
       console.log("Cancel SOS clicked");
       if (currentSOS) {
         const result = await rescuerServices.updateRescuer({
-          longitude: currentSOS.longitude,
-          latitude: currentSOS.latitude,
-          accuracy: currentSOS.accuracy,
+          longitude: currentSOSData.SOS.longitude,
+          latitude: currentSOSData.SOS.latitude,
+          accuracy: currentSOSData.SOS.accuracy,
           status: "CANCELED",
         });
       }
@@ -379,33 +482,36 @@ const DetailSOS = () => {
     setShowCancelDialog(true);
   };
   const handleBack = () => {
-    if (socket.current) {
-      console.log("🧹 Cleaning up socket connections...");
-      socket.current.off(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION);
-      socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
-      socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
-      socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
-      socket.current.disconnect();
+    if (!checkSOS) {
+      if (socket.current) {
+        console.log("🧹 Cleaning up socket connections...");
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION);
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
+        socket.current.disconnect();
 
-      console.log("✅ Socket cleanup completed");
+        console.log("✅ Socket cleanup completed");
+      }
+      if (chatSocket) {
+        chatSocket.off("receive_message");
+        chatSocket.off("chat_history");
+        chatSocket.emit("leave_room", { groupId });
+      }
+      router.back();
+    } else {
+      router.back();
     }
-    if (chatSocket) {
-      chatSocket.off("receive_message");
-      chatSocket.off("chat_history");
-      chatSocket.emit("leave_room", { groupId });
-    }
-    router.back();
   };
   return (
     <View className="flex-1  w-full h-full justify-center items-center bg-white relative">
       <Map
         checkSOS={checkSOS}
-        sos={currentSOS ?? undefined}
+        sos={currentSOSData}
         cameraRef={cameraRef}
         listRescuer={listRescuer}
         otherUserMarkers={otherUserMarkers}
         checkRoute={checkRoute}
-        idSender={idSender ?? undefined}
       ></Map>
       <TouchableOpacity
         onPress={() => handleBack()}
@@ -422,7 +528,7 @@ const DetailSOS = () => {
       </View>
 
       <View className="absolute top-12 right-5 flex flex-col gap-3">
-        {checkHelping === "true" && (
+        {checkSOS && (
           <TouchableOpacity
             onPress={showCancelConfirmation}
             className="w-[40px] h-[40px] z-50  bg-[#EB4747] rounded-full flex justify-center items-center"
