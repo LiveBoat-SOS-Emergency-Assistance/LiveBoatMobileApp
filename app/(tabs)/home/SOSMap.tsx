@@ -84,22 +84,12 @@ export default function SOSMap() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [sosId, setSosId] = useState<string | null>(null);
   const sosIdRef = useRef<string | null>(null);
+  const userId = useAuth()?.profile?.id;
 
   const [groupId, setGroupId] = useState<string | null>(null);
   const { profile } = useAuth();
   const chatSocket = getChatSocket();
 
-  // useEffect(() => {
-  //   const getSOSId = async () => {
-  //     try {
-  //       const sosId = await AsyncStorage.getItem("sosId");
-  //       setSosId(sosId);
-  //     } catch (error) {
-  //       console.log("Error when get SOS ID", error);
-  //     }
-  //   };
-  //   getSOSId();
-  // }, []);
   useEffect(() => {
     const getSOSId = async () => {
       try {
@@ -155,7 +145,7 @@ export default function SOSMap() {
   };
   const {
     socket,
-    userId,
+    // userId,
     setUserInfo,
     updateLocation,
     otherUserMarkers,
@@ -169,9 +159,15 @@ export default function SOSMap() {
       "TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP",
     TOSERVER_SOS_FINISHED: "TOSERVER_SOS_FINISHED",
   };
+  console.log("161 SOSMap, userId", userId);
   const handleCancelSOS = () => {
     setIsDisable(false);
-    router.push("/(tabs)/home/SOSDisable");
+    router.push({
+      pathname: "/(tabs)/home/SOSDisable",
+      params: {
+        userId: userId,
+      },
+    });
   };
   const handleEditSOS = () => {
     setVisible(true);

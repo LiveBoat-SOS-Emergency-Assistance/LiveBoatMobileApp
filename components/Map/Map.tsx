@@ -241,8 +241,8 @@ const Map = ({
             {sosLocation && checkSOS && !otherUserMarkers && (
               <RippleMarker
                 key={sosLocation.user_id}
-                id="ripple-marker"
-                userIDSOS={Number(sosLocation.user_id)}
+                // id="ripple-marker"
+                id={sosLocation.user_id}
                 coordinate={[
                   parseFloat(sosLocation.longitude),
                   parseFloat(sosLocation.latitude),
@@ -323,9 +323,8 @@ const Map = ({
                     <RippleMarker
                       marker={marker}
                       key={`sos-marker-${marker?.userId || sosSender?.user_id}`}
-                      id={String(marker.userId || sosSender?.user_id)}
+                      id={String(sosSender?.user_id || marker.userId)}
                       coordinate={[marker.longitude, marker.latitude]}
-                      userIDSOS={marker.userId || Number(sosSender?.user_id)}
                       isOnline={marker.isOnline}
                       onPress={() => {
                         console.log(
@@ -360,8 +359,8 @@ const Map = ({
             {/* My location */}
             {otherSOS && (
               <RippleMarker
-                id={`ripple-marker-${otherSOS.user_id}-${otherSOS.longitude}-${otherSOS.latitude}`}
-                userIDSOS={Number(otherSOS.user_id)}
+                // id={`ripple-marker-${otherSOS.user_id}-${otherSOS.longitude}-${otherSOS.latitude}`}
+                id={otherSOS.user_id}
                 coordinate={[
                   parseFloat(otherSOS.longitude),
                   parseFloat(otherSOS.latitude),

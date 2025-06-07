@@ -15,7 +15,6 @@ interface RippleMarkerProps {
   id?: string;
   coordinate: [number, number];
   type?: string;
-  userIDSOS?: number;
   isRescuer?: boolean;
   onPress?: () => void;
   isOnline?: boolean;
@@ -27,7 +26,6 @@ const RippleMarker = ({
   id,
   coordinate,
   type,
-  userIDSOS,
   isRescuer,
   onPress,
   isOnline = true,
@@ -38,31 +36,44 @@ const RippleMarker = ({
   const rippleOpacity = useRef(new Animated.Value(1)).current;
   const [sosProfile, setSOSProfile] = useState<Profile | null>(null);
   const { profile } = useAuth();
-  // console.log(isOnline);
-
-  useEffect(() => {
-    const getSOSProfile = async () => {
-      try {
-        if (!userIDSOS) return null;
-        const result = await userServices.getUserByID(userIDSOS);
-        setSOSProfile(result.data);
-      } catch (error: any) {
-        if (error.response) {
-          console.error("Response data:", error.response.data);
-          console.error("Response status:", error.response.status);
-          console.error("Response headers:", error.response.headers);
-        } else if (error.request) {
-          console.error(
-            "No response received. Request details:",
-            error.request
-          );
-        } else {
-          console.error("Error message:", error.message);
-        }
+  console.log("RippleMarker 41, isONline", isOnline);
+  const getSOSProfile = async () => {
+    try {
+      // ✅ More robust validation
+      if (!id) {
+        console.log("No ID provided, skipping profile fetch");
+        return;
       }
-    };
-    getSOSProfile();
-  }, [userIDSOS]);
+
+      const numericId = Number(id);
+      if (isNaN(numericId) || numericId <= 0) {
+        return;
+      }
+      const result = await userServices.getUserByID(numericId);
+
+      if (result?.data) {
+        setSOSProfile(result.data);
+      } else {
+        setSOSProfile(null);
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching profile for ID:", id);
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+      } else if (error.request) {
+        console.error("No response received. Request details:", error.request);
+      } else {
+        console.error("Error message:", error.message);
+      }
+      setSOSProfile(null); // ✅ Set null on error
+    }
+  };
+  useEffect(() => {
+    if (id) {
+      getSOSProfile();
+    }
+  }, []);
   useEffect(() => {
     const createRipple = () => {
       Animated.loop(
@@ -124,7 +135,6 @@ const RippleMarker = ({
             },
           ]}
         />
-
         <View
           style={[
             styles.centerDot,
@@ -133,21 +143,47 @@ const RippleMarker = ({
             },
           ]}
         >
-          {id === profile?.id && (
-            <Avatar
-              source={profile?.User?.avatar_url}
-              width={50}
-              height={50}
-            ></Avatar>
-          )}
-          {userIDSOS && (
+          {
+            id === sosProfile?.id && sosProfile?.User?.avatar_url && (
+              <Avatar
+                source={sosProfile.User.avatar_url}
+                width={50}
+                height={50}
+                style={{
+                  opacity: isOnline ? 1 : 0.5,
+                }}
+              />
+            )
+            /* {userIDSOS && (
             <Avatar
               source={sosProfile?.User?.avatar_url}
               width={50}
               height={50}
-              className={`${isOnline ? "" : "opacity-50"}`}
+              style={{
+                opacity: isOnline ? 1 : 0.5,
+              }}
             ></Avatar>
-          )}
+          )} */
+          }
+          {/* {userIDSOS && sosProfile?.User?.avatar_url ? (
+            <Avatar
+              source={sosProfile.User.avatar_url}
+              width={50}
+              height={50}
+              style={{
+                opacity: isOnline ? 1 : 0.5,
+              }}
+            />
+          ) : (
+            <Avatar
+              source={require("../../assets/images/ava1.png")}
+              width={50}
+              height={50}
+              style={{
+                opacity: isOnline ? 1 : 0.5,
+              }}
+            />
+          )} */}
         </View>
       </TouchableOpacity>
     </MapboxGL.MarkerView>

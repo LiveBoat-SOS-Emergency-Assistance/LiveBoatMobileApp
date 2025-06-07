@@ -1,4 +1,4 @@
-import { Image, ImageSourcePropType } from "react-native";
+import { Image, ImageSourcePropType, ImageStyle } from "react-native";
 import React from "react";
 
 interface imageProps {
@@ -6,12 +6,15 @@ interface imageProps {
   className?: string;
   width?: number;
   height?: number;
+  style?: ImageStyle;
 }
+
 const Avatar = ({
   source,
   width = 100,
   height = 100,
   className,
+  style = {},
 }: imageProps) => {
   const imageSource =
     typeof source === "string"
@@ -22,7 +25,7 @@ const Avatar = ({
     <Image
       className={`rounded-full object-cover ${className ?? ""}`}
       source={imageSource}
-      style={{ width, height }}
+      style={[{ width, height }, style]}
     />
   );
 };

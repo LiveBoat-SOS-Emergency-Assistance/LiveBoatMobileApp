@@ -79,6 +79,7 @@ export default function HomeScreen() {
     setUserInfo,
     updateLocation,
     otherUserMarkers,
+    setOtherUserMarkers,
     displayOfflineMarker,
     displayOrUpdateMarkers,
   } = useSocketContext();
@@ -142,6 +143,7 @@ export default function HomeScreen() {
           pathname: "/(tabs)/history/DetailSOS",
           params: {
             userProfile: JSON.stringify(profile),
+            checkHelping: "true",
           },
         });
       }
@@ -273,12 +275,11 @@ export default function HomeScreen() {
       getSOS();
     }, [])
   );
-  // Handler khi user chọn "Go to Rescue"
+
   const handleGoToRescue = async () => {
     try {
       setShowRescueDialog(false);
 
-      // Lưu sosId vào AsyncStorage
       await AsyncStorage.setItem("SOSID", rescueData.SOS.id.toString());
 
       Toast.show({
@@ -287,10 +288,9 @@ export default function HomeScreen() {
         text2: "Taking you to the rescue page.",
       });
 
-      // Navigate to DetailSOS
       router.replace({
         pathname: "/(tabs)/history/ProfileSOS",
-        params: { id: rescueData.SOS.id },
+        params: { id: rescueData.SOS.id, checkHelping: "true" },
       });
     } catch (error) {
       console.error("Error navigating to rescue page:", error);
@@ -302,7 +302,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Handler khi user chọn "Stay Here"
   const handleStayOnHome = () => {
     setShowRescueDialog(false);
     console.log("User chose to stay on home page");
