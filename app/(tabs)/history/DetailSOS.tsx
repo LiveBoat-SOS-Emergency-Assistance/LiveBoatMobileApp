@@ -71,8 +71,9 @@ const DetailSOS = () => {
     displayOrUpdateMarkers,
     registerCommonSocketEvents,
   } = useSocketContext();
-  // console.log("checkHelping", checkHelping);
-  // console.log("groupId 58Detail sos", groupId);
+  const [showSOSFinishedModal, setShowSOSFinishedModal] = useState(false);
+  const [finishedSOSData, setFinishedSOSData] = useState<any>(null);
+
   const [SOS, setSOS] = useState<any>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [checkRoute, setCheckRoute] = useState(false);
@@ -117,7 +118,6 @@ const DetailSOS = () => {
           groupId,
           profile?.id
         );
-        // console.log("profile", profile);
         sendMessage(
           chatSocket,
           chatInput,
@@ -157,14 +157,6 @@ const DetailSOS = () => {
     }
   };
 
-  // useEffect(() => {
-  //   if (sosId) {
-  //     console.log("163 Helping User ID:", idSender);
-  //     setHelpingTheUserId(Number(idSender));
-  //     setCurrentSOS(profileSOS);
-  //   }
-  // }, [sosId]);
-  // Parse profileSOS and set currentSOS, helpingUserId
   useEffect(() => {
     if (sosId && profileSOS) {
       try {
@@ -176,12 +168,6 @@ const DetailSOS = () => {
         console.log("163 Helping User ID:", idSender);
         setHelpingUserId(Number(idSender));
         setCheckSOS(checkHelping === "true");
-        displayOfflineMarker(
-          Number(idSender),
-          Number(parsedSOS.longitude),
-          Number(parsedSOS.latitude),
-          false
-        );
       } catch (error) {
         console.error("Error parsing profileSOS:", error);
         setCurrentSOS(null);
@@ -208,7 +194,8 @@ const DetailSOS = () => {
       displayOfflineMarker(
         result.data?.user_id,
         result.data?.longitude,
-        result.data?.latitude
+        result.data?.latitude,
+        false
       );
     } catch (error: any) {
       console.error("Error in Detail SOS 183:", {
@@ -249,20 +236,27 @@ const DetailSOS = () => {
     });
 
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
+      console.log("User finished:", data.userId);
+      console.log("Helping User ID (from ref):", helpingUserIdRef.current);
       if (data.userId == helpingUserIdRef.current) {
-        console.log("Sender finished SOS, complete rescuing");
-        Toast.show({
-          type: "success",
-          text1: "SOS Completed",
-          text2: "You have successfully completed the SOS request.",
-        });
-        setAlertVisible(true);
+        setFinishedSOSData(data);
+        setShowSOSFinishedModal(true);
+
+        // ✅ Update states
         setHelpingUserId(null);
         setCheckSOS(false);
+
+        // setAlertVisible(true);
+        // setHelpingUserId(null);
+        // setCheckSOS(false);
       }
     });
-
-    setUserInfo("HELPER");
+    console.log("256 checkHelping:", checkHelping);
+    if (checkHelping == "true") {
+      console.log("267 --------------- cung cung cung");
+      setUserInfo("HELPER");
+      console.log('269 sau khi set userInfo "HELPER"');
+    }
 
     const timeout1 = setTimeout(() => {
       socket?.current?.emit(
@@ -341,11 +335,12 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
         socket.current.disconnect();
-        socket.current.emit("TOSERVER_LEAVE_SOS_GROUP", {
-          sosId: sosId,
-          userId: profile?.id,
-          reason: "CANCELED",
-        });
+        socket.current.connect();
+        // socket.current.emit("TOSERVER_LEAVE_SOS_GROUP", {
+        //   sosId: sosId,
+        //   userId: profile?.id,
+        //   reason: "CANCELED",
+        // });
         console.log("✅ Socket cleanup completed");
       }
       if (chatSocket) {
@@ -379,23 +374,55 @@ const DetailSOS = () => {
     setShowCancelDialog(true);
   };
   const handleBack = () => {
-    if (socket.current) {
-      console.log("🧹 Cleaning up socket connections...");
-      socket.current.off(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION);
-      socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
-      socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
-      socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
-      socket.current.disconnect();
-
-      console.log("✅ Socket cleanup completed");
-    }
-    if (chatSocket) {
-      chatSocket.off("receive_message");
-      chatSocket.off("chat_history");
-      chatSocket.emit("leave_room", { groupId });
-    }
     router.back();
   };
+  const handleSOSFinishedConfirm = async () => {
+    try {
+      console.log("🏁 SOS Finished - cleaning up and navigating...");
+
+      // ✅ Cleanup socket connections
+      if (socket.current) {
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION);
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
+      }
+
+      // ✅ Cleanup chat socket
+      if (chatSocket) {
+        chatSocket.off("receive_message");
+        chatSocket.off("chat_history");
+        chatSocket.emit("leave_room", { groupId });
+      }
+
+      // ✅ Reset user info
+      setUserInfo("NORMAL");
+
+      // ✅ Close modal
+      setShowSOSFinishedModal(false);
+      setFinishedSOSData(null);
+
+      // ✅ Navigate to history
+      router.replace("/(tabs)/history");
+    } catch (error) {
+      console.error("Error handling SOS finished:", error);
+      // Still navigate even if cleanup fails
+      setShowSOSFinishedModal(false);
+      router.replace("/(tabs)/history");
+    }
+  };
+
+  // const handleSOSFinishedCancel = () => {
+  //   // ✅ User muốn ở lại xem thêm
+  //   setShowSOSFinishedModal(false);
+  //   setFinishedSOSData(null);
+
+  //   Toast.show({
+  //     type: "info",
+  //     text1: "Staying on scene",
+  //     text2: "You can continue to monitor the situation.",
+  //   });
+  // };
   return (
     <View className="flex-1  w-full h-full justify-center items-center bg-white relative">
       <Map
@@ -647,6 +674,95 @@ const DetailSOS = () => {
               >
                 <Text className="text-white font-semibold text-center">
                   Yes, Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={showSOSFinishedModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setCheckSOS(false);
+          setShowSOSFinishedModal(false);
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "white",
+              borderRadius: 16,
+              padding: 24,
+              width: "100%",
+              maxWidth: 360,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            {/* ✅ Success Icon */}
+            <View className="items-center mb-4">
+              <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center mb-4">
+                <ImageCustom
+                  source="https://img.icons8.com/?size=100&id=7690&format=png&color=000000"
+                  width={40}
+                  height={40}
+                  color="#10B981"
+                />
+              </View>
+              <Text className="text-2xl font-bold text-gray-900 text-center mb-2">
+                SOS Completed! 🎉
+              </Text>
+            </View>
+
+            {/* ✅ Content */}
+            <View className="mb-6">
+              <Text className="text-gray-600 text-center text-base leading-6 mb-4">
+                The emergency situation has been successfully resolved. The
+                person you were helping is now safe.
+              </Text>
+
+              <View className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <Text className="text-green-800 font-semibold text-center">
+                  ✅ Mission Accomplished
+                </Text>
+                <Text className="text-green-700 text-sm text-center mt-1">
+                  Thank you for your quick response and assistance!
+                </Text>
+              </View>
+            </View>
+
+            {/* ✅ Action Buttons */}
+            <View className="flex-row space-x-3 gap-3">
+              {/* Stay Button */}
+              {/* <TouchableOpacity
+                onPress={handleSOSFinishedCancel}
+                className="flex-1 bg-gray-100 py-3 px-4 rounded-lg border border-gray-200"
+              >
+                <Text className="text-gray-700 font-semibold text-center">
+                  Stay Here
+                </Text>
+              </TouchableOpacity> */}
+
+              {/* Go to History Button */}
+              <TouchableOpacity
+                onPress={handleSOSFinishedConfirm}
+                className="flex-1 bg-green-500 py-3 px-4 rounded-lg"
+              >
+                <Text className="text-white font-semibold text-center">
+                  Got it!
                 </Text>
               </TouchableOpacity>
             </View>

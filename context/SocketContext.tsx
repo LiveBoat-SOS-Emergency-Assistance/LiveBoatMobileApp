@@ -195,7 +195,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     userId: number,
     longitude: number,
     latitude: number,
-    isOnline: boolean = false
+    isOnline?: boolean
   ) => {
     setOtherUserMarkers((prev) => ({
       ...prev,

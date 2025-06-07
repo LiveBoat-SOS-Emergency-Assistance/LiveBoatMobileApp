@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { AlertTriangle } from "lucide-react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { sosService } from "../../../services/sos";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomButton from "../../../components/Button/CustomButton";
@@ -13,8 +13,9 @@ interface SocketEvents {
 }
 export default function SOSDisable() {
   const [loading, setLoading] = useState(false);
-  const { socket, userId, registerCommonSocketEvents } = useSocket();
-  const { setOtherUserMarkers, setUserInfo } = useSocketContext();
+  const { socket, setOtherUserMarkers, setUserInfo } = useSocketContext();
+  const { userId } = useLocalSearchParams<{ userId: string }>();
+  console.log("SOSDisable 20, userId", userId);
   const SOCKET_EVENTS: SocketEvents = {
     TOSERVER_SOS_FINISHED: "TOSERVER_SOS_FINISHED",
   };
@@ -29,6 +30,7 @@ export default function SOSDisable() {
       console.log("socket emit", userId);
       const userType = "NORMAL";
       setUserInfo(userType);
+      console.log("SOSDisable 30, sosId userId", sosId, userId);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
       await sosService.sos_edit(sosId!, {
         longitude: longitude,
@@ -36,6 +38,12 @@ export default function SOSDisable() {
         accuracy: accuracy,
         status: "CANCELED",
       });
+      await AsyncStorage.multiRemove([
+        "longitudeSOS",
+        "latitudeSOS",
+        "accuracySOS",
+        "sosId",
+      ]);
       Toast.show({
         type: "info",
         text1: "Notification",

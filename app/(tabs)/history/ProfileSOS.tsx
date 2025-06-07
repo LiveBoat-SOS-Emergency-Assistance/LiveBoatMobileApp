@@ -248,7 +248,8 @@ const ProfileSOS = () => {
       >
         {/* Map Section */}
         <Pressable
-          onPress={() =>
+          onPress={() => {
+            console.log("Navigate to detailsos usre isOnline", checkHelping);
             router.push({
               pathname: "/(tabs)/history/DetailSOS",
               params: {
@@ -260,8 +261,8 @@ const ProfileSOS = () => {
                 profileSOS: JSON.stringify(profileSOS),
                 checkHelping: checkHelping.toString(),
               },
-            })
-          }
+            });
+          }}
           className="w-full h-[200px] bg-red-300"
         >
           <Map />
