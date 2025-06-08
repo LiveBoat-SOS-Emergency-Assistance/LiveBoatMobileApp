@@ -70,6 +70,7 @@ const DetailSOS = () => {
     displayOfflineMarker,
     displayOrUpdateMarkers,
     registerCommonSocketEvents,
+    clearAndRefreshMarkers,
   } = useSocketContext();
   const [showSOSFinishedModal, setShowSOSFinishedModal] = useState(false);
   const [finishedSOSData, setFinishedSOSData] = useState<any>(null);
@@ -245,19 +246,15 @@ const DetailSOS = () => {
         // ✅ Update states
         setHelpingUserId(null);
         setCheckSOS(false);
-
-        // setAlertVisible(true);
-        // setHelpingUserId(null);
-        // setCheckSOS(false);
       }
     });
     console.log("256 checkHelping:", checkHelping);
-    if (checkHelping == "true") {
-      console.log("267 --------------- cung cung cung");
-      setUserInfo("HELPER");
-      console.log('269 sau khi set userInfo "HELPER"');
-    }
-
+    // if (checkHelping == "true") {
+    //   console.log("267 --------------- cung cung cung");
+    //   setUserInfo("HELPER");
+    //   console.log('269 sau khi set userInfo "HELPER"');
+    // }
+    setUserInfo("HELPER");
     const timeout1 = setTimeout(() => {
       socket?.current?.emit(
         SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
@@ -336,11 +333,6 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
         socket.current.disconnect();
         socket.current.connect();
-        // socket.current.emit("TOSERVER_LEAVE_SOS_GROUP", {
-        //   sosId: sosId,
-        //   userId: profile?.id,
-        //   reason: "CANCELED",
-        // });
         console.log("✅ Socket cleanup completed");
       }
       if (chatSocket) {
@@ -353,11 +345,13 @@ const DetailSOS = () => {
       setUserInfo("NORMAL");
       setCheckSOS(false);
       setShowCancelDialog(false);
+
       Toast.show({
         type: "success",
         text1: "SOS Cancelled",
         text2: "You have canceled your request for emergency assistance.",
       });
+      clearAndRefreshMarkers();
       setTimeout(() => {
         router.back();
       }, 1000);
@@ -370,10 +364,30 @@ const DetailSOS = () => {
       });
     }
   };
+  clearAndRefreshMarkers;
   const showCancelConfirmation = () => {
     setShowCancelDialog(true);
   };
   const handleBack = () => {
+    if (checkHelping === "false") {
+      if (socket.current) {
+        console.log("🧹 Cleaning up socket connections...");
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION);
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
+        socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
+        socket.current.disconnect();
+        socket.current.connect();
+        console.log("✅ Socket cleanup completed");
+      }
+      if (chatSocket) {
+        console.log("🧹 Cleaning up chat socket...");
+        chatSocket.off("receive_message");
+        chatSocket.off("chat_history");
+        chatSocket.emit("leave_room", { groupId });
+        console.log("✅ Chat socket cleanup completed");
+      }
+    }
     router.back();
   };
   const handleSOSFinishedConfirm = async () => {
@@ -397,6 +411,7 @@ const DetailSOS = () => {
 
       // ✅ Reset user info
       setUserInfo("NORMAL");
+      clearAndRefreshMarkers();
 
       // ✅ Close modal
       setShowSOSFinishedModal(false);

@@ -30,6 +30,7 @@ import * as mediaSoupModule from "../../../mediaSoup/index";
 import { getChatSocket, getMediaSoupSocket } from "../../../utils/socket";
 import { initializeChatModule } from "../../../sockets/ChatModule";
 import { useAuth } from "../../../context/AuthContext";
+import { useSocketContext } from "../../../context/SocketContext";
 
 interface SOSProfile {
   accuracy: string;
@@ -71,7 +72,7 @@ const ProfileSOS = () => {
   );
   const { profile } = useAuth();
   const [idSender, setIdSender] = useState<string | null>(null);
-
+  const { socket, clearAndRefreshMarkers } = useSocketContext();
   const [location, setLocation] = useState<{
     longitude: number;
     latitude: number;
@@ -177,12 +178,20 @@ const ProfileSOS = () => {
           status: "CANCELED",
         });
       }
+      if (socket.current) {
+        console.log("🧹 Cleaning up socket connections...");
+        socket.current.disconnect();
+        socket.current.connect();
+        console.log("✅ Socket cleanup completed");
+      }
 
       Toast.show({
         type: "success",
         text1: "SOS Cancelled",
         text2: "You have canceled your request for emergency assistance.",
       });
+      clearAndRefreshMarkers();
+
       setCheckHelping("false");
     } catch (error: any) {
       console.log("Error", error.response?.data);

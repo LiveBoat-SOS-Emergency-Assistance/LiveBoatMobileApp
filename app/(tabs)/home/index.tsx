@@ -81,6 +81,7 @@ export default function HomeScreen() {
     otherUserMarkers,
     setOtherUserMarkers,
     displayOfflineMarker,
+    clearAndRefreshMarkers,
     displayOrUpdateMarkers,
   } = useSocketContext();
   const SOCKET_EVENTS: SocketEvents = {
@@ -94,7 +95,9 @@ export default function HomeScreen() {
     TOSERVER_REGISTER_SOS_SENDER: "TOSERVER_REGISTER_SOS_SENDER",
     TOSERVER_GET_THE_SENDER_LOCATION: "TOSERVER_GET_THE_SENDER_LOCATION",
   };
+
   useEffect(() => {
+    // clearAndRefreshMarkers();
     if (!socket.current) return;
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
       if (!data || data.length === 0) {

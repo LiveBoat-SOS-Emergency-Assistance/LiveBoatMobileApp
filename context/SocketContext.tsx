@@ -50,6 +50,7 @@ interface SocketContextType {
     mediaFiles: any[]
   ) => Promise<boolean>;
   joinGroup: (groupId: number, userId: number) => void;
+  clearAndRefreshMarkers: () => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -137,6 +138,24 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     //   }
     // }, 5000);
   };
+  const clearAndRefreshMarkers = async () => {
+    console.log("🧹 Clearing all markers and requesting fresh data");
+
+    // Clear markers
+    setOtherUserMarkers({});
+
+    // Request fresh data
+    if (socketRef.current) {
+      socketRef.current.emit(
+        SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP,
+        {
+          forceRefresh: true,
+          timestamp: Date.now(),
+          clearPrevious: true,
+        }
+      );
+    }
+  };
 
   const displayOrUpdateMarkers = (data: Marker[]) => {
     setOtherUserMarkers((prevMarkers) => {
@@ -162,6 +181,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         (await AsyncStorage.getItem("groupIds")) || "[]"
       );
       const profileData = await AsyncStorage.getItem("profile");
+      // console.log("profileData 165 SocketContext", profileData);
       const parsedProfile = JSON.parse(profileData || "{}");
       const userId = Number(parsedProfile?.user_id) || 0;
       const avatarUrl =
@@ -285,6 +305,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         sendMessage,
         messages,
         joinGroup,
+        clearAndRefreshMarkers,
       }}
     >
       {children}
