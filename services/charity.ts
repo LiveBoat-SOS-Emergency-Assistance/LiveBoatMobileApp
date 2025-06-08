@@ -6,7 +6,7 @@ export class charityServices {
         params: {
           limit: limit,
           offset: offset,
-          status: "ACTIVE",
+          status: status,
         },
         headers: {
           "Content-Type": "application/json",
