@@ -18,11 +18,13 @@ import "../global.css";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
 import * as SplashScreen from "expo-splash-screen";
+import { useAuth } from "../context/AuthContext";
 
 SplashScreen.preventAutoHideAsync();
 LogBox.ignoreAllLogs();
 export default function home() {
   const router = useRouter();
+  const { loading } = useAuth();
   const handleLoginViaGoogle = () => {
     Toast.show({
       type: "info",
@@ -62,14 +64,6 @@ export default function home() {
     }, [])
   );
 
-  useEffect(() => {
-    const loading = async () => {
-      SplashScreen.preventAutoHideAsync();
-      SplashScreen.hideAsync();
-    };
-
-    loading();
-  }, []);
   const screenHeight = Dimensions.get("window").height;
 
   return (

@@ -7,8 +7,15 @@ interface itemSquadProps {
   name: string;
   onPress?: () => void;
   onSelectId?: (id: string) => void;
+  member_amount?: number;
 }
-const ItemSquad = ({ id, name, onPress, onSelectId }: itemSquadProps) => {
+const ItemSquad = ({
+  id,
+  name,
+  onPress,
+  onSelectId,
+  member_amount,
+}: itemSquadProps) => {
   return (
     <View className=" flex flex-row justify-between w-full items-center">
       <Pressable
@@ -25,7 +32,7 @@ const ItemSquad = ({ id, name, onPress, onSelectId }: itemSquadProps) => {
         </View>
         <View className="flex flex-col gap-1 justify-start w-full">
           <Text className="font-bold text-[#404040] text-[15px] ">{name}</Text>
-          <Text>(2 members)</Text>
+          <Text>({member_amount} members)</Text>
         </View>
       </Pressable>
       <Pressable

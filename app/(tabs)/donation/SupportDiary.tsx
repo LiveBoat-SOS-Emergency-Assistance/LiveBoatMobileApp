@@ -148,12 +148,6 @@ const SupportDiary = () => {
                   />
                 </TouchableOpacity>
               )}
-              {/* <ImageCustom
-                width={25}
-                height={25}
-                color="#80C4E9"
-                source="https://img.icons8.com/?size=100&id=112468&format=png&color=000000"
-              /> */}
             </View>
           </View>
           {/* Status Dropdown */}

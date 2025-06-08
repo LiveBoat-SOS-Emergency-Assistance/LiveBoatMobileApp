@@ -1,4 +1,4 @@
-import { Stack, useSegments } from "expo-router";
+import { Redirect, Stack, useSegments } from "expo-router";
 import {
   Image,
   KeyboardAvoidingView,
@@ -9,16 +9,19 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-import AuthProvider from "../context/AuthContext";
+import AuthProvider, { useAuth } from "../context/AuthContext";
 import React, { useEffect } from "react";
 import { SCREENS } from "../constants/screens";
 import { SocketProvider } from "../context/SocketContext";
 import { initializeNotifications } from "../utils/notification";
-import { Keyboard } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SplashScreen from "expo-splash-screen";
+
+// Prevent splash screen from auto-hiding
+// SplashScreen.preventAutoHideAsync();
 
 const Layout = () => {
   const isChatScreen = useSegments().includes("(main)/chat/ChatBox");
+
   useEffect(() => {
     initializeNotifications();
   }, []);
