@@ -37,10 +37,9 @@ const EditProfile = () => {
   const [selectedValue, setSelectedValue] = useState<Record<string, string>>(
     {}
   );
-  // console.log("profile", profile);
-  const [oldAddress, setOldAddress] = useState<string>(""); // Thêm state này
+  console.log("profile", profile);
+  const [oldAddress, setOldAddress] = useState<string>("");
   const [name, setName] = useState<string>("");
-  // const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   // Function for open library
@@ -67,25 +66,7 @@ const EditProfile = () => {
       }
     }
   };
-  // Function for save avatar
-  // const handleConfirmAvatar = async () => {
-  //   if (profile && imageUri) {
-  //     const success = await userServices.updateImage({ avatarUrl: imageUri });
-  //     if (success) {
-  //       const updatedProfile = {
-  //         ...profile,
-  //         User: {
-  //           ...profile.User,
-  //           avatar_url: imageUri,
-  //         },
-  //       };
-  //       setProfile(updatedProfile);
-  //       await AsyncStorage.setItem("profile", JSON.stringify(updatedProfile));
-  //     } else {
-  //       alert("Failed to update avatar");
-  //     }
-  //   }
-  // };
+
   const handleUpdateProfile = async () => {
     try {
       setLoading(true);
@@ -400,7 +381,10 @@ const EditProfile = () => {
                 source="https://img.icons8.com/?size=100&id=12580&format=png&color=000000"
               ></ImageCustom>
               <Text className="">{myProfile?.User.email || ""}</Text>
-              <Text className="text-[9px] text-green-500">Verified</Text>
+              {myProfile?.User?.email_verified && (
+                <Text className="text-[9px] text-green-500">Verified</Text>
+              )}
+
               <View className="absolute right-2">
                 <Icon path="M9 6L15 12L9 18" />
               </View>
@@ -413,6 +397,10 @@ const EditProfile = () => {
                 source="https://img.icons8.com/?size=100&id=Iw5aeMT37fzK&format=png&color=000000"
               ></ImageCustom>
               <Text className="">+ {myProfile?.User.phone || ""}</Text>
+              {myProfile?.User?.phone_verified && (
+                <Text className="text-[9px] text-green-500">Verified</Text>
+              )}
+
               <View className="absolute right-2">
                 <Icon path="M9 6L15 12L9 18" />
               </View>

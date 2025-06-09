@@ -152,6 +152,19 @@ const ChatScreen = () => {
     });
   };
 
+  const getDynamicCount = () => {
+    switch (selectedValue) {
+      case "alert":
+        return systemNotification.length;
+      case "squad":
+        return historyChat.length;
+      case "invite":
+        return listInvite.length;
+      default:
+        return 0;
+    }
+  };
+
   return (
     <View className="flex flex-col w-full flex-1 h-full bg-white">
       <View className="w-full pt-14 flex flex-row items-center">
@@ -189,7 +202,7 @@ const ChatScreen = () => {
                 : "Alert"}
             </Text>
             <Text className="text-sm bg-green-100 text-green-600 px-2 rounded-full">
-              232
+              {getDynamicCount()}
             </Text>
             <ChevronDown size={16} color="#6B7280" />
           </TouchableOpacity>

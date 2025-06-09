@@ -8,6 +8,7 @@ import {
   Platform,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import ImageCustom from "../../../components/Image/Image";
@@ -24,20 +25,23 @@ import MultiSelectDropdown, {
   FilterOption,
 } from "../../../components/Dropdown/MultiSelectDropdown";
 import { getCurrentLocation } from "../../../utils/location";
+import useDebounce from "../../../hooks/useDebounce";
 
 export default function History() {
   const screenWidth = Dimensions.get("window").width;
 
   // ✅ Core state
-  const [listSOS, setListSOS] = useState<SOSItem[]>([]);
+  const [allSOSData, setAllSOSData] = useState<SOSItem[]>([]); // Store all data for frontend search
+  const [filteredSOS, setFilteredSOS] = useState<SOSItem[]>([]); // Filtered and searched data
   const [page, setPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const { profile } = useAuth();
 
-  // ✅ Search and filter states - Start with empty to avoid auto-loading
+  // ✅ Search and filter states
   const [searchText, setSearchText] = useState<string>("");
+  const debouncedSearchText = useDebounce(searchText, 300);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -59,25 +63,61 @@ export default function History() {
     { label: "No rescue", value: "no_rescue" },
   ];
 
-  // ✅ Main loadSOS function with proper logic
-  const loadSOS = async (
-    pageNum: number = 1,
-    search: string = "",
-    filters: string[] = []
-  ) => {
-    // Prevent duplicate loading for pagination
+  // ✅ Frontend search function
+  const performFrontendSearch = (data: SOSItem[], searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      return data;
+    }
+
+    const lowercaseSearch = searchTerm.toLowerCase().trim();
+
+    return data.filter((item) => {
+      // Search by ID (convert to string for comparison)
+      const idMatch = item.id
+        ?.toString()
+        .toLowerCase()
+        .includes(lowercaseSearch);
+
+      // Search by user name (from various possible name fields)
+      const nameMatch =
+        // item.user?.full_name?.toLowerCase().includes(lowercaseSearch) ||
+        item?.id?.toLowerCase().includes(lowercaseSearch) ||
+        item.SOS?.name?.toLowerCase().includes(lowercaseSearch);
+
+      // Search by description if available
+      const descriptionMatch = item?.SOS?.description
+        ?.toLowerCase()
+        .includes(lowercaseSearch);
+
+      return idMatch || nameMatch || descriptionMatch;
+    });
+  };
+
+  // ✅ Apply search to current data
+  useEffect(() => {
+    console.log("🔍 Applying search:", debouncedSearchText);
+    const searchResults = performFrontendSearch(
+      allSOSData,
+      debouncedSearchText
+    );
+    setFilteredSOS(searchResults);
+    console.log(`📊 Search results: ${searchResults.length} items`);
+  }, [debouncedSearchText, allSOSData]);
+
+  // ✅ Main loadSOS function (no search parameter)
+  const loadSOS = async (pageNum: number = 1, filters: string[] = []) => {
     if (isLoading && pageNum !== 1) return;
 
     setIsLoading(true);
 
     try {
-      // ✅ Build filter parameters
       const filterParams: any = {};
 
       const hasRescueFilter = filters.includes("has_rescue");
       const noRescueFilter = filters.includes("no_rescue");
 
       if (hasRescueFilter && noRescueFilter) {
+        // Both selected, no filter
       } else if (hasRescueFilter) {
         filterParams.has_rescuers = true;
       } else if (noRescueFilter) {
@@ -96,34 +136,28 @@ export default function History() {
         }
       }
 
-      // Handle search
-      if (search.trim()) {
-        filterParams.search = search.trim();
-      }
+      console.log("📡 API call parameters:", filterParams);
       const result = await sosService.getSOSByStatus("ONGOING", filterParams);
 
       if (result?.data) {
         const newData: SOSItem[] = result.data || [];
 
-        // Update hasMore based on returned data
-        setHasMore(newData.length >= itemsPerPage);
-
-        // Update SOS list
-        setListSOS((prev: SOSItem[]) => {
-          if (pageNum === 1) {
-            return newData;
-          } else {
+        if (pageNum === 1) {
+          setAllSOSData(newData);
+        } else {
+          setAllSOSData((prev) => {
             const existingIds = prev.map((item) => item.id);
             const uniqueNewData = newData.filter(
               (item) => !existingIds.includes(item.id)
             );
             return [...prev, ...uniqueNewData];
-          }
-        });
+          });
+        }
+
+        setHasMore(newData.length >= itemsPerPage);
       } else {
-        // No data received
         if (pageNum === 1) {
-          setListSOS([]);
+          setAllSOSData([]);
         }
         setHasMore(false);
       }
@@ -135,7 +169,7 @@ export default function History() {
       });
 
       if (pageNum === 1) {
-        setListSOS([]);
+        setAllSOSData([]);
         setHasMore(false);
       }
     } finally {
@@ -180,55 +214,50 @@ export default function History() {
     fetchWeather();
   }, []);
 
-  // ✅ Load initial data when app starts - default to "nearest"
+  // ✅ Load initial data when app starts
   useEffect(() => {
     const loadInitialData = async () => {
       if (userLocation) {
         setSelectedFilters(["nearest"]);
         setPage(1);
         setHasMore(true);
-        setListSOS([]);
-        await loadSOS(1, "", ["nearest"]);
+        await loadSOS(1, ["nearest"]);
       }
     };
 
     loadInitialData();
   }, [userLocation]);
 
-  // ✅ Handle filter/search changes
+  // ✅ Handle filter changes (not search, search is handled separately)
   useEffect(() => {
     const handleFilterChange = async () => {
       if (
         selectedFilters.length === 1 &&
         selectedFilters[0] === "nearest" &&
-        !searchText
+        !debouncedSearchText
       ) {
-        return;
+        return; // Skip if only nearest filter and no search
       }
 
-      // Check if location is needed
       const needsLocation = selectedFilters.includes("nearest");
-
       if (needsLocation && !userLocation) {
         return;
       }
 
-      // Reset pagination and load new data
       setPage(1);
       setHasMore(true);
-      setListSOS([]);
-      await loadSOS(1, searchText, selectedFilters);
+      await loadSOS(1, selectedFilters);
     };
 
     handleFilterChange();
-  }, [selectedFilters, searchText]); // React to filter and search changes
+  }, [selectedFilters]); // Only depend on filters, not search
 
   // ✅ Handle load more
   const handleLoadMore = () => {
     if (!isLoading && hasMore) {
       setPage((prev) => {
         const nextPage = prev + 1;
-        loadSOS(nextPage, searchText, selectedFilters);
+        loadSOS(nextPage, selectedFilters);
         return nextPage;
       });
     }
@@ -239,16 +268,16 @@ export default function History() {
     setRefreshing(true);
     setPage(1);
     setHasMore(true);
-    setListSOS([]);
 
     try {
-      await loadSOS(1, searchText, selectedFilters);
+      await loadSOS(1, selectedFilters);
     } catch (error) {
       console.error("Error refreshing:", error);
     } finally {
       setRefreshing(false);
     }
   };
+
   const handleFilterChange = (newFilters: string[]) => {
     setSelectedFilters(newFilters);
   };
@@ -277,7 +306,7 @@ export default function History() {
             />
           }
         >
-          {/* ✅ Header */}
+          {/* Header */}
           <View className="flex flex-row justify-between px-5 w-full items-center">
             <Text className="text-[28px] text-[#404040] font-bold">Today</Text>
             <View className="w-[75px] h-[75px] rounded-full flex justify-center items-center border-[#EB4747] border-[3px]">
@@ -289,8 +318,7 @@ export default function History() {
               />
             </View>
           </View>
-
-          {/* ✅ Weather Card */}
+          {/* Weather Card */}
           <View
             className="w-[90%] h-[175px] rounded-[30px] bg-[#FFD9D9] py-4"
             style={{
@@ -307,7 +335,7 @@ export default function History() {
             <View className="flex flex-row justify-between px-5">
               <View className="flex flex-row gap-3 items-center justify-center pl-5">
                 <Text className="text-[#EB4747] text-[40px] font-bold">
-                  {listSOS.length}
+                  {filteredSOS.length}
                 </Text>
                 <Text className="text-[#404040] italic">emergencies</Text>
               </View>
@@ -389,26 +417,46 @@ export default function History() {
                 </Text>
               </View>
             </View>
-          </View>
-
-          {/* ✅ Search and Filter Row */}
+          </View>{" "}
+          {/* Search and Filter Row */}
           <View className="w-[90%] flex-row items-center justify-between mt-4 px-2">
             {/* Search Input */}
             <View className="flex-1 px-3 h-[40px] relative flex shadow-lg border-gray-200 border-[1px] rounded-[10px] bg-white mr-3">
               <TextInput
-                className="w-full h-full px-4"
+                className="w-full h-full px-4 "
                 placeholder="Search by name..."
                 value={searchText}
-                onChangeText={setSearchText}
+                onChangeText={(text) => {
+                  console.log("📝 Search text changed:", text);
+                  setSearchText(text);
+                }}
                 returnKeyType="search"
               />
-              <ImageCustom
-                className="absolute top-1/2 right-3 -translate-y-1/2"
-                source="https://img.icons8.com/?size=100&id=112468&format=png&color=000000"
-                width={24}
-                height={24}
-                color="#EB4747"
-              />
+              {/* Clear button - only show when there's text */}
+              {searchText.length > 0 && (
+                <TouchableOpacity
+                  className="absolute top-1/2 right-3 w-5 h-5 rounded-full  flex items-center justify-center"
+                  style={{ transform: [{ translateY: -10 }] }}
+                  onPress={() => {
+                    setSearchText("");
+                  }}
+                >
+                  <Text className="text-gray-600 text-lg font-bold">×</Text>
+                </TouchableOpacity>
+              )}
+              {/* Search icon - only show when there's no text */}
+              {searchText.length === 0 && (
+                <View
+                  className="absolute top-1/2 right-3"
+                  style={{ transform: [{ translateY: -10 }] }}
+                >
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=112468&format=png&color=000000"
+                    width={20}
+                    height={20}
+                  />
+                </View>
+              )}
             </View>
 
             {/* Filter Dropdown */}
@@ -421,48 +469,45 @@ export default function History() {
               />
             </View>
           </View>
-
-          {/* ✅ Loading indicator for initial load */}
-          {isLoading && listSOS.length === 0 && !refreshing && (
+          {/* Loading indicator */}
+          {isLoading && filteredSOS.length === 0 && !refreshing && (
             <View className="w-[90%] py-12 items-center">
               <ActivityIndicator size="large" color="#EB4747" />
               <Text className="text-gray-500 mt-4 text-center">
-                {selectedFilters.length > 0
-                  ? `Loading with filters: ${selectedFilters.join(", ")}...`
-                  : "Loading emergencies..."}
+                Loading emergencies...
               </Text>
             </View>
           )}
-
-          {/* ✅ Empty State Message */}
-          {!isLoading && listSOS.length === 0 && (
+          {/* Empty State Message */}
+          {!isLoading && filteredSOS.length === 0 && (
             <View className="flex-1 justify-center items-center py-16">
               <View className="bg-green-50 rounded-3xl p-8 mx-6 shadow-sm border border-green-100">
                 <View className="items-center">
-                  <Text className="text-4xl mb-4">✅</Text>
+                  <Text className="text-4xl mb-4">
+                    {debouncedSearchText ? "🔍" : "✅"}
+                  </Text>
                   <Text className="text-xl font-bold text-green-800 text-center mb-2">
-                    Awesome!
+                    {debouncedSearchText ? "No Results" : "Awesome!"}
                   </Text>
                   <Text className="text-green-700 text-center text-base leading-6">
-                    {selectedFilters.length > 0
-                      ? `No emergencies found for: ${selectedFilters.join(
-                          ", "
-                        )}`
+                    {debouncedSearchText
+                      ? `No emergencies found for "${debouncedSearchText}"`
                       : "There is no SOS at the moment"}
                   </Text>
                   <Text className="text-green-600 text-center text-sm mt-2 opacity-80">
-                    Everyone is safe right now 🎉
+                    {debouncedSearchText
+                      ? "Try a different search term"
+                      : "Everyone is safe right now 🎉"}
                   </Text>
                 </View>
               </View>
             </View>
           )}
-
-          {/* ✅ SOS List */}
-          {listSOS.length > 0 && (
+          {/* SOS List */}
+          {filteredSOS.length > 0 && (
             <View style={{ width: "100%", flex: 1 }}>
               <ScrollPagination<SOSItem>
-                data={listSOS}
+                data={filteredSOS}
                 itemsPerPage={itemsPerPage}
                 renderItem={(item: SOSItem) => <SOSCardFilter data={item} />}
                 onLoadMore={handleLoadMore}

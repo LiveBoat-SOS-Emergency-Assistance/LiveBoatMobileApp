@@ -1,4 +1,4 @@
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
 import Avatar from "../Image/Avatar";
 import ImageCustom from "../Image/Image";
@@ -7,8 +7,15 @@ interface itemSquadProps {
   name: string;
   onPress?: () => void;
   onSelectId?: (id: string) => void;
+  member_amount?: number;
 }
-const ItemSquad = ({ id, name, onPress, onSelectId }: itemSquadProps) => {
+const ItemSquad = ({
+  id,
+  name,
+  onPress,
+  onSelectId,
+  member_amount,
+}: itemSquadProps) => {
   return (
     <View className=" flex flex-row justify-between w-full items-center">
       <Pressable
@@ -25,23 +32,24 @@ const ItemSquad = ({ id, name, onPress, onSelectId }: itemSquadProps) => {
         </View>
         <View className="flex flex-col gap-1 justify-start w-full">
           <Text className="font-bold text-[#404040] text-[15px] ">{name}</Text>
-          <Text>(2 members)</Text>
+          <Text>({member_amount} members)</Text>
         </View>
       </Pressable>
-      <Pressable
+      <TouchableOpacity
         onPress={() => {
           onPress?.();
         }}
-        style={{ pointerEvents: "auto", width: 30, height: 30 }}
+        style={{ pointerEvents: "auto", width: 24, height: 24 }}
+        className="bg-gray-200 rounded-full flex justify-center items-center"
       >
         <Image
           source={{
-            uri: "https://img.icons8.com/?size=100&id=4511GGVppfIx&format=png&color=000000",
+            uri: "https://img.icons8.com/?size=100&id=85789&format=png&color=000000",
           }}
-          width={24}
-          height={24}
+          width={14}
+          height={14}
         ></Image>
-      </Pressable>
+      </TouchableOpacity>
     </View>
   );
 };

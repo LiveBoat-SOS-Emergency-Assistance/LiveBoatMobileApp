@@ -37,8 +37,13 @@ import * as Animatable from "react-native-animatable";
 import { useSocketContext } from "../../../context/SocketContext";
 import CustomAlert from "../../../components/Toast/CustomAlert";
 // import messaging from "@react-native-firebase/messaging";
-import * as Notifications from "expo-notifications";
-import { initializeNotifications } from "../../../utils/notification";
+import * as SplashScreen from "expo-splash-screen";
+
+SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({
+  duration: 0,
+  fade: false,
+});
 interface SocketEvents {
   TOCLIENT_SOS_LOCATIONS: string;
   TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
@@ -56,7 +61,7 @@ export default function HomeScreen() {
   const topSheetRef = useRef<TopSheetRef>(null);
   const [openModalCreateSquad, setOpenModalCreateSquad] = useState(false);
   const [group, setGroup] = useState<
-    { id: string; name: string; description: string }[]
+    { id: string; name: string; description: string; member_amount: string }[]
   >([]);
   const { profile } = useAuth();
   const cameraRef = useRef<Camera>(null);
@@ -81,6 +86,7 @@ export default function HomeScreen() {
     otherUserMarkers,
     setOtherUserMarkers,
     displayOfflineMarker,
+    clearAndRefreshMarkers,
     displayOrUpdateMarkers,
   } = useSocketContext();
   const SOCKET_EVENTS: SocketEvents = {
@@ -94,7 +100,9 @@ export default function HomeScreen() {
     TOSERVER_REGISTER_SOS_SENDER: "TOSERVER_REGISTER_SOS_SENDER",
     TOSERVER_GET_THE_SENDER_LOCATION: "TOSERVER_GET_THE_SENDER_LOCATION",
   };
+
   useEffect(() => {
+    // clearAndRefreshMarkers();
     if (!socket.current) return;
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
       if (!data || data.length === 0) {
@@ -288,7 +296,7 @@ export default function HomeScreen() {
         text2: "Taking you to the rescue page.",
       });
 
-      router.replace({
+      router.push({
         pathname: "/(tabs)/history/ProfileSOS",
         params: { id: rescueData.SOS.id, checkHelping: "true" },
       });
@@ -320,7 +328,7 @@ export default function HomeScreen() {
           const result = await groupServices.getGroup();
           if (result && result.data) {
             const reversedData = result.data.reverse();
-            // console.log("Groups:", reversedData);
+            console.log("Groups:", reversedData);
             setGroup(reversedData);
             setSelectNameSquad(reversedData[0]?.name);
             setSelectSquad(reversedData[0]?.id);
@@ -443,52 +451,72 @@ export default function HomeScreen() {
           </View>
         )}
         <TopSheet ref={topSheetRef}>
-          <View className="flex flex-col pt-3 pb-0 gap-3  justify-center items-center w-full relative">
-            <View
-              className="w-[50%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative "
-              style={{
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 4,
-                elevation: 5,
-              }}
-            >
-              <Text
-                className="text-white text-base font-bold"
-                style={{ fontFamily: "Poppins" }}
-              >
-                {selectNamesquad}
-              </Text>
-            </View>
-            <View className="h-[150px] w-full pr-5 pb-10">
-              <ScrollView
-                className="w-full px-7"
-                contentContainerStyle={{ gap: 8 }}
-                showsVerticalScrollIndicator={false}
-              >
-                {group.map((squad) => (
-                  <ItemSquad
-                    key={squad.id}
-                    name={squad.name}
-                    id={squad.id}
-                    onPress={() => {
-                      router.push({
-                        pathname: "/(main)/squad",
-                        params: { id: squad.id, name: squad.name },
-                      });
-                      setSelectSquad(squad.id);
+          <View
+            className="flex flex-col pt-3 pb-0 gap-3  justify-center items-center w-full relative"
+            style={{ minHeight: 100 }}
+          >
+            {group.length > 0 && (
+              <>
+                <View
+                  className="w-[50%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative"
+                  style={{
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 5,
+                  }}
+                >
+                  <Text
+                    className="text-white text-base font-bold"
+                    style={{ fontFamily: "Poppins" }}
+                  >
+                    {selectNamesquad}
+                  </Text>
+                </View>
+                <View className="h-[160px] w-full pr-5 pb-16">
+                  {/* Adjusted padding for button space */}
+                  <ScrollView
+                    className="w-full px-7"
+                    contentContainerStyle={{
+                      gap: 8,
+                      justifyContent: "flex-start",
                     }}
-                    onSelectId={() => {
-                      setSelectNameSquad(squad.name);
-                      setSelectSquad(squad.id.toString());
-                      topSheetRef.current?.close();
-                    }}
-                  />
-                ))}
-              </ScrollView>
-            </View>
-            <View className="absolute w-full justify-end px-5 flex flex-row bottom-0 bg-white">
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {group.map((squad) => (
+                      <ItemSquad
+                        key={squad.id}
+                        name={squad.name}
+                        id={squad.id}
+                        member_amount={Number(squad?.member_amount) || 1}
+                        onPress={() => {
+                          router.push({
+                            pathname: "/(main)/squad",
+                            params: { id: squad.id, name: squad.name },
+                          });
+                          setSelectSquad(squad.id);
+                        }}
+                        onSelectId={() => {
+                          setSelectNameSquad(squad.name);
+                          setSelectSquad(squad.id.toString());
+                          topSheetRef.current?.close();
+                        }}
+                      />
+                    ))}
+                  </ScrollView>
+                </View>
+              </>
+            )}
+            <View className="absolute w-full justify-self-end px-5 flex flex-col bottom-0 bg-white items-end">
+              {group.length === 0 && (
+                <Text
+                  className="text-[#80C4E9] text-base font-medium w-full text-center"
+                  style={{ fontFamily: "Poppins", marginBottom: 10 }}
+                >
+                  Let's start creating squads!
+                </Text>
+              )}
               <Pressable
                 onPress={() => setOpenModalCreateSquad(true)}
                 className="w-[40%] h-[43px] bg-white rounded-[40px] flex justify-center items-center relative border border-[#80C4E9]"
@@ -507,23 +535,6 @@ export default function HomeScreen() {
                   Create a squad
                 </Text>
               </Pressable>
-              {/* <Pressable
-                className="w-[40%] h-[43px] bg-[#80C4E9] rounded-[30px] flex justify-center items-center relative"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 5,
-                }}
-              >
-                <Text
-                  className="text-white text-sm font-bold"
-                  style={{ fontFamily: "Poppins" }}
-                >
-                  Join a squad
-                </Text>
-              </Pressable> */}
             </View>
           </View>
         </TopSheet>

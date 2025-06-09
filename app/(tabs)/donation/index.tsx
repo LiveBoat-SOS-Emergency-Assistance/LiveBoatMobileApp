@@ -8,17 +8,19 @@ import {
   FlatList,
   SafeAreaView,
   ActivityIndicator,
+  Keyboard,
 } from "react-native";
 import React, { useEffect, useState, useCallback } from "react";
 import Avatar from "../../../components/Image/Avatar";
 import { useAuth } from "../../../context/AuthContext";
 import DonationCard from "../../../components/Card/DonationCard";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+// import { GestureHandlerRootView } from "react-native-gesture-handler";
 import ImageCustom from "../../../components/Image/Image";
 import DonationItem from "../../../components/DonationItem/DonationItem";
 import { router } from "expo-router";
 import { charityServices } from "../../../services/charity";
 import useDebounce from "../../../hooks/useDebounce";
+import { TouchableWithoutFeedback } from "react-native";
 
 // Define TypeScript interface for better type safety
 interface Donation {
@@ -49,7 +51,7 @@ export default function Donation() {
   const ITEMS_PER_PAGE = 10;
   const debouncedSearchPhone = useDebounce(searchPhone, 1000);
   const [totalDonation, setTotalDonation] = useState(0);
-
+  const [isFocused, setIsFocused] = useState(false);
   const fetchCharity = async () => {
     try {
       const result = await charityServices.get_all_charity(3, 0, "ACTIVE");
@@ -255,180 +257,188 @@ export default function Donation() {
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "white" }}>
-      <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: "white",
-          paddingVertical: 40,
-          paddingHorizontal: 5,
-        }}
-      >
-        <View className="flex flex-col gap-10 w-full bg-white">
-          {error && (
-            <View className="px-5">
-              <Text className="text-red-500 text-[14px]">{error}</Text>
-            </View>
-          )}
-          <View className="flex flex-row px-5 justify-between">
-            <Text className="text-[28px] text-[#404040] font-bold w-[70%]">
-              Donation year of history
-            </Text>
-            <View className="w-[75px] h-[75px] rounded-full flex justify-center items-center border-[#EB4747] border-[3px]">
-              <Pressable>
-                <Avatar
-                  source={profile?.User?.avatar_url}
-                  width={65}
-                  height={65}
-                />
-              </Pressable>
-            </View>
-          </View>
-          <View className="w-full">
-            <FlatList
-              horizontal
-              data={listCharity}
-              keyExtractor={(item, index) => `charity-${item.id || index}`}
-              renderItem={({ item }) => (
-                <DonationCard
-                  charity={item}
-                  onPress={() => handleNavidateToDetail(item)}
-                />
-              )}
-              contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
-              showsHorizontalScrollIndicator={false}
-              ListFooterComponent={() => (
-                <View className="h-[100px] flex justify-center items-center ">
-                  <TouchableOpacity
-                    onPress={() => router.push("/(tabs)/donation/SupportDiary")}
-                  >
-                    <ImageCustom
-                      source="https://img.icons8.com/?size=100&id=wgYy0nz8B9SS&format=png&color=000000"
-                      width={20}
-                      height={20}
-                    />
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-          </View>
-          <View className="flex flex-row w-full justify-between px-6">
-            <View className="flex flex-col gap-2">
-              <View className="flex gap-3 flex-row justify-start items-center">
-                <Text className="text-[#404040] opacity-90 font-bold text-[13px]">
-                  Total donations:
-                </Text>
-                <Text className="text-[#2D5B75] font-bold text-[15px]">
-                  +{Number(totalDonation).toLocaleString("vi-VN")} VNĐ
-                </Text>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "white",
+        paddingVertical: 40,
+        paddingHorizontal: 5,
+      }}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View className="flex-1">
+          <View className="flex flex-col gap-10 w-full bg-white">
+            {error && (
+              <View className="px-5">
+                <Text className="text-red-500 text-[14px]">{error}</Text>
               </View>
-              <View className="flex flex-row items-center gap-2">
-                <Text className="text-[#404040] text-[10px]">
-                  Your kindness saves lives –
-                </Text>
-                <Text className="text-[#EB4747] font-bold italic text-[12px]">
-                  Donate now!
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/donation/SupportDiary")}
-              activeOpacity={0.8}
-              style={{
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 4,
-                elevation: 5,
-              }}
-              className="bg-[#EB4747] px-5 py-2 flex justify-center items-center rounded-[10px]"
-            >
-              <Text className="text-white font-bold">Donation</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        {/* Search input */}
-        <View
-          style={{
-            paddingHorizontal: 20,
-            marginVertical: 20,
-          }}
-        >
-          <TextInput
-            placeholder="Enter phone number..."
-            value={searchPhone}
-            onChangeText={setSearchPhone}
-            className="w-full py-3 bg-white rounded-[10px] text-[14px] border border-[#D9D9D9] shadow-md px-5 pr-10"
-            keyboardType="phone-pad"
-            returnKeyType="search"
-            onSubmitEditing={handleSearch}
-            blurOnSubmit={false}
-            autoCorrect={false}
-            autoCapitalize="none"
-            maxLength={15}
-          />
-          {searchPhone.length > 0 && (
-            <TouchableOpacity
-              onPress={clearSearch}
-              style={{
-                position: "absolute",
-                right: 30,
-                top: "50%",
-                transform: [{ translateY: -7 }],
-              }}
-            >
-              <ImageCustom
-                source="https://img.icons8.com/?size=100&id=46&format=png&color=666666"
-                width={15}
-                height={15}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-        {/* --- END search input --- */}
-
-        <FlatList
-          data={listDonation}
-          keyExtractor={(item, index) =>
-            item.id ? `donation-${item.id}` : `donation-fallback-${index}`
-          }
-          renderItem={({ item }) => <DonationItem item={item} />}
-          onEndReached={loadMoreData}
-          onEndReachedThreshold={0.3}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          contentContainerStyle={{ paddingBottom: 20, gap: 8 }}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          initialNumToRender={10}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="none"
-          ListEmptyComponent={() => (
-            <View className="flex justify-center items-center py-10">
-              <Text className="text-[#666666] text-[14px]">
-                {searchPhone.length > 0 && searchPhone.length < 3
-                  ? "Enter at least 3 digits to search"
-                  : searchPhone.length >= 3
-                  ? "No donations found for this phone number"
-                  : "Enter a phone number to search donations"}
+            )}
+            <View className="flex flex-row px-5 justify-between">
+              <Text className="text-[28px] text-[#404040] font-bold w-[70%]">
+                Donation year of history
               </Text>
+              <View className="w-[75px] h-[75px] rounded-full flex justify-center items-center border-[#EB4747] border-[3px]">
+                <Pressable>
+                  <Avatar
+                    source={profile?.User?.avatar_url}
+                    width={65}
+                    height={65}
+                  />
+                </Pressable>
+              </View>
             </View>
-          )}
-          ListFooterComponent={() =>
-            isLoadingMore ? (
-              <View className="flex justify-center items-center py-4">
-                <ActivityIndicator size="small" color="#80C4E9" />
-                <Text className="text-[#666666] text-[12px] mt-2">
-                  Loading more donations...
+            <View className="w-full">
+              <FlatList
+                horizontal
+                data={listCharity}
+                keyExtractor={(item, index) => `charity-${item.id || index}`}
+                renderItem={({ item }) => (
+                  <DonationCard
+                    charity={item}
+                    onPress={() => handleNavidateToDetail(item)}
+                  />
+                )}
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
+                showsHorizontalScrollIndicator={false}
+                ListFooterComponent={() => (
+                  <View className="h-[100px] flex justify-center items-center ">
+                    <TouchableOpacity
+                      onPress={() =>
+                        router.push("/(tabs)/donation/SupportDiary")
+                      }
+                    >
+                      <ImageCustom
+                        source="https://img.icons8.com/?size=100&id=wgYy0nz8B9SS&format=png&color=000000"
+                        width={20}
+                        height={20}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+            </View>
+            <View className="flex flex-row w-full justify-between px-6">
+              <View className="flex flex-col gap-2">
+                <View className="flex gap-3 flex-row justify-start items-center">
+                  <Text className="text-[#404040] opacity-90 font-bold text-[13px]">
+                    Total donations:
+                  </Text>
+                  <Text className="text-[#2D5B75] font-bold text-[15px]">
+                    +{Number(totalDonation).toLocaleString("vi-VN")} VNĐ
+                  </Text>
+                </View>
+                <View className="flex flex-row items-center gap-2">
+                  <Text className="text-[#404040] text-[10px]">
+                    Your kindness saves lives –
+                  </Text>
+                  <Text className="text-[#EB4747] font-bold italic text-[12px]">
+                    Donate now!
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/donation/SupportDiary")}
+                activeOpacity={0.8}
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
+                className="bg-[#EB4747] px-5 py-2 flex justify-center items-center rounded-[10px]"
+              >
+                <Text className="text-white font-bold">Donation</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          {/* Search input */}
+          <View
+            style={{
+              paddingHorizontal: 20,
+              marginVertical: 20,
+            }}
+          >
+            <TextInput
+              placeholder="Enter phone number..."
+              value={searchPhone}
+              onChangeText={setSearchPhone}
+              keyboardType="phone-pad"
+              returnKeyType="search"
+              onSubmitEditing={handleSearch}
+              blurOnSubmit={false}
+              autoCorrect={false}
+              autoCapitalize="none"
+              maxLength={15}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className={`w-full py-3 bg-white rounded-[10px] text-[14px] border px-5 pr-10 shadow-md ${
+                isFocused ? "border-blue-500" : "border-[#D9D9D9]"
+              }`}
+            />
+            {searchPhone.length > 0 && (
+              <TouchableOpacity
+                onPress={clearSearch}
+                style={{
+                  position: "absolute",
+                  right: 30,
+                  top: "50%",
+                  transform: [{ translateY: -7 }],
+                }}
+              >
+                <ImageCustom
+                  source="https://img.icons8.com/?size=100&id=46&format=png&color=666666"
+                  width={15}
+                  height={15}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+          {/* --- END search input --- */}
+
+          <FlatList
+            data={listDonation}
+            keyExtractor={(item, index) =>
+              item.id ? `donation-${item.id}` : `donation-fallback-${index}`
+            }
+            renderItem={({ item }) => <DonationItem item={item} />}
+            onEndReached={loadMoreData}
+            onEndReachedThreshold={0.3}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            contentContainerStyle={{ paddingBottom: 0, gap: 8 }}
+            showsVerticalScrollIndicator={false}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+            initialNumToRender={10}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
+            ListEmptyComponent={() => (
+              <View className="flex justify-center items-center py-10">
+                <Text className="text-[#666666] text-[14px]">
+                  {searchPhone.length > 0 && searchPhone.length < 3
+                    ? "Enter at least 3 digits to search"
+                    : searchPhone.length >= 3
+                    ? "No donations found for this phone number"
+                    : "Enter a phone number to search donations"}
                 </Text>
               </View>
-            ) : null
-          }
-          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        />
-      </SafeAreaView>
-    </GestureHandlerRootView>
+            )}
+            ListFooterComponent={() =>
+              isLoadingMore ? (
+                <View className="flex justify-center items-center py-4">
+                  <ActivityIndicator size="small" color="#80C4E9" />
+                  <Text className="text-[#666666] text-[12px] mt-2">
+                    Loading more donations...
+                  </Text>
+                </View>
+              ) : null
+            }
+            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+          />
+        </View>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }

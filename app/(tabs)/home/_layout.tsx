@@ -58,16 +58,8 @@ export default function Layout() {
         options={{
           headerShown: true,
           headerShadowVisible: false,
-          title: "",
-          // headerTitle: () => (
-          //   <ImageCustom
-          //     source="https://img.icons8.com/?size=100&id=fJXFbcW0WrW9&format=png&color=000000"
-          //     width={50}
-          //     height={50}
-          //     color="#fff"
-          //   />
-          // ),
-          headerStyle: { backgroundColor: "#f87171" },
+          title: "Chat in SOS",
+          headerStyle: { backgroundColor: "#f78d8d" },
         }}
       />
     </Stack>

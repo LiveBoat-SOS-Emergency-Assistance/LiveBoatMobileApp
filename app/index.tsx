@@ -18,11 +18,19 @@ import "../global.css";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
 import * as SplashScreen from "expo-splash-screen";
+import { useAuth } from "../context/AuthContext";
 
 SplashScreen.preventAutoHideAsync();
+// SplashScreen.setOptions({
+//   duration: 2000,
+//   fade: true,
+// });
 LogBox.ignoreAllLogs();
 export default function home() {
   const router = useRouter();
+  const [isAppReady, setAppReady] = useState(false);
+
+  const { loading } = useAuth();
   const handleLoginViaGoogle = () => {
     Toast.show({
       type: "info",
@@ -30,11 +38,31 @@ export default function home() {
       text2: "The feature will coming soon!",
     });
   };
+  useEffect(() => {
+    const prepare = async () => {
+      try {
+        await SplashScreen.preventAutoHideAsync();
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppReady(true);
+        await SplashScreen.hideAsync();
+      }
+    };
 
-  // configureReanimatedLogger({
-  //   level: ReanimatedLogLevel.warn,
-  //   strict: true,
-  // });
+    prepare();
+  }, []);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (isAppReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [isAppReady]);
+
+  if (!isAppReady) {
+    return <View style={{ flex: 1, backgroundColor: "#ffffff" }} />;
+  }
 
   const navigation = useNavigation();
   useFocusEffect(
@@ -62,14 +90,6 @@ export default function home() {
     }, [])
   );
 
-  useEffect(() => {
-    const loading = async () => {
-      SplashScreen.preventAutoHideAsync();
-      SplashScreen.hideAsync();
-    };
-
-    loading();
-  }, []);
   const screenHeight = Dimensions.get("window").height;
 
   return (

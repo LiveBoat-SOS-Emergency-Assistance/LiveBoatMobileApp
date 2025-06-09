@@ -7,13 +7,12 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authen } from "../services/authentication";
-// import { jwtServices } from "../services/jwt";
-import { router } from "expo-router";
-import { jwtDecode } from "jwt-decode";
-import axiosPrivate from "../utils/api";
+import { router, SplashScreen } from "expo-router";
 import { userServices } from "../services/user";
 import { Profile } from "../types/Profile";
 import { groupServices } from "../services/group";
+import LoadingScreen from "../components/Loading/LoadingScreen";
+
 interface RegisterData {
   phone: string;
   password: string;
@@ -30,6 +29,8 @@ interface LoginData {
 
 type AuthProps = {
   register: (data: RegisterData) => Promise<void>;
+  loading: boolean;
+  accessToken: string | null;
   login: (data: LoginData) => Promise<void>;
   logout: () => Promise<void>;
   send_otp: (data: SendOtpData) => Promise<void>;
@@ -41,6 +42,7 @@ type AuthProps = {
 };
 
 export const AuthContext = createContext<AuthProps | undefined>(undefined);
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -52,68 +54,60 @@ export const useAuth = () => {
   }
   return context;
 };
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [profile, setProfile] = useState<Profile | null>(null);
   const [groupIds, setGroupIds] = useState<number[]>([]);
+
   useEffect(() => {
-    const loadAccessToken = async () => {
+    const initializeAuth = async () => {
       try {
+        await SplashScreen.preventAutoHideAsync();
+        // Load access token
         const token = await AsyncStorage.getItem("accessToken");
         if (token) {
           setAccessToken(token);
+
+          // Load profile
+          const profileString = await AsyncStorage.getItem("profile");
+          if (profileString) {
+            const profileData: Profile = JSON.parse(profileString);
+            setProfile(profileData);
+          }
+
+          // Load group IDs
+          const groupIdsString = await AsyncStorage.getItem("groupIds");
+          if (groupIdsString) {
+            const groupIdsData: number[] = JSON.parse(groupIdsString);
+            setGroupIds(groupIdsData);
+          }
         }
       } catch (error) {
-        console.error("Error loading access token:", error);
+        console.error("Error initializing auth:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadAccessToken();
+    initializeAuth();
   }, []);
 
   useEffect(() => {
-    if (!loading) {
-      if (accessToken) {
-        router.replace("/(tabs)/home");
-      } else {
-        router.replace("/");
+    const checkAccessToken = async () => {
+      if (!loading) {
+        SplashScreen.hide();
+        if (accessToken) {
+          router.replace("/(tabs)/home");
+        } else {
+          router.replace("/");
+        }
       }
-    }
+    };
+    checkAccessToken();
   }, [loading, accessToken]);
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const profileString = await AsyncStorage.getItem("profile");
-        if (profileString) {
-          const profileData: Profile = JSON.parse(profileString);
-          setProfile(profileData);
-        }
-      } catch (error) {
-        console.error("Error loading profile:", error);
-      }
-    };
-
-    loadProfile();
-  }, []);
-  useEffect(() => {
-    const loadGroupIds = async () => {
-      try {
-        const groupIdsString = await AsyncStorage.getItem("groupIds");
-        if (groupIdsString) {
-          const groupIdsData: number[] = JSON.parse(groupIdsString);
-          setGroupIds(groupIdsData);
-        }
-      } catch (error) {
-        console.error("Error loading group IDs:", error);
-      }
-    };
-
-    loadGroupIds();
-  }, []);
 
   const register = async (data: RegisterData) => {
     try {
@@ -122,6 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw error;
     }
   };
+
   const send_otp = async (data: SendOtpData) => {
     try {
       await authen.send_otp(data);
@@ -129,8 +124,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw error;
     }
   };
+
   const login = async (userData: LoginData) => {
     try {
+      setLoading(true); // Set loading during login
       const result = await authen.login(userData);
       if (result) {
         await AsyncStorage.setItem("accessToken", result.data?.accessToken);
@@ -142,8 +139,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log("Group data", groupIds.data);
           const ids = groupIds.data.map((group: { id: string | number }) =>
             Number(group.id)
-          ); // Convert to numbers
-          await AsyncStorage.setItem("groupIds", JSON.stringify(ids)); // Store as a stringified array of numbers
+          );
+          await AsyncStorage.setItem("groupIds", JSON.stringify(ids));
           setGroupIds(ids);
           setProfile(profileRes.data);
           await AsyncStorage.setItem(
@@ -151,12 +148,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             JSON.stringify(profileRes.data)
           );
         }
+        setAccessToken(result.data?.accessToken);
         return;
       }
     } catch (error: any) {
       throw error;
+    } finally {
+      setLoading(false); // Ensure loading is reset after login
     }
   };
+
   const reset_password = async (data: any) => {
     try {
       const result = await authen.reset_password(data);
@@ -170,17 +171,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
+      setLoading(true); // Set loading during logout
       const result = await authen.logout();
       if (result) {
         await AsyncStorage.removeItem("accessToken");
         await AsyncStorage.removeItem("refreshToken");
         await AsyncStorage.removeItem("user");
+        await AsyncStorage.removeItem("profile");
+        await AsyncStorage.removeItem("groupIds");
         setAccessToken(null);
         setUser(null);
+        setProfile(null);
+        setGroupIds([]);
         return;
       }
     } catch (error: any) {
       throw error;
+    } finally {
+      setLoading(false); // Ensure loading is reset after logout
     }
   };
 
@@ -196,6 +204,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     <AuthContext.Provider
       value={{
         register,
+        accessToken,
+        loading,
         send_otp,
         reset_password,
         login,
@@ -206,8 +216,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setProfile,
       }}
     >
-      {!loading && children}
+      {loading ? <LoadingScreen /> : children}
     </AuthContext.Provider>
   );
 };
+
 export default AuthProvider;

@@ -159,7 +159,7 @@ export default function SOSMap() {
       "TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP",
     TOSERVER_SOS_FINISHED: "TOSERVER_SOS_FINISHED",
   };
-  console.log("161 SOSMap, userId", userId);
+  // console.log("161 SOSMap, userId", userId);
   const handleCancelSOS = () => {
     setIsDisable(false);
     router.push({
@@ -188,7 +188,8 @@ export default function SOSMap() {
             position: "top",
             visibilityTime: 2000,
           });
-          setListRescuer(data);
+          console.log("191 Data Rescuer of SOSMap:", data);
+          // setListRescuer(data);
           displayOrUpdateMarkers(data);
         }
       });
@@ -265,7 +266,7 @@ export default function SOSMap() {
             }
           }
         }
-      }, 10000);
+      }, 5000);
       return () => {
         clearInterval(timeout1);
         clearTimeout(timeout2);
@@ -341,14 +342,21 @@ export default function SOSMap() {
       const latitude = await AsyncStorage.getItem("latitudeSOS");
       const accuracy = await AsyncStorage.getItem("accuracySOS");
       const sosId = await AsyncStorage.getItem("sosId");
-      socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
+
       const result = await sosService.sos_edit(sosId!, {
         longitude: longitude,
         latitude: latitude,
         accuracy: accuracy,
         status: "RESOLVED",
       });
-      displayOrUpdateMarkers([]);
+      await AsyncStorage.multiRemove([
+        "longitudeSOS",
+        "latitudeSOS",
+        "accuracySOS",
+        "sosId",
+      ]);
+      socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
+      // displayOrUpdateMarkers([]);
       setOtherUserMarkers({});
       Toast.show({
         type: "info",
@@ -418,24 +426,27 @@ export default function SOSMap() {
           </Pressable>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View className="flex-col space-y-2 gap-1">
-              {listRescuer.map((rescuer, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => {
-                    handleControl({
-                      latitude: rescuer?.latitude,
-                      longitude: rescuer?.longitude,
-                    });
-                  }}
-                >
-                  <Avatar
+              {Object.values(otherUserMarkers)
+                .filter((rescuer) => rescuer.userType === "HELPER")
+                .map((rescuer, index) => (
+                  <TouchableOpacity
                     key={index}
-                    source={rescuer?.avatarUrl}
-                    width={isExpanded ? 40 : 24}
-                    height={isExpanded ? 40 : 24}
-                  ></Avatar>
-                </TouchableOpacity>
-              ))}
+                    onPress={() => {
+                      handleControl({
+                        latitude: Number(rescuer?.latitude),
+                        longitude: Number(rescuer.longitude),
+                      });
+                    }}
+                  >
+                    <Avatar
+                      source={
+                        rescuer?.avatarUrl || "https://via.placeholder.com/150"
+                      }
+                      width={isExpanded ? 40 : 24}
+                      height={isExpanded ? 40 : 24}
+                    />
+                  </TouchableOpacity>
+                ))}
             </View>
           </ScrollView>
         </View>

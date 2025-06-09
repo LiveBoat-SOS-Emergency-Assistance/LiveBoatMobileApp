@@ -10,6 +10,7 @@ import { useSocket } from "../../../hooks/useLiveLocation";
 import { useSocketContext } from "../../../context/SocketContext";
 interface SocketEvents {
   TOSERVER_SOS_FINISHED: string;
+  TOCLIENT_SOS_FINISHED: string;
 }
 export default function SOSDisable() {
   const [loading, setLoading] = useState(false);
@@ -18,6 +19,7 @@ export default function SOSDisable() {
   console.log("SOSDisable 20, userId", userId);
   const SOCKET_EVENTS: SocketEvents = {
     TOSERVER_SOS_FINISHED: "TOSERVER_SOS_FINISHED",
+    TOCLIENT_SOS_FINISHED: "TOCLIENT_SOS_FINISHED",
   };
 
   const handleOk = async () => {
@@ -32,6 +34,20 @@ export default function SOSDisable() {
       setUserInfo(userType);
       console.log("SOSDisable 30, sosId userId", sosId, userId);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
+      // socket?.current?.on(
+      //   SOCKET_EVENTS.TOSERVER_SOS_FINISHED,
+      //   async ({ userId }) => {
+      //     console.log("TOSERVER_SOS_FINISHED: ", userId);
+      //     if (!userId) {
+      //       console.error("Missing userId in TOSERVER_SOS_FINISHED");
+      //       return;
+      //     }
+      //     socket?.current?.emit(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, {
+      //       userId,
+      //     });
+      //   }
+      // );
+
       await sosService.sos_edit(sosId!, {
         longitude: longitude,
         latitude: latitude,
