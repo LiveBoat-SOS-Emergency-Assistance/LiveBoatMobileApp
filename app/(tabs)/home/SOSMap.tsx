@@ -367,6 +367,8 @@ export default function SOSMap() {
       });
       console.log("Result", result);
       router.push("/(tabs)/home");
+      socket.current?.disconnect();
+      socket.current?.connect();
     } catch (error: any) {
       console.error(error);
     }

@@ -34,19 +34,6 @@ export default function SOSDisable() {
       setUserInfo(userType);
       console.log("SOSDisable 30, sosId userId", sosId, userId);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
-      // socket?.current?.on(
-      //   SOCKET_EVENTS.TOSERVER_SOS_FINISHED,
-      //   async ({ userId }) => {
-      //     console.log("TOSERVER_SOS_FINISHED: ", userId);
-      //     if (!userId) {
-      //       console.error("Missing userId in TOSERVER_SOS_FINISHED");
-      //       return;
-      //     }
-      //     socket?.current?.emit(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, {
-      //       userId,
-      //     });
-      //   }
-      // );
 
       await sosService.sos_edit(sosId!, {
         longitude: longitude,
@@ -67,8 +54,11 @@ export default function SOSDisable() {
         position: "top",
         visibilityTime: 2000,
       });
+
       setOtherUserMarkers({});
       router.replace("/(tabs)/home");
+      socket.current?.disconnect();
+      socket.current?.connect();
       setLoading(false);
     } catch (error: any) {
       console.error(error);
