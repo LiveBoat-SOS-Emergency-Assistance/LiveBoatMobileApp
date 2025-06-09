@@ -1,4 +1,5 @@
 import React from "react";
+import { Image } from "react-native";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
 
 interface LoadingScreenProps {
@@ -10,8 +11,12 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#007AFF" />
-      <Text style={styles.message}>{message}</Text>
+      {/* <Image
+        width={100}
+        height={100}
+        style={{ width: 100, height: 100, marginBottom: 16 }}
+        source={require("../../assets/images/liveboatappicon.png")}
+      ></Image> */}
     </View>
   );
 };

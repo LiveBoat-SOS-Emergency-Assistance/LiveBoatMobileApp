@@ -11,15 +11,9 @@ import Map from "../../../components/Map/Map";
 import ImageCustom from "../../../components/Image/Image";
 import { ScrollView } from "react-native";
 import Information from "../../../components/Information/Information";
-import {
-  router,
-  useFocusEffect,
-  useLocalSearchParams,
-  useRouter,
-} from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { sosService } from "../../../services/sos";
 import { rescuerServices } from "../../../services/rescuer";
-import CustomButton from "../../../components/Button/CustomButton";
 import { getCurrentLocation } from "../../../utils/location";
 import { userServices } from "../../../services/user";
 import Avatar from "../../../components/Image/Avatar";
@@ -31,6 +25,7 @@ import { getChatSocket, getMediaSoupSocket } from "../../../utils/socket";
 import { initializeChatModule } from "../../../sockets/ChatModule";
 import { useAuth } from "../../../context/AuthContext";
 import { useSocketContext } from "../../../context/SocketContext";
+import { ActivityIndicator } from "react-native";
 
 interface SOSProfile {
   accuracy: string;
@@ -82,6 +77,7 @@ const ProfileSOS = () => {
   const mediaSoupSocket = getMediaSoupSocket();
   const [loading, setLoading] = useState(false);
   const [groupId, setGroupId] = useState<number | null>(null);
+  const [loadingButton, setLoadingButton] = useState(false);
   const getMyRescuerCurrent = async () => {
     try {
       const result = await rescuerServices.getSOSCurrent();
@@ -136,6 +132,7 @@ const ProfileSOS = () => {
   }, []);
   const handleGiveSupport = async () => {
     try {
+      setLoadingButton(true);
       const result = await rescuerServices.postRescuer(Number(id), location);
       if (result) {
         Toast.show({
@@ -158,6 +155,7 @@ const ProfileSOS = () => {
           },
         });
       }
+      setLoadingButton(false);
     } catch (error: any) {
       Toast.show({
         type: "error",
@@ -165,10 +163,12 @@ const ProfileSOS = () => {
         text2: "You are already assisting another SOS request.",
       });
       console.log("Error", error.response?.data);
+      setLoadingButton(false);
     }
   };
   const handleCancelSOS = async () => {
     try {
+      setLoadingButton(true);
       // console.log(currentSOS.SOS);
       if (profileSOS) {
         const result = await rescuerServices.updateRescuer({
@@ -193,7 +193,9 @@ const ProfileSOS = () => {
       clearAndRefreshMarkers();
 
       setCheckHelping("false");
+      setLoadingButton(false);
     } catch (error: any) {
+      setLoadingButton(false);
       console.log("Error", error.response?.data);
       Toast.show({
         type: "error",
@@ -248,9 +250,29 @@ const ProfileSOS = () => {
       });
     }
   };
-
   return (
     <SafeAreaView className="flex-1">
+      {/* Back Button */}
+      <View className="absolute top-12 left-4 z-10">
+        <TouchableOpacity
+          onPress={() => router.replace("/(tabs)/history")}
+          className="w-10 h-10 bg-gray-100 rounded-full shadow-lg flex items-center justify-center"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
+          }}
+        >
+          <ImageCustom
+            width={20}
+            height={20}
+            source="https://img.icons8.com/?size=100&id=20i9yZTsnnmg&format=png&color=000000"
+          />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         contentContainerStyle={{ paddingBottom: 100 }}
         className="w-full bg-white"
@@ -318,9 +340,17 @@ const ProfileSOS = () => {
                   onPress={handleCancelSOS}
                   className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"
                 >
-                  <Text className="text-[11px] text-white font-bold">
-                    Cancel Help
-                  </Text>
+                  {loadingButton ? (
+                    <ActivityIndicator
+                      size="small"
+                      color="#fff"
+                      style={{ transform: [{ scale: 0.6 }] }}
+                    />
+                  ) : (
+                    <Text className="text-[11px] text-white font-bold">
+                      Cancel Help
+                    </Text>
+                  )}
                 </TouchableOpacity>
               )}
               {checkHelping === "false" && (
@@ -328,7 +358,17 @@ const ProfileSOS = () => {
                   onPress={handleGiveSupport}
                   className="w-fit px-3 py-2 bg-red-400 flex justify-center rounded-[20px] items-center"
                 >
-                  <Text className="text-[11px] text-white font-bold">Help</Text>
+                  {loadingButton ? (
+                    <ActivityIndicator
+                      size="small"
+                      color="#fff"
+                      style={{ transform: [{ scale: 0.6 }] }}
+                    />
+                  ) : (
+                    <Text className="text-[11px] text-white font-bold">
+                      Help
+                    </Text>
+                  )}
                 </TouchableOpacity>
               )}
             </View>

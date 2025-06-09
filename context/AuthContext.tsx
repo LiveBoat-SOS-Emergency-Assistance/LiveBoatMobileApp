@@ -89,7 +89,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error("Error initializing auth:", error);
       } finally {
         setLoading(false);
-        await SplashScreen.hideAsync();
       }
     };
 
@@ -97,13 +96,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (!loading) {
-      if (accessToken) {
-        router.replace("/(tabs)/home");
-      } else {
-        router.replace("/");
+    const checkAccessToken = async () => {
+      if (!loading) {
+        SplashScreen.hide();
+        if (accessToken) {
+          router.replace("/(tabs)/home");
+        } else {
+          router.replace("/");
+        }
       }
-    }
+    };
+    checkAccessToken();
   }, [loading, accessToken]);
 
   const register = async (data: RegisterData) => {

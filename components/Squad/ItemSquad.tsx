@@ -1,4 +1,4 @@
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
 import Avatar from "../Image/Avatar";
 import ImageCustom from "../Image/Image";
@@ -35,20 +35,21 @@ const ItemSquad = ({
           <Text>({member_amount} members)</Text>
         </View>
       </Pressable>
-      <Pressable
+      <TouchableOpacity
         onPress={() => {
           onPress?.();
         }}
-        style={{ pointerEvents: "auto", width: 30, height: 30 }}
+        style={{ pointerEvents: "auto", width: 24, height: 24 }}
+        className="bg-gray-200 rounded-full flex justify-center items-center"
       >
         <Image
           source={{
-            uri: "https://img.icons8.com/?size=100&id=4511GGVppfIx&format=png&color=000000",
+            uri: "https://img.icons8.com/?size=100&id=85789&format=png&color=000000",
           }}
-          width={24}
-          height={24}
+          width={14}
+          height={14}
         ></Image>
-      </Pressable>
+      </TouchableOpacity>
     </View>
   );
 };

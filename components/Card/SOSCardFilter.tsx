@@ -14,7 +14,7 @@ interface cardProps {
 const SOSCardFilter = ({ data }: cardProps) => {
   const [user, setUser] = useState<any>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
-  console.log("SOSCardFilter rendered with data:", data);
+  // console.log("SOSCardFilter rendered with data:", data);
   useEffect(() => {
     const getUser = async () => {
       try {

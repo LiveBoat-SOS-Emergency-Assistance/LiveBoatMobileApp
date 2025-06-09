@@ -33,7 +33,19 @@
       "@react-native-firebase/auth",
       "@react-native-firebase/crashlytics",
       "expo-font",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/images/liveboatappicon.png",
+          "dark": {
+            "image": "./assets/images/liveboatappicon.png",
+            "backgroundColor": "#ffffff"
+          },
+          "imageWidth": 200
+        }
+      ]
     ]
   }
 }

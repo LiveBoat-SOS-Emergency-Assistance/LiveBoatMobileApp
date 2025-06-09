@@ -9,7 +9,7 @@ export default function Layout() {
       <Stack.Screen
         name="ProfileSOS"
         options={{
-          headerShown: true,
+          headerShown: false,
           headerTitle: "",
           headerTransparent: true,
           headerStyle: {

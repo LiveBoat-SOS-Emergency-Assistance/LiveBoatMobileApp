@@ -37,8 +37,13 @@ import * as Animatable from "react-native-animatable";
 import { useSocketContext } from "../../../context/SocketContext";
 import CustomAlert from "../../../components/Toast/CustomAlert";
 // import messaging from "@react-native-firebase/messaging";
-import * as Notifications from "expo-notifications";
-import { initializeNotifications } from "../../../utils/notification";
+import * as SplashScreen from "expo-splash-screen";
+
+SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({
+  duration: 0,
+  fade: false,
+});
 interface SocketEvents {
   TOCLIENT_SOS_LOCATIONS: string;
   TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP: string;
@@ -291,7 +296,7 @@ export default function HomeScreen() {
         text2: "Taking you to the rescue page.",
       });
 
-      router.replace({
+      router.push({
         pathname: "/(tabs)/history/ProfileSOS",
         params: { id: rescueData.SOS.id, checkHelping: "true" },
       });
@@ -469,7 +474,7 @@ export default function HomeScreen() {
                     {selectNamesquad}
                   </Text>
                 </View>
-                <View className="h-[150px] w-full pr-5 pb-16">
+                <View className="h-[160px] w-full pr-5 pb-16">
                   {/* Adjusted padding for button space */}
                   <ScrollView
                     className="w-full px-7"

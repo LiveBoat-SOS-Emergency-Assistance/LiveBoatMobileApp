@@ -92,7 +92,7 @@ const GroupChat = () => {
     );
   };
   return (
-    <View className="w-full h-full bg-red-400  relative ">
+    <View className="w-full h-full bg-white  relative ">
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -101,7 +101,7 @@ const GroupChat = () => {
         contentContainerStyle={{ padding: 16 }}
       />
 
-      <View className="absolute bottom-9 w-full px-4 bg-red-400 pb-2">
+      <View className="absolute bottom-9 w-full px-4 bg-white pb-2 ">
         <View className="flex-row items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md border border-gray-200">
           {/* Input field */}
           <TextInput
