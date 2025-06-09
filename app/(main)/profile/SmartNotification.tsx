@@ -21,7 +21,6 @@ import { notifcationService } from "../../../services/notification";
 
 const SmartNotification = () => {
   const [isEnabled, setIsEnabled] = useState(false);
-
   useEffect(() => {
     const initNotificationStatus = async () => {
       try {
@@ -132,7 +131,9 @@ const SmartNotification = () => {
               try {
                 await deleteFCMToken();
                 setIsEnabled(false);
-
+                const result = await notifcationService.update_fcm_token({
+                  fcmToken: "",
+                });
                 console.log("Notifications disabled successfully");
               } catch (error) {
                 Alert.alert(

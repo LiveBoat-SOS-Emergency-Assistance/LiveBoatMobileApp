@@ -94,7 +94,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initializeAuth();
   }, []);
-
   useEffect(() => {
     const checkAccessToken = async () => {
       if (!loading) {
