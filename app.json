@@ -1,9 +1,9 @@
 {
   "expo": {
     "scheme": "liveboatapp",
-    "name": "Liveboat-07jun2025",
+    "name": "Liveboat-10jun2025",
     "slug": "liveboatapp",
-    "version": "07.6.2025",
+    "version": "10.06.2025",
     "orientation": "portrait",
     "icon": "./assets/images/liveboatappicon.png",
     "userInterfaceStyle": "light",

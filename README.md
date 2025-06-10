@@ -150,7 +150,8 @@ Some errors may need taken cares of
         gradlew assembleRelease
     ```
 2. make sure all images are in its true extension
-3. 
+3. might need ``chmod +x android/gradlew``
+
 ---
 
 ## 📄 License
