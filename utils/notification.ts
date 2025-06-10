@@ -2,7 +2,7 @@ import messaging from "@react-native-firebase/messaging";
 import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
 
-// Yêu cầu quyền thông báo
+// Request notification permission
 async function requestUserPermission() {
   const authStatus = await messaging().requestPermission();
   const enabled =
@@ -17,7 +17,7 @@ async function requestUserPermission() {
   return enabled;
 }
 
-// Lấy FCM token
+// Get FCM token
 async function getFCMToken() {
   try {
     const token = await messaging().getToken();
@@ -29,7 +29,7 @@ async function getFCMToken() {
   }
 }
 
-// Xử lý thông báo khi ứng dụng ở foreground
+// Handle notifications when the app is in the foreground
 function setupForegroundNotification() {
   messaging().onMessage(async (remoteMessage) => {
     console.log(
@@ -54,7 +54,7 @@ function setupForegroundNotification() {
   });
 }
 
-// Xử lý thông báo khi ứng dụng ở background
+// Handle notifications when the application is in the background
 function setupBackgroundNotification() {
   messaging().setBackgroundMessageHandler(async (remoteMessage) => {
     console.log(
@@ -64,7 +64,7 @@ function setupBackgroundNotification() {
   });
 }
 
-// Khởi tạo dịch vụ thông báo
+// Initialize notification service
 export async function initializeNotifications() {
   try {
     const permissionGranted = await requestUserPermission();

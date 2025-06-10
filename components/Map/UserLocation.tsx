@@ -11,6 +11,8 @@ import {
 import { Easing } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import MapboxGL from "@rnmapbox/maps";
+import { userServices } from "../../services/user";
+import { Profile } from "../../types/Profile";
 
 interface BreathingAvatarProps {
   id?: string;
@@ -25,20 +27,23 @@ interface BreathingAvatarProps {
     phone?: string;
     accuracy?: number;
   };
+  marker?: any;
 }
 
 const UserLocation = ({
   id,
-  size = 60,
+  size = 50,
   coordinate,
   avatarUrl,
   userType = "NORMAL",
   onPress,
   userData,
+  marker,
 }: BreathingAvatarProps) => {
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(1)).current;
   const { profile } = useAuth();
+  const [profileUser, setSOSProfile] = React.useState<Profile | null>(null);
 
   useEffect(() => {
     const breathingAnimation = Animated.loop(
@@ -80,6 +85,43 @@ const UserLocation = ({
     return () => {
       breathingAnimation.stop();
     };
+  }, []);
+  const getSOSProfile = async () => {
+    try {
+      // ✅ More robust validation
+      if (!id) {
+        console.log("No ID provided, skipping profile fetch");
+        return;
+      }
+
+      const numericId = Number(id);
+      if (isNaN(numericId) || numericId <= 0) {
+        return;
+      }
+      const result = await userServices.getUserByID(numericId);
+
+      if (result?.data) {
+        setSOSProfile(result.data);
+      } else {
+        setSOSProfile(null);
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching profile for ID:", id);
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+      } else if (error.request) {
+        console.error("No response received. Request details:", error.request);
+      } else {
+        console.error("Error message:", error.message);
+      }
+      setSOSProfile(null); // ✅ Set null on error
+    }
+  };
+  useEffect(() => {
+    if (id) {
+      getSOSProfile();
+    }
   }, []);
   return (
     <MapboxGL.MarkerView

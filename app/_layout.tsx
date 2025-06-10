@@ -14,10 +14,6 @@ import React, { useEffect } from "react";
 import { SCREENS } from "../constants/screens";
 import { SocketProvider } from "../context/SocketContext";
 import { initializeNotifications } from "../utils/notification";
-import * as SplashScreen from "expo-splash-screen";
-
-// Prevent splash screen from auto-hiding
-// SplashScreen.preventAutoHideAsync();
 
 const Layout = () => {
   const isChatScreen = useSegments().includes("(main)/chat/ChatBox");

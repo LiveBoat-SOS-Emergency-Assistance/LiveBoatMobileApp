@@ -102,7 +102,6 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    // clearAndRefreshMarkers();
     if (!socket.current) return;
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
       if (!data || data.length === 0) {
@@ -120,7 +119,7 @@ export default function HomeScreen() {
         SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
       );
     }, 3000);
-    const timeout3 = setTimeout(async () => {
+    const timeout3 = setInterval(async () => {
       const location = await getCurrentLocation();
       if (location) {
         updateLocation(
@@ -129,7 +128,7 @@ export default function HomeScreen() {
           location.accuracy ?? 0
         );
       }
-    }, 2000);
+    }, 5000);
     return () => {
       clearTimeout(timeout1);
       clearTimeout(timeout3);

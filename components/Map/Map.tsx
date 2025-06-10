@@ -389,7 +389,7 @@ const Map = ({
         visible={showPopup}
         marker={selectedMarker}
         onClose={handleClosePopup}
-        onCall={handleCallUser}
+        // onCall={handleCallUser}
         onMessage={handleMessageUser}
         onGetDirections={handleGetDirections}
       />

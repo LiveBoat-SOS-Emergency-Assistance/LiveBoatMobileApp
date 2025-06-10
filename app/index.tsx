@@ -29,8 +29,6 @@ LogBox.ignoreAllLogs();
 export default function home() {
   const router = useRouter();
   const [isAppReady, setAppReady] = useState(false);
-
-  const { loading } = useAuth();
   const handleLoginViaGoogle = () => {
     Toast.show({
       type: "info",
@@ -49,6 +47,7 @@ export default function home() {
         setAppReady(true);
         await SplashScreen.hideAsync();
       }
+      setAppReady(true);
     };
 
     prepare();
@@ -60,9 +59,9 @@ export default function home() {
     }
   }, [isAppReady]);
 
-  if (!isAppReady) {
-    return <View style={{ flex: 1, backgroundColor: "#ffffff" }} />;
-  }
+  // if (!isAppReady) {
+  //   return <View style={{ flex: 1, backgroundColor: "#ffffff" }} />;
+  // }
 
   const navigation = useNavigation();
   useFocusEffect(
@@ -92,7 +91,9 @@ export default function home() {
 
   const screenHeight = Dimensions.get("window").height;
 
-  return (
+  return !isAppReady ? (
+    <View style={{ flex: 1, backgroundColor: "#ffffff" }} />
+  ) : (
     <>
       <StatusBar style="dark"></StatusBar>
       <View
