@@ -589,7 +589,7 @@ const DetailSOS = () => {
                       marginRight: 6,
                     }}
                   >
-                    {msg.name || "You"}:
+                    {msg.name || "You"}
                   </Text>
                   <Text style={{ color: "#000" }}>{msg.content}</Text>
                 </View>
