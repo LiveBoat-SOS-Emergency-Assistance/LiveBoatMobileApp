@@ -252,7 +252,6 @@ export default function SOSMap() {
             location.longitude,
             location.accuracy ?? 0
           );
-          // Gọi sos_edit để update location SOS trên server
           if (sosId) {
             try {
               await sosService.sos_edit(sosId, {

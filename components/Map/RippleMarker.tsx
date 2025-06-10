@@ -35,7 +35,7 @@ const RippleMarker = ({
   const rippleScale = useRef(new Animated.Value(0)).current;
   const rippleOpacity = useRef(new Animated.Value(1)).current;
   const [sosProfile, setSOSProfile] = useState<Profile | null>(null);
-  const { profile } = useAuth();
+  // const { profile } = useAuth();
   // console.log("RippleMarker 41, isONline", isOnline);
   const getSOSProfile = async () => {
     try {

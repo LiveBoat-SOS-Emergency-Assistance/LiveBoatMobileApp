@@ -417,7 +417,7 @@ export default function History() {
                 </Text>
               </View>
             </View>
-          </View>{" "}
+          </View>
           {/* Search and Filter Row */}
           <View className="w-[90%] flex-row items-center justify-between mt-4 px-2">
             {/* Search Input */}

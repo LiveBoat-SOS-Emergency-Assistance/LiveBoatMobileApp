@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -7,10 +7,13 @@ import {
   Image,
   Dimensions,
   Modal,
+  Linking,
+  Alert,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import Avatar from "../Image/Avatar";
 import ImageCustom from "../Image/Image";
+import { userServices } from "../../services/user";
 
 interface MarkerPopupProps {
   visible: boolean;
@@ -26,7 +29,7 @@ interface MarkerPopupProps {
     status?: string;
   } | null;
   onClose: () => void;
-  onCall?: () => void;
+  // onCall?: () => void;
   onMessage?: () => void;
   onGetDirections?: () => void;
 }
@@ -37,12 +40,19 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
   visible,
   marker,
   onClose,
-  onCall,
+  // onCall,
   onMessage,
   onGetDirections,
 }) => {
   if (!visible || !marker) return null;
   console.log("MarkerPopup rendered with marker:", marker);
+  const [profileUser, setProfileUser] = React.useState<{
+    userId: number;
+    name?: string;
+    phone?: string;
+    accuracy?: number;
+    avatarUrl?: string;
+  } | null>(null);
   const getStatusColor = (userType: string) => {
     switch (userType) {
       case "SENDER":
@@ -55,7 +65,47 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
         return "#6B7280";
     }
   };
-
+  // const handleCallUser = () => {
+  //   if (selectedMarker?.phone) {
+  //     Linking.openURL(`tel:${selectedMarker.phone}`);
+  //   } else {
+  //     Alert.alert(
+  //       "No phone number",
+  //       "This user doesn't have a phone number available"
+  //     );
+  //   }
+  // };
+  const onCall = () => {
+    if (profileUser?.phone) {
+      Linking.openURL(`tel:${profileUser.phone}`);
+    } else {
+      Alert.alert(
+        "No phone number",
+        "This user doesn't have a phone number available"
+      );
+    }
+  };
+  // console.log("MarkerPopup rendered with marker:", marker);
+  useEffect(() => {
+    const getUser = async () => {
+      if (marker) {
+        try {
+          const result = await userServices.getUserByID(marker.userId);
+          // console.log("Fetched user data:", result.data);
+          setProfileUser({
+            userId: marker.userId,
+            name: result?.data?.name || `User ${marker.userId}`,
+            phone: result?.data?.User?.phone,
+            accuracy: marker.accuracy,
+            avatarUrl: result?.data?.User?.avatar_url || marker.avatarUrl,
+          });
+        } catch (error: any) {
+          console.error("Error fetching user data:", error.message);
+        }
+      }
+    };
+    getUser();
+  }, [marker]);
   const getStatusText = (userType: string) => {
     switch (userType) {
       case "SENDER":
@@ -84,14 +134,14 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
             <View style={styles.header}>
               <View style={styles.headerContent}>
                 <Avatar
-                  source={marker.avatarUrl}
+                  source={profileUser?.avatarUrl}
                   width={50}
                   height={50}
                   className="rounded-full"
                 />
                 <View style={styles.userInfo}>
                   <Text style={styles.userName}>
-                    {marker.name || `User ${marker.userId}`}
+                    {profileUser?.name || `User ${marker.userId}`}
                   </Text>
                   <View style={styles.statusContainer}>
                     <View
@@ -104,8 +154,8 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
                       {getStatusText(marker.userType)}
                     </Text>
                   </View>
-                  {marker.phone && (
-                    <Text style={styles.phoneText}>{marker.phone}</Text>
+                  {profileUser?.phone && (
+                    <Text style={styles.phoneText}>{profileUser.phone}</Text>
                   )}
                 </View>
               </View>
@@ -168,7 +218,7 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
                   </Text>
                 </TouchableOpacity>
               )}
-              {onMessage && marker.userType === "SENDER" && (
+              {/* {onMessage && marker.userType === "SENDER" && (
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={onMessage}
@@ -183,7 +233,7 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
                     Help
                   </Text>
                 </TouchableOpacity>
-              )}
+              )} */}
               {onGetDirections && (
                 <TouchableOpacity
                   style={styles.actionButton}
@@ -283,7 +333,7 @@ const styles = StyleSheet.create({
   },
   phoneText: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: "#404040",
     marginTop: 2,
   },
   closeButton: {
