@@ -8,6 +8,7 @@ import {
   LogBox,
   BackHandler,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { FONTS } from "../constants/theme";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
@@ -92,7 +93,16 @@ export default function home() {
   const screenHeight = Dimensions.get("window").height;
 
   return !isAppReady ? (
-    <View style={{ flex: 1, backgroundColor: "#ffffff" }} />
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: "#ffffff",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <ActivityIndicator size="small" color="#EB4747" />
+    </View>
   ) : (
     <>
       <StatusBar style="dark"></StatusBar>

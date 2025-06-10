@@ -8,6 +8,7 @@ import {
   BackHandler,
   Image,
   StatusBar,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { Video } from "lucide-react-native";
 import Map from "../../../components/Map/Map";
@@ -89,13 +90,50 @@ export default function SOSMap() {
   const [groupId, setGroupId] = useState<string | null>(null);
   const { profile } = useAuth();
   const chatSocket = getChatSocket();
+  const [sosStartTime, setSosStartTime] = useState<Date | null>(null);
+  const [currentTime, setCurrentTime] = useState<string>("00:00");
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const calculateElapsedTime = useCallback((startTime: Date) => {
+    const now = new Date();
+    const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+      2,
+      "0"
+    )}`;
+  }, []);
+
+  useEffect(() => {
+    if (sosStartTime) {
+      // Update timer every second
+      timerRef.current = setInterval(() => {
+        setCurrentTime(calculateElapsedTime(sosStartTime));
+      }, 1000);
+
+      // Cleanup on unmount
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      };
+    }
+  }, [sosStartTime, calculateElapsedTime]);
   useEffect(() => {
     const getSOSId = async () => {
       try {
         const id = await AsyncStorage.getItem("sosId");
         setSosId(id);
         sosIdRef.current = id;
+        const result = await sosService.getSOSById(Number(id));
+        console.log("SOSMap: SOS ID", result.data.created_at);
+        const startTime = new Date(result.data.created_at);
+        setSosStartTime(startTime);
+
+        setCurrentTime(calculateElapsedTime(startTime));
       } catch (error) {
         console.log("Error when get SOS ID", error);
       }
@@ -181,13 +219,13 @@ export default function SOSMap() {
       socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
         // console.log("The Helper locations:", data);
         if (data) {
-          Toast.show({
-            type: "info",
-            text1: "Notification",
-            text2: "Someone is coming to support you!",
-            position: "top",
-            visibilityTime: 2000,
-          });
+          // Toast.show({
+          //   type: "info",
+          //   text1: "Notification",
+          //   text2: "Someone is coming to support you!",
+          //   position: "top",
+          //   visibilityTime: 2000,
+          // });
           console.log("191 Data Rescuer of SOSMap:", data);
           // setListRescuer(data);
           displayOrUpdateMarkers(data);
@@ -201,7 +239,7 @@ export default function SOSMap() {
         );
       }, 3000);
 
-      socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
+      // socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
       const timeout2 = setTimeout(async () => {
         const location = await getCurrentLocation();
         if (location) {
@@ -282,17 +320,7 @@ export default function SOSMap() {
       };
     }, [sosId])
   );
-  // useEffect(() => {
-  //   const getSOSId = async () => {
-  //     try {
-  //       const sosId = await AsyncStorage.getItem("sosId");
-  //       setSosId(sosId);
-  //     } catch (error) {
-  //       console.log("Error when get SOS ID", error);
-  //     }
-  //   };
-  //   getSOSId();
-  // }, []);
+
   useEffect(() => {
     const unsubscribe = navigation.addListener(
       "beforeRemove",
@@ -372,6 +400,7 @@ export default function SOSMap() {
       console.error(error);
     }
   };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar hidden={false} barStyle={"dark-content"} />
@@ -521,42 +550,57 @@ export default function SOSMap() {
         </Pressable>
         {isDisable ? (
           <AnimatePresence>
-            <BottomModal expandedHeight={55} collapsedHeight={55} color="white">
-              <View className="flex flex-col justify-center w-full h-full items-center gap-4 relative">
-                <View className="flex flex-col justify-center items-center gap-2  absolute top-3">
-                  <View className="flex flex-row justify-center ">
-                    <Text className="text-[#404040] font-bold text-lg">
-                      SOS has been activated–
-                    </Text>
-                    <Text className="text-[#EB4747] font-bold text-lg">
-                      03:25 minutes
-                    </Text>
-                  </View>
-                  <ImageCustom
-                    width={100}
-                    height={100}
-                    source={require("../../../assets/images/imageDisable.png")}
-                  ></ImageCustom>
-                  <View className="flex flex-col gap-4">
-                    <Text className="text-[#EB4747] font-semibold">
-                      Are you sure you want to cancel SOS?
-                    </Text>
-                    <View className="flex flex-row">
-                      <Text className="text-[#404040] opacity-1 italic">
-                        If you are still in danger, keep
-                      </Text>
-                      <TouchableOpacity onPress={() => setIsDisable(false)}>
-                        <Text className="text-[#4F8AAB] italic underline">
-                          {" "}
-                          SOS active!
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+            <View className="absolute inset-0 z-40 bg-black/20">
+              <TouchableWithoutFeedback onPress={() => setIsDisable(false)}>
+                <View className="flex-1">
+                  <BottomModal
+                    expandedHeight={55}
+                    collapsedHeight={55}
+                    color="white"
+                  >
+                    {/* Add a TouchableWithoutFeedback to capture touches inside the modal */}
+                    <TouchableWithoutFeedback onPress={() => {}}>
+                      <View className="flex flex-col justify-center w-full h-full items-center gap-4 relative">
+                        <View className="flex flex-col justify-center items-center gap-2 absolute top-3">
+                          <View className="flex flex-row justify-center">
+                            <Text className="text-[#404040] font-bold text-lg">
+                              SOS has been activated–
+                            </Text>
+                            <Text className="text-[#EB4747] font-bold text-lg">
+                              {currentTime} minutes
+                            </Text>
+                          </View>
+                          <ImageCustom
+                            width={160}
+                            height={160}
+                            source={require("../../../assets/images/imageDisable.png")}
+                          />
+                          <View className="flex flex-col gap-4">
+                            <Text className="text-[#EB4747] font-semibold">
+                              Are you sure you want to cancel SOS?
+                            </Text>
+                            <View className="flex flex-row">
+                              <Text className="text-[#404040] opacity-1 italic">
+                                If you are still in danger, keep
+                              </Text>
+                              <TouchableOpacity
+                                onPress={() => setIsDisable(false)}
+                              >
+                                <Text className="text-[#4F8AAB] italic underline">
+                                  {" "}
+                                  SOS active!
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </View>
+                        <SlideToCancel onCancel={handleCancelSOS} />
+                      </View>
+                    </TouchableWithoutFeedback>
+                  </BottomModal>
                 </View>
-                <SlideToCancel onCancel={handleCancelSOS}></SlideToCancel>
-              </View>
-            </BottomModal>
+              </TouchableWithoutFeedback>
+            </View>
           </AnimatePresence>
         ) : (
           <>
