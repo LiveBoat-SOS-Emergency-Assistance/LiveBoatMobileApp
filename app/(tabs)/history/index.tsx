@@ -95,13 +95,11 @@ export default function History() {
 
   // ✅ Apply search to current data
   useEffect(() => {
-    console.log("🔍 Applying search:", debouncedSearchText);
     const searchResults = performFrontendSearch(
       allSOSData,
       debouncedSearchText
     );
     setFilteredSOS(searchResults);
-    console.log(`📊 Search results: ${searchResults.length} items`);
   }, [debouncedSearchText, allSOSData]);
 
   // ✅ Main loadSOS function (no search parameter)
@@ -136,7 +134,6 @@ export default function History() {
         }
       }
 
-      console.log("📡 API call parameters:", filterParams);
       const result = await sosService.getSOSByStatus("ONGOING", filterParams);
 
       if (result?.data) {

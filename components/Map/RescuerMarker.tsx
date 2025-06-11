@@ -10,6 +10,7 @@ import MapboxGL from "@rnmapbox/maps";
 import { useAuth } from "../../context/AuthContext";
 import Avatar from "../Image/Avatar";
 import { Profile } from "../../types/Profile";
+import { userServices } from "../../services/user";
 interface RippleMarkerProps {
   id: string;
   coordinate: [number, number];
@@ -35,7 +36,44 @@ const RescuerMarker = ({
 }: RippleMarkerProps) => {
   const rippleScale = useRef(new Animated.Value(0)).current;
   const rippleOpacity = useRef(new Animated.Value(1)).current;
+  const [rescuerProfile, setRescuerProfile] = useState<Profile | null>(null);
+  const getSOSProfile = async () => {
+    try {
+      // ✅ More robust validation
+      if (!id) {
+        console.log("No ID provided, skipping profile fetch");
+        return;
+      }
 
+      const numericId = Number(id);
+      if (isNaN(numericId) || numericId <= 0) {
+        return;
+      }
+      const result = await userServices.getUserByID(numericId);
+
+      if (result?.data) {
+        setRescuerProfile(result.data);
+      } else {
+        setRescuerProfile(null);
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching profile for ID:", id);
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+      } else if (error.request) {
+        console.error("No response received. Request details:", error.request);
+      } else {
+        console.error("Error message:", error.message);
+      }
+      setRescuerProfile(null);
+    }
+  };
+  useEffect(() => {
+    if (id) {
+      getSOSProfile();
+    }
+  }, []);
   useEffect(() => {
     const createRipple = () => {
       Animated.loop(
@@ -90,7 +128,11 @@ const RescuerMarker = ({
           ]}
         />
         <View style={styles.centerDot}>
-          <Avatar source={avatarUrl!} width={50} height={50}></Avatar>
+          <Avatar
+            source={rescuerProfile?.User.avatar_url || avatarUrl!}
+            width={50}
+            height={50}
+          ></Avatar>
         </View>
       </TouchableOpacity>
     </MapboxGL.MarkerView>
