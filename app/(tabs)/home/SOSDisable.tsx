@@ -57,7 +57,9 @@ export default function SOSDisable() {
 
       setOtherUserMarkers({});
       router.replace("/(tabs)/home");
-      socket.current?.disconnect();
+      socket?.current?.on("disconnect", () => {
+        console.log("❌ Disconnected from server live location");
+      });
       socket.current?.connect();
       setLoading(false);
     } catch (error: any) {

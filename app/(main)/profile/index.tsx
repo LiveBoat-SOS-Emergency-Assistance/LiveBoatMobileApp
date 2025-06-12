@@ -8,10 +8,12 @@ import { useAuth } from "../../../context/AuthContext";
 import { router, useRouter } from "expo-router";
 import Avatar from "../../../components/Image/Avatar";
 import messaging from "@react-native-firebase/messaging";
+import { useSocketContext } from "../../../context/SocketContext";
 export default function Profile() {
   const [loading, setLoading] = useState(false);
   const { logout, profile } = useAuth();
   const router = useRouter();
+  const { socket } = useSocketContext();
   const handlePress = () => {
     router.push("/(main)/profile/edit_profile");
   };
@@ -29,7 +31,12 @@ export default function Profile() {
 
       await logout();
       setLoading(false);
-      router.replace("/");
+      // router.replace("/");
+      socket.current?.disconnect();
+      router.replace({
+        pathname: "/",
+        params: { skipSplash: "true" },
+      });
     } catch (error: any) {
       console.error(error.response);
       setLoading(false);

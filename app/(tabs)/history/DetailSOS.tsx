@@ -65,6 +65,7 @@ const DetailSOS = () => {
   const {
     socket,
     setUserInfo,
+    initializeSocket,
     updateLocation,
     otherUserMarkers,
     displayOfflineMarker,
@@ -331,7 +332,10 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
-        socket.current.disconnect();
+        // socket.current.disconnect();
+        socket.current.on("disconnect", () => {
+          console.log("❌ Disconnected from server live location");
+        });
         socket.current.connect();
         console.log("✅ Socket cleanup completed");
       }
@@ -376,8 +380,13 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
-        socket.current.disconnect();
-        socket.current.connect();
+        // socket.current.disconnect();
+        socket.current.on("disconnect", () => {
+          console.log("❌ Disconnected from server live location");
+        });
+        // socket.current.connect();
+        initializeSocket();
+        setUserInfo("NORMAL");
         console.log("✅ Socket cleanup completed");
       }
       if (chatSocket) {

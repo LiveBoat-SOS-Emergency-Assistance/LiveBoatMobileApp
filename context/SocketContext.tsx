@@ -28,6 +28,7 @@ interface SocketContextType {
   setOtherUserMarkers: React.Dispatch<
     React.SetStateAction<Record<number, Marker>>
   >;
+  initializeSocket: () => void;
   updateLocation: (
     latitude: number,
     longitude: number,
@@ -89,7 +90,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const initializeSocket = () => {
     if (!socketRef.current) {
       socketRef.current = io(serverUrl);
-
+      console.log("✅ Socket initialized");
       socketRef.current.on("connect", () => {
         console.log(`✅ Connected to server: ${socketRef.current?.id}`);
         registerCommonSocketEvents();
@@ -112,7 +113,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const registerCommonSocketEvents = async () => {
     if (!socketRef.current) return;
-
+    // setUserInfo("NORMAL");
     socketRef.current.on(
       SOCKET_EVENTS.TOCLIENT_COMMON_GROUPS_LOCATIONS,
       (data: Marker[]) => {
@@ -177,24 +178,39 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setUserInfo = async (userType: string) => {
     if (socketRef.current) {
-      const groupIds = JSON.parse(
-        (await AsyncStorage.getItem("groupIds")) || "[]"
-      );
-      const profileData = await AsyncStorage.getItem("profile");
-      // console.log("profileData 165 SocketContext", profileData);
-      const parsedProfile = JSON.parse(profileData || "{}");
-      const userId = Number(parsedProfile?.user_id) || 0;
-      const avatarUrl =
-        parsedProfile?.User?.avatar_url || "https://i.pravatar.cc/150";
+      console.log("setUserInfo calll");
+      try {
+        const groupIds = JSON.parse(
+          (await AsyncStorage.getItem("groupIds")) || "[]"
+        );
+        console.log("groupIds 165 SocketContext", groupIds);
+        const profileData = await AsyncStorage.getItem("profile");
+        // console.log("profileData 165 SocketContext", profileData);
+        const parsedProfile = JSON.parse(profileData || "{}");
+        const userId = Number(parsedProfile?.user_id) || 0;
+        const avatarUrl =
+          parsedProfile?.User?.avatar_url || "https://i.pravatar.cc/150";
 
-      socketRef.current.emit(SOCKET_EVENTS.TOSERVER_SET_USER_INFO, {
-        userId,
-        avatarUrl,
-        groupIds,
-        userType,
-        timestamp: Date.now(),
-        accuracy: 0,
-      });
+        socketRef.current.emit(SOCKET_EVENTS.TOSERVER_SET_USER_INFO, {
+          userId,
+          avatarUrl,
+          groupIds,
+          userType,
+          timestamp: Date.now(),
+          accuracy: 0,
+        });
+        console.log("information sent to server:", {
+          userId,
+          avatarUrl,
+          groupIds,
+          userType,
+          timestamp: Date.now(),
+          accuracy: 0,
+        });
+        console.log("after set userInfo calll");
+      } catch (error: any) {
+        console.error("Error setting user info:", error.message);
+      }
     }
   };
 
@@ -296,6 +312,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         userId,
         myLocation,
         otherUserMarkers,
+        initializeSocket,
         setOtherUserMarkers,
         updateLocation,
         setUserInfo,

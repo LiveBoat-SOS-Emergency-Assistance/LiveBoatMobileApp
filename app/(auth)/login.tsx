@@ -15,12 +15,14 @@ import { useAuth } from "../../context/AuthContext";
 import React from "react";
 import { Keyboard } from "react-native";
 import { SafeAreaView } from "react-native";
+import { useSocketContext } from "../../context/SocketContext";
 const Login = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [phoneError, setPhoneError] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { socket, setUserInfo } = useSocketContext();
   const { login } = useAuth();
   const validatePhoneNumber = (phone: string) => {
     const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
@@ -41,8 +43,9 @@ const Login = () => {
     }
     setPasswordError("");
     try {
+      console.log("Logging in with phone:", phone, "and password:", password);
       await login!({ phone: phone, password: password });
-      setLoading(false);
+
       Toast.show({
         type: "success",
         text1: "Notification",
@@ -51,7 +54,15 @@ const Login = () => {
         visibilityTime: 2000,
       });
       Keyboard.dismiss();
-      router.replace("/(tabs)/home");
+      socket.current?.connect();
+
+      router.replace({
+        pathname: "/(tabs)/home",
+        params: { skipSplash: "true" },
+      });
+      setLoading(false);
+      setUserInfo("NORMAL");
+      // router.replace("/(tabs)/home");
     } catch (error: any) {
       Toast.show({
         type: "error",
@@ -62,6 +73,8 @@ const Login = () => {
       });
       setLoading(false);
       console.log(phone, password);
+    } finally {
+      setLoading(false);
     }
   };
   return (

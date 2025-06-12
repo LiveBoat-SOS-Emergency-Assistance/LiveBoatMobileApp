@@ -58,7 +58,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true); // Start with loading true
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [groupIds, setGroupIds] = useState<number[]>([]);
 
@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (userData: LoginData) => {
     try {
-      setLoading(true); // Set loading during login
+      // setLoading(true); 
       const result = await authen.login(userData);
       if (result) {
         await AsyncStorage.setItem("accessToken", result.data?.accessToken);
@@ -148,12 +148,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           );
         }
         setAccessToken(result.data?.accessToken);
-        return;
+        // return;
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       throw error;
     } finally {
-      setLoading(false); // Ensure loading is reset after login
+      // setLoading(false);
     }
   };
 
@@ -170,7 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      setLoading(true); // Set loading during logout
+      // setLoading(true);
       const result = await authen.logout();
       if (result) {
         await AsyncStorage.removeItem("accessToken");
@@ -187,7 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       throw error;
     } finally {
-      setLoading(false); // Ensure loading is reset after logout
+      // setLoading(false); 
     }
   };
 

@@ -103,12 +103,13 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!socket.current) return;
+    console.log("helo ");
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
       if (!data || data.length === 0) {
         console.log("No SOS locations received");
         return;
       }
-      console.log("Received SOS locations:", data);
+      // console.log("Received SOS locations:", data);
       displayOrUpdateMarkers(data);
     });
 

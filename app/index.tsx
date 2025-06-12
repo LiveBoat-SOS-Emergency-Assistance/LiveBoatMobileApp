@@ -11,7 +11,12 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { FONTS } from "../constants/theme";
-import { useFocusEffect, useNavigation, useRouter } from "expo-router";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+  useRouter,
+} from "expo-router";
 import CustomButton from "../components/Button/CustomButton";
 import tw from "twrnc";
 import React, { useCallback, useEffect, useState } from "react";
@@ -30,6 +35,7 @@ LogBox.ignoreAllLogs();
 export default function home() {
   const router = useRouter();
   const [isAppReady, setAppReady] = useState(false);
+  const { skipSplash } = useLocalSearchParams();
   const handleLoginViaGoogle = () => {
     Toast.show({
       type: "info",
@@ -40,8 +46,10 @@ export default function home() {
   useEffect(() => {
     const prepare = async () => {
       try {
-        await SplashScreen.preventAutoHideAsync();
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (skipSplash !== "true") {
+          await SplashScreen.preventAutoHideAsync();
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
       } catch (e) {
         console.warn(e);
       } finally {
