@@ -11,13 +11,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
+  TouchableWithoutFeedback,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import ImageCustom from "../../../components/Image/Image";
-import {
-  GestureHandlerRootView,
-  TouchableWithoutFeedback,
-} from "react-native-gesture-handler";
+// import {
+//   GestureHandlerRootView,
+//   TouchableWithoutFeedback,
+// } from "react-native-gesture-handler";
 import { router } from "expo-router";
 import { aiURL } from "../../../baseUrl";
 import LottieView from "lottie-react-native";
@@ -85,7 +86,7 @@ export default function Chatbot(): JSX.Element {
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
+      // If the user says things like greetings, reply with: "Hello, how can I help you?"
       const response = await fetch(fetchUrl, {
         method: "POST",
         headers: {
@@ -93,13 +94,31 @@ export default function Chatbot(): JSX.Element {
         },
         body: JSON.stringify({
           model: "llama3.2:3b",
-          system: `You are an emergency response assistant. Only provide direct, concise answers related to emergencies including accidents, natural disasters, medical issues, or situations like getting lost.
-You can answer questions in English or Vietnamese.
-If the user's question is completely unrelated to these topics, reply exactly:
-"Sorry, your request is not related to emergency assistance." and do not say anything, or elaborate whatsoever anymore.
-Answer directly without any introductory phrases. Focus only on giving the answer or refusal.
-If the user says things like greetings, reply with: "Hello, how can I help you?"
-If the input is ambiguous or unclear but could still relate to healthcare, politely ask for clarification.
+          //           system: `You are an emergency response assistant. Only provide direct, concise answers related to emergencies including accidents, natural disasters, medical issues, or situations like getting lost.
+          // You can answer questions in English or Vietnamese.
+          // If the user's question is completely unrelated to these topics, reply exactly:
+          // "Sorry, your request is not related to emergency assistance." and do not say anything, or elaborate whatsoever anymore.
+          // Answer directly without any introductory phrases. Focus only on giving the answer or refusal.
+
+          // If the input is ambiguous or unclear but could still relate to healthcare, politely ask for clarification.
+          // `,
+          system: `You are a helpful emergency response assistant operating in Vietnam. Your responsibility is to provide clear, practical, and concise guidance in emergency situations.
+
+You can respond to questions or provide instructions in the following types of emergencies:
+- Medical emergencies (e.g. unconsciousness, bleeding, fractures, burns)
+- Natural disasters (e.g. earthquakes, floods, storms)
+- Situations where someone is lost (e.g. in forests, mountains, or remote areas)
+- Fire-related emergencies (e.g. house fires, wildfires)
+- Dangerous or life-threatening situations (e.g. physical assaults, serious accidents, animal attacks)
+
+
+Instructions:
+- If the user's entire message is only a greeting (e.g. "hello", "hi", "xin chào", "chào"), respond with:    
+  "Hello, how can I assist you in this emergency situation?"
+- If the user's question appears vague or incomplete but still relates to an emergency, provide the most relevant and helpful first aid advice based on reasonable assumptions.
+- If the message is too unclear or seems unrelated to any emergency scenario, respond with:
+"Sorry, I can only answer questions related to emergency aid."
+- Avoid small talk, introductions, or explanations. Only respond with practical emergency-related information.
 `,
           prompt: userMessage,
           stream: false,
@@ -144,103 +163,61 @@ If the input is ambiguous or unclear but could still relate to healthcare, polit
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={0}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className="relative h-full">
-              <LinearGradient
-                colors={colors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
+    <SafeAreaView className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View className="relative  flex-1">
+            <LinearGradient
+              colors={colors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <TouchableOpacity
+              onPress={() => {
+                setChatHistory([]);
+                setCheck(false);
+                router.replace("/(tabs)/home");
+              }}
+              className="items-start flex absolute top-16 left-5 z-50 w-[20px]"
+            >
+              <ImageCustom
+                width={20}
+                height={20}
+                color="#EB4747"
+                source="https://img.icons8.com/?size=100&id=8112&format=png&color=000000"
               />
-              <TouchableOpacity
-                onPress={() => {
-                  setChatHistory([]);
-                  setCheck(false);
-                  router.replace("/(tabs)/home");
+            </TouchableOpacity>
+            <View className="flex w-full h-[100px] bg-transparent"></View>
+            {check ? (
+              <ScrollView
+                // className=""
+                className="flex-1"
+                ref={scrollViewRef}
+                keyboardShouldPersistTaps="handled"
+                onContentSizeChange={() =>
+                  scrollViewRef.current?.scrollToEnd({ animated: true })
+                }
+                // style={{ height: 300 }}
+                contentContainerStyle={{
+                  paddingVertical: 20,
+                  paddingBottom: 80,
+                  paddingHorizontal: 10,
+                  flexGrow: 1,
                 }}
-                className="items-start flex absolute top-16 left-5 z-50 w-[20px]"
               >
-                <ImageCustom
-                  width={20}
-                  height={20}
-                  color="#EB4747"
-                  source="https://img.icons8.com/?size=100&id=8112&format=png&color=000000"
-                />
-              </TouchableOpacity>
-              <View className="flex w-full h-[100px] bg-transparent"></View>
-              {check ? (
-                <ScrollView
-                  // className=""
-                  ref={scrollViewRef}
-                  keyboardShouldPersistTaps="handled"
-                  onContentSizeChange={() =>
-                    scrollViewRef.current?.scrollToEnd({ animated: true })
-                  }
-                  style={{ height: 300 }}
-                  contentContainerStyle={{
-                    paddingVertical: 20,
-                    paddingBottom: 80,
-                    paddingHorizontal: 10,
-                  }}
-                >
-                  {chatHistory.map((message, index) =>
-                    message.sender === "ai" ? (
-                      <View
-                        key={index}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "flex-start",
-                          marginBottom: 12,
-                        }}
-                      >
-                        <ImageCustom
-                          source={require("../../../assets/images/chatbot.png")}
-                          width={32}
-                          height={32}
-                          className="rounded-full mr-2"
-                        />
-                        <View className="mb-3 p-2 rounded-xl self-start bg-white max-w-[75%]">
-                          <Text className="color-black">{message.content}</Text>
-                        </View>
-                      </View>
-                    ) : (
-                      <View
-                        key={index}
-                        className={`mb-3 p-2 rounded-xl ${
-                          message.sender === "user"
-                            ? "self-end bg-white"
-                            : message.sender === "error"
-                            ? "self-start bg-red-100"
-                            : "self-start bg-white"
-                        }`}
-                        style={
-                          message.sender === "user"
-                            ? { alignSelf: "flex-end", maxWidth: "75%" }
-                            : { alignSelf: "flex-start", maxWidth: "75%" }
-                        }
-                      >
-                        <Text className="color-black">
-                          {message.sender === "error"
-                            ? "Oops, something went wrong!"
-                            : message.content}
-                        </Text>
-                      </View>
-                    )
-                  )}
-
-                  {typing && (
+                {chatHistory.map((message, index) =>
+                  message.sender === "ai" ? (
                     <View
+                      key={index}
                       style={{
                         flexDirection: "row",
-                        alignItems: "center",
-                        marginBottom: 8,
+                        alignItems: "flex-start",
+                        marginBottom: 12,
                       }}
                     >
                       <ImageCustom
@@ -249,85 +226,129 @@ If the input is ambiguous or unclear but could still relate to healthcare, polit
                         height={32}
                         className="rounded-full mr-2"
                       />
-                      <View
-                        style={{
-                          width: 60,
-                          height: 30,
-                          backgroundColor: "#f3f4f6",
-                          borderRadius: 16,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <LottieView
-                          source={{
-                            uri: "https://lottie.host/f52662c5-7c67-4040-a539-899bb0dfbf7d/0pB91FaotS.lottie",
-                          }}
-                          autoPlay
-                          loop
-                          speed={2}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                          }}
-                        />
+                      <View className="mb-3 p-2 rounded-xl self-start bg-white max-w-[75%]">
+                        <Text className="color-black">{message.content}</Text>
                       </View>
                     </View>
-                  )}
-                </ScrollView>
-              ) : (
-                <View className="flex-1 z-10 justify-center items-center px-5">
-                  <View className="flex flex-col gap-2 items-center">
-                    <Text className="font-normal text-2xl text-white">
-                      Hello, {profile?.name || "User"}!
-                    </Text>
-                    <Text className="text-2xl text-white">
-                      How can I help you today?
-                    </Text>
-                    {/* <Image
+                  ) : (
+                    <View
+                      key={index}
+                      className={`mb-3 p-2 rounded-xl ${
+                        message.sender === "user"
+                          ? "self-end bg-white"
+                          : message.sender === "error"
+                          ? "self-start bg-red-100"
+                          : "self-start bg-white"
+                      }`}
+                      style={
+                        message.sender === "user"
+                          ? { alignSelf: "flex-end", maxWidth: "75%" }
+                          : { alignSelf: "flex-start", maxWidth: "75%" }
+                      }
+                    >
+                      <Text className="color-black">
+                        {message.sender === "error"
+                          ? "Oops, something went wrong!"
+                          : message.content}
+                      </Text>
+                    </View>
+                  )
+                )}
+
+                {typing && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <ImageCustom
+                      source={require("../../../assets/images/chatbot.png")}
+                      width={32}
+                      height={32}
+                      className="rounded-full mr-2"
+                    />
+                    <View
+                      style={{
+                        width: 60,
+                        height: 30,
+                        backgroundColor: "#f3f4f6",
+                        borderRadius: 16,
+                        overflow: "hidden",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <LottieView
+                        source={{
+                          uri: "https://lottie.host/f52662c5-7c67-4040-a539-899bb0dfbf7d/0pB91FaotS.lottie",
+                        }}
+                        autoPlay
+                        loop
+                        speed={2}
+                        style={{
+                          width: "80%",
+                          height: "80%",
+                        }}
+                      />
+                    </View>
+                  </View>
+                )}
+              </ScrollView>
+            ) : (
+              <View className="flex-1 z-10 justify-center items-center px-5">
+                <View className="flex flex-col gap-2 items-center">
+                  <Text className="font-normal text-2xl text-white">
+                    Hello, {profile?.name || "User"}!
+                  </Text>
+                  <Text className="text-2xl text-white">
+                    How can I help you today?
+                  </Text>
+                  {/* <Image
                         width={20}
                         height={20}
                         source={require("../../../assets/images/chatbot.png")}
                       ></Image> */}
-                  </View>
-                </View>
-              )}
-              <View className="pb-2 z-50">
-                <View className="flex flex-row w-full px-5 gap-4">
-                  <View className="relative w-[85%] h-[40px] border border-gray-200 rounded-full bg-white flex-row items-center px-3 py-2">
-                    <ImageCustom
-                      width={20}
-                      height={20}
-                      color="gray"
-                      className="absolute left-3"
-                      source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
-                    />
-                    <TextInput
-                      ref={textInputRef}
-                      value={messageContent}
-                      onChangeText={setMessageContent}
-                      placeholder="Enter message..."
-                      className="w-full h-full pl-8 pr-3 text-black"
-                    />
-                  </View>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={handleSendMessage}
-                    className="bg-white p-3 rounded-full z-50"
-                  >
-                    <ImageCustom
-                      width={20}
-                      height={20}
-                      color="#EB4747"
-                      source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
-                    />
-                  </TouchableOpacity>
                 </View>
               </View>
+            )}
+            <View className="pb-2 z-50">
+              <View className="flex flex-row w-full px-5 gap-4">
+                <View className="relative w-[85%] h-[40px] border border-gray-200 rounded-full bg-white flex-row items-center px-3 py-2">
+                  <ImageCustom
+                    width={20}
+                    height={20}
+                    color="gray"
+                    className="absolute left-3"
+                    source="https://img.icons8.com/?size=100&id=59728&format=png&color=000000"
+                  />
+                  <TextInput
+                    ref={textInputRef}
+                    value={messageContent}
+                    onChangeText={setMessageContent}
+                    placeholder="Enter message..."
+                    className="w-full h-full pl-8 pr-3 text-black"
+                  />
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={handleSendMessage}
+                  className="bg-white p-3 rounded-full z-50"
+                >
+                  <ImageCustom
+                    width={20}
+                    height={20}
+                    color="#EB4747"
+                    source="https://img.icons8.com/?size=100&id=93330&format=png&color=000000"
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </GestureHandlerRootView>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

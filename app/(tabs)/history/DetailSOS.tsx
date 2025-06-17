@@ -37,6 +37,8 @@ import { initializeChatModule, sendMessage } from "../../../sockets/ChatModule";
 import { useAuth } from "../../../context/AuthContext";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { SOSProfile } from "../../../types/sosItem";
+import { groupServices } from "../../../services/group";
+import { check } from "react-native-permissions";
 const DetailSOS = () => {
   const [checkSOS, setCheckSOS] = useState(false);
   const [listRescuer, setListRescuer] = useState<RescuerItem[]>([]);
@@ -45,6 +47,7 @@ const DetailSOS = () => {
   const [helpingUserId, setHelpingTheUserId] = useState<number | null>(null);
   const helpingUserIdRef = useRef<number | null>(null);
   const [currentSOS, setCurrentSOS] = useState<SOSProfile | null>(null);
+  const [checkCommonGroups, setCheckCommonGroups] = useState(false);
   const setHelpingUserId = (value: number | null) => {
     console.log(`DetailSOS: Setting helpingUserId to ${value}`);
     setHelpingTheUserId(value);
@@ -53,9 +56,7 @@ const DetailSOS = () => {
   const { sosId, userProfile, profileSOS } = useLocalSearchParams();
   const { idSender } = useLocalSearchParams<{ idSender: string }>();
   const { checkHelping } = useLocalSearchParams<{ checkHelping: string }>();
-  console.log("checkHelping", checkHelping);
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
-
   const [isAlertVisible, setAlertVisible] = useState(false);
   const chatSocket = getChatSocket();
   const [chatMessages, setChatMessages] = useState<any[]>([]);
@@ -110,6 +111,21 @@ const DetailSOS = () => {
       });
     }
   }, [chatMessages]);
+  useEffect(() => {
+    const handleCheckCommonGroups = async () => {
+      try {
+        const result = await groupServices.getCommonGroup(Number(idSender));
+        console.log("Common groups result:", result.data);
+        if (Array.isArray(result.data) && result.data.length > 0) {
+          console.log("check - true => co nhom chung");
+          setCheckCommonGroups(true);
+        }
+      } catch (error: any) {
+        console.error("Error fetching common groups:", error);
+      }
+    };
+    handleCheckCommonGroups();
+  }, []);
   const handleSendLiveChat = () => {
     if (chatInput.trim()) {
       try {
@@ -332,7 +348,10 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
-        // socket.current.disconnect();
+        if (!checkCommonGroups) {
+          socket.current.disconnect();
+        }
+        //
         socket.current.on("disconnect", () => {
           console.log("❌ Disconnected from server live location");
         });
@@ -381,10 +400,16 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
         // socket.current.disconnect();
+        if (!checkCommonGroups) {
+          socket.current.disconnect();
+        }
         socket.current.on("disconnect", () => {
           console.log("❌ Disconnected from server live location");
         });
-        // socket.current.connect();
+        if (!checkCommonGroups) {
+          socket.current.connect();
+        }
+        //
         initializeSocket();
         setUserInfo("NORMAL");
         console.log("✅ Socket cleanup completed");
