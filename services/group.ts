@@ -30,6 +30,20 @@ export class groupServices {
       throw error;
     }
   }
+  static async getCommonGroup(userId: number) {
+    try {
+      const result = await axiosPrivate.get(`/group/common-groups/${userId}`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        requiresAuth: true,
+      } as CustomAxiosRequestConfig);
+
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
   static async getChat(group_type: string) {
     try {
       const result = await axiosPrivate.get("/group/user-groups", {
