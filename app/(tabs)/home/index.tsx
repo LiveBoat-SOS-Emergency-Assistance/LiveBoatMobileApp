@@ -30,7 +30,6 @@ import { getCurrentLocation } from "../../../utils/location";
 import ImageCustom from "../../../components/Image/Image";
 import Toast from "react-native-toast-message";
 import { rescuerServices } from "../../../services/rescuer";
-// import { useSocket } from "../../../hooks/useLiveLocation";
 import BottomModal from "../../../components/Modal/BottomModal";
 import MemberCard from "../../../components/Card/MemberCard";
 import * as Animatable from "react-native-animatable";
@@ -102,8 +101,8 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    console.log("Socket.current 105", socket.current?.id);
     if (!socket.current) return;
-    console.log("helo ");
     socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS, (data) => {
       if (!data || data.length === 0) {
         console.log("No SOS locations received");
@@ -328,7 +327,6 @@ export default function HomeScreen() {
           const result = await groupServices.getGroup();
           if (result && result.data) {
             const reversedData = result.data.reverse();
-            console.log("Groups:", reversedData);
             setGroup(reversedData);
             setSelectNameSquad(reversedData[0]?.name);
             setSelectSquad(reversedData[0]?.id);
@@ -392,7 +390,6 @@ export default function HomeScreen() {
       const result = await groupServices.getMemberByIdGroup(
         Number(selectSquad)
       );
-      console.log("Members:", result.data);
       setListMember(result.data);
     } catch (error: any) {
       console.error("Error fetching members:", {

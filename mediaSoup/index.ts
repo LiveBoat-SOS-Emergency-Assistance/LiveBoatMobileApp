@@ -104,7 +104,7 @@ const createDevice = async (
     await device.load({
       routerRtpCapabilities: rtpCapabilities,
     });
-    
+
     setProducerDevice(device, rtpCapabilities);
     setConsumerDevice(device);
 
@@ -124,7 +124,6 @@ const createDevice = async (
       } catch (error) {
         console.log("Error in createDevice", error);
       }
-      console.log("helo...");
     }
 
     handleProducerClosed(mediaSoupSocket);

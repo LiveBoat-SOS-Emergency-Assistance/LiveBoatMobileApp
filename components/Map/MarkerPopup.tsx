@@ -29,7 +29,6 @@ interface MarkerPopupProps {
     status?: string;
   } | null;
   onClose: () => void;
-  // onCall?: () => void;
   onMessage?: () => void;
   onGetDirections?: () => void;
 }
@@ -40,12 +39,9 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
   visible,
   marker,
   onClose,
-  // onCall,
-  onMessage,
   onGetDirections,
 }) => {
-  if (!visible || !marker) return null;
-  console.log("MarkerPopup rendered with marker:", marker);
+  // if (!visible || !marker) return null;
   const [profileUser, setProfileUser] = React.useState<{
     userId: number;
     name?: string;
@@ -56,25 +52,16 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
   const getStatusColor = (userType: string) => {
     switch (userType) {
       case "SENDER":
-        return "#EF4444"; // Red for SOS
+        return "#EF4444";
       case "HELPER":
-        return "#10B981"; // Green for Helper
+        return "#10B981";
       case "NORMAL":
-        return "#6B7280"; // Gray for Normal
+        return "#6B7280";
       default:
         return "#6B7280";
     }
   };
-  // const handleCallUser = () => {
-  //   if (selectedMarker?.phone) {
-  //     Linking.openURL(`tel:${selectedMarker.phone}`);
-  //   } else {
-  //     Alert.alert(
-  //       "No phone number",
-  //       "This user doesn't have a phone number available"
-  //     );
-  //   }
-  // };
+
   const onCall = () => {
     if (profileUser?.phone) {
       Linking.openURL(`tel:${profileUser.phone}`);
@@ -85,13 +72,12 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
       );
     }
   };
-  // console.log("MarkerPopup rendered with marker:", marker);
+
   useEffect(() => {
     const getUser = async () => {
-      if (marker) {
+      if (marker && visible) {
         try {
           const result = await userServices.getUserByID(marker.userId);
-          // console.log("Fetched user data:", result.data);
           setProfileUser({
             userId: marker.userId,
             name: result?.data?.name || `User ${marker.userId}`,
@@ -102,6 +88,8 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
         } catch (error: any) {
           console.error("Error fetching user data:", error.message);
         }
+      } else {
+        setProfileUser(null);
       }
     };
     getUser();
@@ -126,134 +114,126 @@ const MarkerPopup: React.FC<MarkerPopupProps> = ({
       statusBarTranslucent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} />
-        <View style={styles.popupContainer}>
-          <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.headerContent}>
-                <Avatar
-                  source={profileUser?.avatarUrl}
-                  width={50}
-                  height={50}
-                  className="rounded-full"
-                />
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>
-                    {profileUser?.name || `User ${marker.userId}`}
-                  </Text>
-                  <View style={styles.statusContainer}>
-                    <View
-                      style={[
-                        styles.statusDot,
-                        { backgroundColor: getStatusColor(marker.userType) },
-                      ]}
-                    />
-                    <Text style={styles.statusText}>
-                      {getStatusText(marker.userType)}
+      {marker ? (
+        <View style={styles.overlay}>
+          <TouchableOpacity style={styles.backdrop} onPress={onClose} />
+          <View style={styles.popupContainer}>
+            <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+              {/* Header */}
+              <View style={styles.header}>
+                <View style={styles.headerContent}>
+                  <Avatar
+                    source={profileUser?.avatarUrl}
+                    width={50}
+                    height={50}
+                    className="rounded-full"
+                  />
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>
+                      {profileUser?.name || `User ${marker?.userId}`}
                     </Text>
+                    <View style={styles.statusContainer}>
+                      <View
+                        style={[
+                          styles.statusDot,
+                          { backgroundColor: getStatusColor(marker?.userType) },
+                        ]}
+                      />
+                      <Text style={styles.statusText}>
+                        {getStatusText(marker?.userType)}
+                      </Text>
+                    </View>
+                    {profileUser?.phone && (
+                      <Text style={styles.phoneText}>{profileUser?.phone}</Text>
+                    )}
                   </View>
-                  {profileUser?.phone && (
-                    <Text style={styles.phoneText}>{profileUser.phone}</Text>
-                  )}
+                </View>
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=83149&format=png&color=000000"
+                    width={20}
+                    height={20}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Location Info */}
+              <View style={styles.locationInfo}>
+                <View style={styles.coordinateItem}>
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=13800&format=png&color=000000"
+                    width={16}
+                    height={16}
+                    color="#6B7280"
+                  />
+                  <Text style={styles.coordinateText}>
+                    {typeof marker.latitude === "number" &&
+                    !isNaN(marker.latitude)
+                      ? marker.latitude.toFixed(6)
+                      : "N/A"}
+                    ,{" "}
+                    {typeof marker.longitude === "number" &&
+                    !isNaN(marker.longitude)
+                      ? marker.longitude.toFixed(6)
+                      : "N/A"}
+                  </Text>
+                </View>
+                <View style={styles.coordinateItem}>
+                  <ImageCustom
+                    source="https://img.icons8.com/?size=100&id=85471&format=png&color=000000"
+                    width={16}
+                    height={16}
+                    color="#6B7280"
+                  />
+                  <Text style={styles.coordinateText}>
+                    Accuracy: ±{marker.accuracy || 0}m
+                  </Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <ImageCustom
-                  source="https://img.icons8.com/?size=100&id=83149&format=png&color=000000"
-                  width={20}
-                  height={20}
-                  color="#6B7280"
-                />
-              </TouchableOpacity>
-            </View>
 
-            {/* Location Info */}
-            <View style={styles.locationInfo}>
-              <View style={styles.coordinateItem}>
-                <ImageCustom
-                  source="https://img.icons8.com/?size=100&id=13800&format=png&color=000000"
-                  width={16}
-                  height={16}
-                  color="#6B7280"
-                />
-                <Text style={styles.coordinateText}>
-                  {typeof marker.latitude === "number" &&
-                  !isNaN(marker.latitude)
-                    ? marker.latitude.toFixed(6)
-                    : "N/A"}
-                  ,{" "}
-                  {typeof marker.longitude === "number" &&
-                  !isNaN(marker.longitude)
-                    ? marker.longitude.toFixed(6)
-                    : "N/A"}
-                </Text>
-              </View>
-              <View style={styles.coordinateItem}>
-                <ImageCustom
-                  source="https://img.icons8.com/?size=100&id=85471&format=png&color=000000"
-                  width={16}
-                  height={16}
-                  color="#6B7280"
-                />
-                <Text style={styles.coordinateText}>
-                  Accuracy: ±{marker.accuracy || 0}m
-                </Text>
-              </View>
-            </View>
+              {/* Action Buttons */}
+              <View style={styles.actionButtons}>
+                {onCall && (
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={onCall}
+                  >
+                    <ImageCustom
+                      source="https://img.icons8.com/?size=100&id=9730&format=png&color=000000"
+                      width={20}
+                      height={20}
+                      color="#10B981"
+                    />
+                    <Text style={[styles.actionText, { color: "#10B981" }]}>
+                      Call
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-            {/* Action Buttons */}
-            <View style={styles.actionButtons}>
-              {onCall && (
-                <TouchableOpacity style={styles.actionButton} onPress={onCall}>
-                  <ImageCustom
-                    source="https://img.icons8.com/?size=100&id=9730&format=png&color=000000"
-                    width={20}
-                    height={20}
-                    color="#10B981"
-                  />
-                  <Text style={[styles.actionText, { color: "#10B981" }]}>
-                    Call
-                  </Text>
-                </TouchableOpacity>
-              )}
-              {/* {onMessage && marker.userType === "SENDER" && (
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={onMessage}
-                >
-                  <ImageCustom
-                    source="https://img.icons8.com/?size=100&id=85500&format=png&color=000000"
-                    width={20}
-                    height={20}
-                    color="#3B82F6"
-                  />
-                  <Text style={[styles.actionText, { color: "#3B82F6" }]}>
-                    Help
-                  </Text>
-                </TouchableOpacity>
-              )} */}
-              {onGetDirections && (
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={onGetDirections}
-                >
-                  <ImageCustom
-                    source="https://img.icons8.com/?size=100&id=7880&format=png&color=000000"
-                    width={20}
-                    height={20}
-                    color="#8B5CF6"
-                  />
-                  <Text style={[styles.actionText, { color: "#8B5CF6" }]}>
-                    Directions
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </BlurView>
+                {onGetDirections && (
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={onGetDirections}
+                  >
+                    <ImageCustom
+                      source="https://img.icons8.com/?size=100&id=7880&format=png&color=000000"
+                      width={20}
+                      height={20}
+                      color="#8B5CF6"
+                    />
+                    <Text style={[styles.actionText, { color: "#8B5CF6" }]}>
+                      Directions
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </BlurView>
+          </View>
         </View>
-      </View>
+      ) : (
+        <View></View>
+      )}
     </Modal>
   );
 };
