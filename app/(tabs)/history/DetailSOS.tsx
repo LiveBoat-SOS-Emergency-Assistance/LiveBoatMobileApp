@@ -39,6 +39,7 @@ import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { SOSProfile } from "../../../types/sosItem";
 import { groupServices } from "../../../services/group";
 import { check } from "react-native-permissions";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const DetailSOS = () => {
   const [checkSOS, setCheckSOS] = useState(false);
   const [listRescuer, setListRescuer] = useState<RescuerItem[]>([]);
@@ -48,8 +49,9 @@ const DetailSOS = () => {
   const helpingUserIdRef = useRef<number | null>(null);
   const [currentSOS, setCurrentSOS] = useState<SOSProfile | null>(null);
   const [checkCommonGroups, setCheckCommonGroups] = useState(false);
-  const setHelpingUserId = (value: number | null) => {
+  const setHelpingUserId = async (value: number | null) => {
     console.log(`DetailSOS: Setting helpingUserId to ${value}`);
+    await AsyncStorage.setItem("idSender", String(idSender));
     setHelpingTheUserId(value);
     helpingUserIdRef.current = value;
   };
@@ -65,6 +67,7 @@ const DetailSOS = () => {
   const { profile } = useAuth();
   const {
     socket,
+    socketCopy,
     setUserInfo,
     initializeSocket,
     updateLocation,
@@ -73,6 +76,7 @@ const DetailSOS = () => {
     displayOrUpdateMarkers,
     registerCommonSocketEvents,
     clearAndRefreshMarkers,
+    reconnect,
   } = useSocketContext();
   const [showSOSFinishedModal, setShowSOSFinishedModal] = useState(false);
   const [finishedSOSData, setFinishedSOSData] = useState<any>(null);
@@ -184,6 +188,7 @@ const DetailSOS = () => {
         const parsedSOS = JSON.parse(profileSOSString) as SOSProfile;
         setCurrentSOS(parsedSOS);
         console.log("163 Helping User ID:", idSender);
+
         setHelpingUserId(Number(idSender));
         setCheckSOS(checkHelping === "true");
       } catch (error) {
@@ -226,36 +231,24 @@ const DetailSOS = () => {
   };
 
   useEffect(() => {
-    console.log("Focus on DETAIL SOS screen");
     registerCommonSocketEvents();
     if (!socket.current) return;
 
-    console.log("Rescuer mode active");
-
     socket?.current?.on(SOCKET_EVENTS.TOCLIENT_THE_SENDER_LOCATION, (data) => {
-      // console.log("The Sender location:", data);
       displayOrUpdateMarkers(data);
       setCheckRoute(true);
     });
-    console.log("222 get helper locations");
-    socket?.current.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
-      console.log("Other helper locations:", data);
+    socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
       displayOrUpdateMarkers(data);
     });
 
-    socket.current.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
-      console.log("User disconnected:", data.userId);
-      console.log("Helping User ID (from ref):", helpingUserIdRef.current);
-      console.log("Helping User ID (from state):", helpingUserId);
+    socket.current?.on(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED, (data) => {
       if (data.userId == helpingUserIdRef.current) {
-        console.log("Sender disconnected, display offline marker");
         getCurrentSOS();
       }
     });
 
-    socket.current.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
-      console.log("User finished:", data.userId);
-      console.log("Helping User ID (from ref):", helpingUserIdRef.current);
+    socket.current?.on(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED, (data) => {
       if (data.userId == helpingUserIdRef.current) {
         setFinishedSOSData(data);
         setShowSOSFinishedModal(true);
@@ -265,22 +258,15 @@ const DetailSOS = () => {
         setCheckSOS(false);
       }
     });
-    console.log("256 checkHelping:", checkHelping);
-    // if (checkHelping == "true") {
-    //   console.log("267 --------------- cung cung cung");
-    //   setUserInfo("HELPER");
-    //   console.log('269 sau khi set userInfo "HELPER"');
-    // }
+
     setUserInfo("HELPER");
     const timeout1 = setTimeout(() => {
       socket?.current?.emit(
         SOCKET_EVENTS.TOSERVER_GET_LOCATIONS_OF_PEOPLE_IN_SAME_GROUP
       );
-      console.log("178: helpingUserId:", helpingUserId);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_REGISTER_SOS_SENDER, {
         helpingTheUserId: Number(idSender),
       });
-      console.log("helpingUserId 181:", helpingUserId);
     }, 1000);
 
     const timeout3 = setTimeout(async () => {
@@ -302,13 +288,6 @@ const DetailSOS = () => {
           getCurrentLocation();
           getCurrentSOS();
           if (response?.status === false && helpingUserId !== null) {
-            console.log(
-              "helpingUserId 200:",
-              helpingUserId,
-              currentSOS?.longitude,
-              currentSOS?.latitude
-            );
-
             displayOfflineMarker(
               helpingUserId,
               Number(currentSOS?.longitude),
@@ -348,24 +327,23 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
-        if (!checkCommonGroups) {
-          socket.current.disconnect();
-        }
-        //
-        socket.current.on("disconnect", () => {
-          console.log("❌ Disconnected from server live location");
-        });
-        socket.current.connect();
-        console.log("✅ Socket cleanup completed");
+        reconnect();
+        // if (!checkCommonGroups) {
+        //   reconnect();
+        //   setUserInfo("NORMAL");
+        // } else {
+        //   socket.current?.on("disconnect", () => {
+        //     console.log("❌ Disconnected from server live location");
+        //   });
+        //   socket.current?.connect();
+        // }
       }
       if (chatSocket) {
-        console.log("🧹 Cleaning up chat socket...");
         chatSocket.off("receive_message");
         chatSocket.off("chat_history");
         chatSocket.emit("leave_room", { groupId });
-        console.log("✅ Chat socket cleanup completed");
       }
-      setUserInfo("NORMAL");
+      // setUserInfo("NORMAL");
       setCheckSOS(false);
       setShowCancelDialog(false);
 
@@ -374,10 +352,10 @@ const DetailSOS = () => {
         text1: "SOS Cancelled",
         text2: "You have canceled your request for emergency assistance.",
       });
-      clearAndRefreshMarkers();
+
       setTimeout(() => {
         router.back();
-      }, 1000);
+      }, 3000);
     } catch (error: any) {
       console.log("Error", error.response?.data);
       Toast.show({
@@ -387,7 +365,7 @@ const DetailSOS = () => {
       });
     }
   };
-  clearAndRefreshMarkers;
+  // clearAndRefreshMarkers;
   const showCancelConfirmation = () => {
     setShowCancelDialog(true);
   };
@@ -399,18 +377,9 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
-        // socket.current.disconnect();
         if (!checkCommonGroups) {
-          socket.current.disconnect();
+          reconnect();
         }
-        socket.current.on("disconnect", () => {
-          console.log("❌ Disconnected from server live location");
-        });
-        if (!checkCommonGroups) {
-          socket.current.connect();
-        }
-        //
-        initializeSocket();
         setUserInfo("NORMAL");
         console.log("✅ Socket cleanup completed");
       }
@@ -461,17 +430,6 @@ const DetailSOS = () => {
     }
   };
 
-  // const handleSOSFinishedCancel = () => {
-  //   // ✅ User muốn ở lại xem thêm
-  //   setShowSOSFinishedModal(false);
-  //   setFinishedSOSData(null);
-
-  //   Toast.show({
-  //     type: "info",
-  //     text1: "Staying on scene",
-  //     text2: "You can continue to monitor the situation.",
-  //   });
-  // };
   return (
     <View className="flex-1  w-full h-full justify-center items-center bg-white relative">
       <Map
@@ -761,7 +719,6 @@ const DetailSOS = () => {
               elevation: 8,
             }}
           >
-            {/* ✅ Success Icon */}
             <View className="items-center mb-4">
               <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center mb-4">
                 <ImageCustom
@@ -776,7 +733,6 @@ const DetailSOS = () => {
               </Text>
             </View>
 
-            {/* ✅ Content */}
             <View className="mb-6">
               <Text className="text-gray-600 text-center text-base leading-6 mb-4">
                 The emergency situation has been successfully resolved. The
@@ -793,19 +749,7 @@ const DetailSOS = () => {
               </View>
             </View>
 
-            {/* ✅ Action Buttons */}
             <View className="flex-row space-x-3 gap-3">
-              {/* Stay Button */}
-              {/* <TouchableOpacity
-                onPress={handleSOSFinishedCancel}
-                className="flex-1 bg-gray-100 py-3 px-4 rounded-lg border border-gray-200"
-              >
-                <Text className="text-gray-700 font-semibold text-center">
-                  Stay Here
-                </Text>
-              </TouchableOpacity> */}
-
-              {/* Go to History Button */}
               <TouchableOpacity
                 onPress={handleSOSFinishedConfirm}
                 className="flex-1 bg-green-500 py-3 px-4 rounded-lg"

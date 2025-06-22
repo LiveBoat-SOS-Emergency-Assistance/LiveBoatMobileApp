@@ -6,7 +6,6 @@ import { sosService } from "../../../services/sos";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomButton from "../../../components/Button/CustomButton";
 import Toast from "react-native-toast-message";
-import { useSocket } from "../../../hooks/useLiveLocation";
 import { useSocketContext } from "../../../context/SocketContext";
 interface SocketEvents {
   TOSERVER_SOS_FINISHED: string;
@@ -14,7 +13,8 @@ interface SocketEvents {
 }
 export default function SOSDisable() {
   const [loading, setLoading] = useState(false);
-  const { socket, setOtherUserMarkers, setUserInfo } = useSocketContext();
+  const { socket, setOtherUserMarkers, setUserInfo, reconnect } =
+    useSocketContext();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   console.log("SOSDisable 20, userId", userId);
   const SOCKET_EVENTS: SocketEvents = {
@@ -57,10 +57,7 @@ export default function SOSDisable() {
 
       setOtherUserMarkers({});
       router.replace("/(tabs)/home");
-      socket?.current?.on("disconnect", () => {
-        console.log("❌ Disconnected from server live location");
-      });
-      socket.current?.connect();
+      reconnect();
       setLoading(false);
     } catch (error: any) {
       console.error(error);

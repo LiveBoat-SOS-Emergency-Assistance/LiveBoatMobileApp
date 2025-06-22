@@ -190,6 +190,7 @@ export default function SOSMap() {
     setOtherUserMarkers,
     displayOrUpdateMarkers,
     registerCommonSocketEvents,
+    reconnect,
   } = useSocketContext();
   const SOCKET_EVENTS: SocketEvents = {
     TOCLIENT_HELPER_LOCATIONS: "TOCLIENT_HELPER_LOCATIONS",
@@ -382,8 +383,10 @@ export default function SOSMap() {
         "accuracySOS",
         "sosId",
       ]);
+      const userType = "NORMAL";
+      setUserInfo(userType);
+      console.log("userid", userId);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
-      // displayOrUpdateMarkers([]);
       setOtherUserMarkers({});
       Toast.show({
         type: "info",
@@ -394,10 +397,7 @@ export default function SOSMap() {
       });
       console.log("Result", result);
       router.push("/(tabs)/home");
-      socket?.current?.on("disconnect", () => {
-        console.log("❌ Disconnected from server live location");
-      });
-      socket.current?.connect();
+      reconnect();
     } catch (error: any) {
       console.error(error);
     }

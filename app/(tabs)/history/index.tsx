@@ -113,9 +113,8 @@ export default function History() {
 
       const hasRescueFilter = filters.includes("has_rescue");
       const noRescueFilter = filters.includes("no_rescue");
-
+      filterParams.high_urgency = true;
       if (hasRescueFilter && noRescueFilter) {
-        // Both selected, no filter
       } else if (hasRescueFilter) {
         filterParams.has_rescuers = true;
       } else if (noRescueFilter) {
@@ -135,7 +134,6 @@ export default function History() {
       }
 
       const result = await sosService.getSOSByStatus("ONGOING", filterParams);
-
       if (result?.data) {
         const newData: SOSItem[] = result.data || [];
 

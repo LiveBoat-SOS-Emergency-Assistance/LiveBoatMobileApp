@@ -64,6 +64,7 @@ export class sosService {
       latitude?: number;
       longitude?: number;
       search?: string;
+      high_urgency?: boolean;
     }
   ) {
     try {
@@ -90,6 +91,9 @@ export class sosService {
         }
         if (filters.search && filters.search.trim()) {
           params.search = filters.search.trim();
+        }
+        if (filters.high_urgency !== undefined) {
+          params.high_urgency = filters.high_urgency;
         }
       }
 
@@ -153,6 +157,19 @@ export class sosService {
           "Content-Type": "application/json",
         },
       });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+  static async reportUser(sosId: number, data: any) {
+    try {
+      const result = await axiosPrivate.post(`/sos/report/${sosId}`, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        requiresAuth: true,
+      } as CustomAxiosRequestConfig);
       return result;
     } catch (error: any) {
       throw error;

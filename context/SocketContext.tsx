@@ -9,6 +9,7 @@ import io, { Socket } from "socket.io-client";
 import Toast from "react-native-toast-message";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { baseURL } from "../baseUrl";
+import { router } from "expo-router";
 
 interface Marker {
   userId: number;
@@ -22,13 +23,14 @@ interface Marker {
 
 interface SocketContextType {
   socket: React.MutableRefObject<Socket | null>;
+  socketCopy: React.MutableRefObject<Socket | null>;
   userId: number;
   myLocation: [number, number] | null;
   otherUserMarkers: Record<number, Marker>;
   setOtherUserMarkers: React.Dispatch<
     React.SetStateAction<Record<number, Marker>>
   >;
-  initializeSocket: () => void;
+  initializeSocket: () => Promise<void>;
   updateLocation: (
     latitude: number,
     longitude: number,
@@ -52,6 +54,7 @@ interface SocketContextType {
   ) => Promise<boolean>;
   joinGroup: (groupId: number, userId: number) => void;
   clearAndRefreshMarkers: () => void;
+  reconnect: () => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -66,8 +69,6 @@ const SOCKET_EVENTS = {
   TOSERVER_SET_USER_INFO: "TOSERVER_SET_USER_INFO",
   TOCLIENT_SOS_FINISHED: "TOCLIENT_SOS_FINISHED",
   TOCLIENT_HELPER_LOCATIONS: "TOCLIENT_HELPER_LOCATIONS",
-
-  //
   RECEIVE_MESSAGE: "receive_message",
   CHAT_HISTORY: "chat_history",
   JOIN_GROUP: "join_group",
@@ -86,38 +87,73 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     Record<number, Marker>
   >({});
   const socketRef = useRef<Socket | null>(null);
+  const [helpingUserId, setHelpingUserId] = useState<number | null>(null);
+  const [showSOSFinishedModal, setShowSOSFinishedModal] = useState(false);
+  const [finishedSOSData, setFinishedSOSData] = useState<any>(null);
+  const [checkSOS, setCheckSOS] = useState<boolean>(false);
 
-  const initializeSocket = () => {
-    if (!socketRef.current) {
-      socketRef.current = io(serverUrl);
-      console.log("✅ Socket initialized");
-      socketRef.current.on("connect", () => {
-        console.log(`✅ Connected to server: ${socketRef.current?.id}`);
-        registerCommonSocketEvents();
-      });
-
-      socketRef.current.on("disconnect", () => {
-        console.log("❌ Disconnected from server live location");
-      });
-
-      socketRef.current.on("connect_error", (error: Error) => {
-        console.error("❌ Connection error:", error.message);
-        Toast.show({
-          type: "error",
-          text1: "Connection Error",
-          text2: error.message,
-        });
-      });
+  const initializeSocket = async () => {
+    // Check if socket is already initialized
+    if (socketRef.current && socketRef.current.id) {
+      console.log(
+        "Socket already initialized, skipping initialization",
+        socketRef.current.id
+      );
+      return;
     }
+
+    console.log("Creating new socket connection");
+    socketRef.current = io(serverUrl, {
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    console.log("✅ Socket initialized");
+
+    socketRef.current.on("connect", () => {
+      console.log(`✅ Connected to server: ${socketRef.current?.id}`);
+      registerCommonSocketEvents();
+    });
+
+    socketRef.current.on("disconnect", () => {
+      console.log("❌ Disconnected from server live location");
+    });
+
+    socketRef.current.on("connect_error", (error: Error) => {
+      console.error("❌ Connection error:", error.message);
+      Toast.show({
+        type: "error",
+        text1: "Connection Error",
+        text2: error.message,
+      });
+    });
+
+    console.log("Finished initializeSocket");
   };
 
-  const registerCommonSocketEvents = async () => {
-    if (!socketRef.current) return;
-    // setUserInfo("NORMAL");
+  const reconnect = () => {
+    if (socketRef.current) {
+      console.log("🔄 Reconnecting socket...");
+      socketRef.current.off();
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+    initializeSocket();
+  };
+
+  const registerCommonSocketEvents = () => {
+    console.log("Registering common socket events");
+    if (!socketRef.current) {
+      console.log("No socket instance available");
+      return;
+    }
+    console.log("Socket ID:", socketRef.current.id);
+
     socketRef.current.on(
       SOCKET_EVENTS.TOCLIENT_COMMON_GROUPS_LOCATIONS,
       (data: Marker[]) => {
-        // console.log("Common groups locations:", data);
+        console.log("Received common group locations:", data);
         displayOrUpdateMarkers(data);
       }
     );
@@ -133,12 +169,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }
     );
-    // setInterval(() => {
-    //   if (socketRef.current) {
-    //     socketRef.current.emit(SOCKET_EVENTS.TOSERVER_HEARTBEAT);
-    //   }
-    // }, 5000);
   };
+
   const clearAndRefreshMarkers = async () => {
     console.log("🧹 Clearing all markers and requesting fresh data");
 
@@ -152,7 +184,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         {
           forceRefresh: true,
           timestamp: Date.now(),
-          clearPrevious: true,
+          clearPrevious: false,
         }
       );
     }
@@ -178,16 +210,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setUserInfo = async (userType: string) => {
     if (socketRef.current) {
-      console.log("setUserInfo calll");
+      console.log("setUserInfo called");
       try {
         const groupIds = JSON.parse(
           (await AsyncStorage.getItem("groupIds")) || "[]"
         );
-        console.log("groupIds 165 SocketContext", groupIds);
+        console.log("groupIds SocketContext", groupIds);
         const profileData = await AsyncStorage.getItem("profile");
-        // console.log("profileData 165 SocketContext", profileData);
         const parsedProfile = JSON.parse(profileData || "{}");
         const userId = Number(parsedProfile?.user_id) || 0;
+        setUserId(userId);
         const avatarUrl =
           parsedProfile?.User?.avatar_url || "https://i.pravatar.cc/150";
 
@@ -199,15 +231,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
           timestamp: Date.now(),
           accuracy: 0,
         });
-        console.log("information sent to server:", {
-          userId,
-          avatarUrl,
-          groupIds,
-          userType,
-          timestamp: Date.now(),
-          accuracy: 0,
-        });
-        console.log("after set userInfo calll");
       } catch (error: any) {
         console.error("Error setting user info:", error.message);
       }
@@ -227,6 +250,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       accuracy,
     });
   };
+
   const displayOfflineMarker = (
     userId: number,
     longitude: number,
@@ -246,6 +270,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       },
     }));
   };
+
   const sendMessage = async (
     senderId: number,
     groupId: number,
@@ -290,7 +315,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    initializeSocket();
+    console.log("Running useEffect to initialize socket");
+    const init = async () => {
+      await initializeSocket();
+    };
+    init();
 
     const interval = setInterval(() => {
       if (socketRef.current) {
@@ -299,6 +328,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }, 5000);
 
     return () => {
+      console.log("Cleaning up useEffect");
       clearInterval(interval);
       socketRef.current?.disconnect();
       socketRef.current = null;
@@ -309,6 +339,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     <SocketContext.Provider
       value={{
         socket: socketRef,
+        socketCopy: socketRef,
         userId,
         myLocation,
         otherUserMarkers,
@@ -323,6 +354,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         messages,
         joinGroup,
         clearAndRefreshMarkers,
+        reconnect,
+        // showSOSFinishedModal,
+        // closeSOSFinishedModal,
       }}
     >
       {children}

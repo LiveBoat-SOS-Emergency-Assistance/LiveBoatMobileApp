@@ -26,6 +26,7 @@ import { initializeChatModule } from "../../../sockets/ChatModule";
 import { useAuth } from "../../../context/AuthContext";
 import { useSocketContext } from "../../../context/SocketContext";
 import { ActivityIndicator } from "react-native";
+import Report from "../../../components/Report/Report";
 
 interface SOSProfile {
   accuracy: string;
@@ -78,14 +79,13 @@ const ProfileSOS = () => {
   const [loading, setLoading] = useState(false);
   const [groupId, setGroupId] = useState<number | null>(null);
   const [loadingButton, setLoadingButton] = useState(false);
+  const [listReport, setListReport] = useState<any[]>([]);
   const getMyRescuerCurrent = async () => {
     try {
       const result = await rescuerServices.getSOSCurrent();
       if (result && result.data && result.data.sos_id === id) {
-        console.log("dang helping");
         setCheckHelping("true");
       } else {
-        console.log("not helping");
         setCheckHelping("false");
       }
     } catch (error: any) {
@@ -97,7 +97,6 @@ const ProfileSOS = () => {
 
   useFocusEffect(
     useCallback(() => {
-      console.log("📱 ProfileSOS screen focused - refreshing helping status");
       if (id) {
         getMyRescuerCurrent();
       }
@@ -111,6 +110,7 @@ const ProfileSOS = () => {
         Number(result.data.user_id)
       );
       const dataGroupId = await sosService.getGroupBySOSID(Number(id));
+      setListReport(result.data.extra_data.reports.reverse() || []);
 
       const loc = await getCurrentLocation();
       if (loc) {
@@ -120,7 +120,6 @@ const ProfileSOS = () => {
           accuracy: loc.accuracy,
         });
       }
-      console.log("126 ProfileSOS", result.data.user_id);
       setIdSender(result.data.user_id);
       setProfileSOS(result.data);
       setUserProfile(resultUserProfile.data);
@@ -179,10 +178,8 @@ const ProfileSOS = () => {
         });
       }
       if (socket.current) {
-        console.log("🧹 Cleaning up socket connections...");
         socket.current.disconnect();
         socket.current.connect();
-        console.log("✅ Socket cleanup completed");
       }
 
       Toast.show({
@@ -250,9 +247,39 @@ const ProfileSOS = () => {
       });
     }
   };
+  const handleWarnUserMessage = async (message: string) => {
+    try {
+      // Send the warning message
+      const result = await sosService.reportUser(Number(id), {
+        extra_data: {
+          send_new_report: {
+            reason: message,
+          },
+        },
+      });
+      console.log("Report result:", result.data);
+
+      // Fetch updated report data after sending warning
+      const updatedSOSResult = await sosService.getSOSById(Number(id));
+      console.log("Updated reports:", updatedSOSResult.data.extra_data.reports);
+      setListReport(updatedSOSResult.data.extra_data.reports.reverse() || []);
+
+      Toast.show({
+        type: "success",
+        text1: "Warning Sent",
+        text2: "Warning message has been sent to the user.",
+      });
+    } catch (error: any) {
+      console.log("Error sending warning message:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error!",
+        text2: "You have already warned this sos.",
+      });
+    }
+  };
   return (
     <SafeAreaView className="flex-1">
-      {/* Back Button */}
       <View className="absolute top-12 left-4 z-10">
         <TouchableOpacity
           onPress={() => router.replace("/(tabs)/history")}
@@ -388,6 +415,11 @@ const ProfileSOS = () => {
                 {profileSOS?.description}
               </Text>
             </View>
+            <Report
+              data={listReport}
+              // onReportAction={handleReportAction}
+              onWarnUser={handleWarnUserMessage}
+            />
             <View
               style={{
                 shadowColor: "#000",
@@ -439,7 +471,6 @@ const ProfileSOS = () => {
                 />
               </View>
             </View>
-
             <View
               style={{
                 shadowColor: "#000",
@@ -471,6 +502,7 @@ const ProfileSOS = () => {
                 />
               </View>
             </View>
+            {/* Reports Section */}
           </View>
         </View>
       </ScrollView>

@@ -6,6 +6,7 @@ import axios from "axios";
 import { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "@env";
 import { router } from "expo-router";
 import Avatar from "../Image/Avatar";
+import { SOSType, SOSTypeDisplay } from "../../types/sosType";
 
 interface cardProps {
   data: any;
@@ -77,18 +78,27 @@ const SOSCardFilter = ({ data }: cardProps) => {
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays}d ago`;
   };
-
-  // ✅ Get emergency type icon
-  const getEmergencyIcon = (name: string) => {
-    const lowerName = name?.toLowerCase() || "";
-    if (lowerName.includes("water") || lowerName.includes("drowning"))
-      return "🌊";
-    if (lowerName.includes("fire")) return "🔥";
-    if (lowerName.includes("medical") || lowerName.includes("health"))
-      return "🏥";
-    if (lowerName.includes("accident")) return "🚗";
-    if (lowerName.includes("lost")) return "🧭";
-    return "🚨";
+  // ✅ Get emergency type icon from category
+  const getEmergencyIcon = (category: string) => {
+    switch (category) {
+      case SOSType.DANGER:
+        return "🚨";
+      case SOSType.MEDICAL:
+        return "🏥";
+      case SOSType.VEHICLE:
+        return "🚗";
+      case SOSType.DISASTER:
+        return "🔥";
+      case SOSType.THREATENED:
+        return "⚠️";
+      case SOSType.LOST:
+        return "🧭";
+      case SOSType.UNSAFE:
+        return "�";
+      case SOSType.UNSPECIFIED:
+      default:
+        return "❓";
+    }
   };
 
   return (
@@ -130,7 +140,9 @@ const SOSCardFilter = ({ data }: cardProps) => {
                 elevation: 3,
               }}
             >
-              <Text className="text-2xl">{getEmergencyIcon(data?.name)}</Text>
+              <Text className="text-2xl">
+                {getEmergencyIcon(data?.extra_data?.category || data?.category)}
+              </Text>
             </View>
 
             {/* ✅ Content */}
@@ -182,17 +194,16 @@ const SOSCardFilter = ({ data }: cardProps) => {
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center space-x-3 gap-2">
                   {/* Distance indicator */}
-                  {/* <View className="flex-row items-center">
-                    <ImageCustom
-                      width={14}
-                      height={14}
-                      source="https://img.icons8.com/?size=100&id=85018&format=png&color=059669"
-                      className="mr-1"
-                    />
+                  <View className="flex-row items-center">
+                    
                     <Text className="text-green-600 text-xs font-medium">
-                      Nearby
+                      {
+                        SOSTypeDisplay[
+                          data.extra_data?.category || SOSType.UNSPECIFIED
+                        ]
+                      }
                     </Text>
-                  </View> */}
+                  </View>
 
                   {/* Responders count */}
                   <View className="flex-row items-center">
