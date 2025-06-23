@@ -74,6 +74,7 @@ const DetailSOS = () => {
     otherUserMarkers,
     displayOfflineMarker,
     displayOrUpdateMarkers,
+    setOtherUserMarkers,
     registerCommonSocketEvents,
     clearAndRefreshMarkers,
     reconnect,
@@ -202,8 +203,7 @@ const DetailSOS = () => {
       console.log("Fetching SOS by ID:", sosId);
       const result = await sosService.getSOSById(Number(sosId));
       console.log("Current SOS:", profileSOS);
-      // setSOS(result.data);
-      setSOS(profileSOS);
+      setSOS(result.data?.name);
       if (helpingUserId === null) {
         setHelpingUserId(result.data?.user_id);
       }
@@ -252,8 +252,6 @@ const DetailSOS = () => {
       if (data.userId == helpingUserIdRef.current) {
         setFinishedSOSData(data);
         setShowSOSFinishedModal(true);
-
-        // ✅ Update states
         setHelpingUserId(null);
         setCheckSOS(false);
       }
@@ -377,18 +375,16 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
-        if (!checkCommonGroups) {
-          reconnect();
-        }
+        reconnect();
         setUserInfo("NORMAL");
-        console.log("✅ Socket cleanup completed");
+        setTimeout(() => {
+          clearAndRefreshMarkers();
+        }, 1000);
       }
       if (chatSocket) {
-        console.log("🧹 Cleaning up chat socket...");
         chatSocket.off("receive_message");
         chatSocket.off("chat_history");
         chatSocket.emit("leave_room", { groupId });
-        console.log("✅ Chat socket cleanup completed");
       }
     }
     router.back();
@@ -405,26 +401,22 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
       }
 
-      // ✅ Cleanup chat socket
       if (chatSocket) {
         chatSocket.off("receive_message");
         chatSocket.off("chat_history");
         chatSocket.emit("leave_room", { groupId });
       }
 
-      // ✅ Reset user info
       setUserInfo("NORMAL");
       clearAndRefreshMarkers();
 
-      // ✅ Close modal
       setShowSOSFinishedModal(false);
       setFinishedSOSData(null);
 
-      // ✅ Navigate to history
       router.replace("/(tabs)/history");
     } catch (error) {
       console.error("Error handling SOS finished:", error);
-      // Still navigate even if cleanup fails
+
       setShowSOSFinishedModal(false);
       router.replace("/(tabs)/history");
     }
@@ -452,7 +444,9 @@ const DetailSOS = () => {
         />
       </TouchableOpacity>
       <View className=" bg-[#EB4747] absolute top-12 rounded-[30px] opacity-90 px-7 py-3 flex justify-center items-center">
-        <Text className="font-bold text-white ">Traffic Accident</Text>
+        <Text className="font-bold text-white ">
+          {SOS || `Emergency No.${sosId}`}
+        </Text>
       </View>
 
       <View className="absolute top-12 right-5 flex flex-col gap-3">

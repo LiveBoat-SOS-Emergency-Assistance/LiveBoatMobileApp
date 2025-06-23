@@ -168,7 +168,6 @@ const ProfileSOS = () => {
   const handleCancelSOS = async () => {
     try {
       setLoadingButton(true);
-      // console.log(currentSOS.SOS);
       if (profileSOS) {
         const result = await rescuerServices.updateRescuer({
           longitude: profileSOS.longitude,

@@ -322,7 +322,9 @@ const Map = ({
                   return (
                     <RippleMarker
                       marker={marker}
-                      key={`sos-marker-${marker?.userId || sosSender?.user_id}`}
+                      key={`sos-marker1-${
+                        marker?.userId || sosSender?.user_id
+                      }`}
                       id={String(sosSender?.user_id || marker.userId)}
                       coordinate={[marker.longitude, marker.latitude]}
                       isOnline={marker.isOnline}
