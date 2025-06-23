@@ -28,21 +28,21 @@ const FAQ = () => {
       id: 1,
       question: "How to send an emergency SOS signal?",
       answer:
-        "To send an SOS signal, tap the red emergency button on the home screen. Hold for 3 seconds to activate. Your location and emergency details will be sent to nearby rescuers automatically.",
-      gif: "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif",
+        "To send an SOS signal, tap the red emergency button on the home screen. Hold for 3 seconds to activate. Your location and emergency details will be sent to nearby citizens automatically.",
+      gif: "../../../assets/gif/flow1.gif",
       category: "emergency",
     },
     {
       id: 2,
-      question: "How to start a live stream for rescue?",
+      question: "How to start a live stream?",
       answer:
-        "Go to the Home tab, tap 'Start Live Stream', allow camera and microphone permissions. Your live video will be broadcast to rescue teams and volunteers in your area.",
+        "Go to the Home tab, tap 'Start Live Stream', allow camera and microphone permissions. Your live video will be broadcast to everyone in your area.",
       gif: "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
       category: "emergency",
     },
     {
       id: 3,
-      question: "How to join a rescue squad?",
+      question: "How to join a squad?",
       answer:
         "Navigate to the Squad tab, browse available squads in your area, and tap 'Join'. You may need to meet certain requirements and be approved by squad leaders.",
       gif: "https://media.giphy.com/media/3o7qDEq2bMbcbPRQ2c/giphy.gif",
@@ -254,10 +254,20 @@ const FAQ = () => {
                     {item.gif && (
                       <View className="mb-4 rounded-xl overflow-hidden">
                         <Image
-                          source={{ uri: item.gif }}
+                          source={
+                            item.gif.startsWith("http") ||
+                            item.gif.startsWith("https")
+                              ? { uri: item.gif }
+                              : require("../../../assets/gif/flow1.gif")
+                          }
                           style={{
                             width: "100%",
-                            height: 200,
+                            // height: 400,
+                            height:
+                              item.gif.startsWith("http") ||
+                              item.gif.startsWith("https")
+                                ? 200
+                                : 500,
                             borderRadius: 12,
                           }}
                           resizeMode="cover"
