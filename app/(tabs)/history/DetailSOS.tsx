@@ -326,15 +326,10 @@ const DetailSOS = () => {
         socket.current.off(SOCKET_EVENTS.TOCLIENT_USER_DISCONNECTED);
         socket.current.off(SOCKET_EVENTS.TOCLIENT_SOS_FINISHED);
         reconnect();
-        // if (!checkCommonGroups) {
-        //   reconnect();
-        //   setUserInfo("NORMAL");
-        // } else {
-        //   socket.current?.on("disconnect", () => {
-        //     console.log("❌ Disconnected from server live location");
-        //   });
-        //   socket.current?.connect();
-        // }
+        setUserInfo("NORMAL");
+        setTimeout(() => {
+          clearAndRefreshMarkers();
+        }, 1000);
       }
       if (chatSocket) {
         chatSocket.off("receive_message");

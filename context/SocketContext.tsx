@@ -69,6 +69,7 @@ const SOCKET_EVENTS = {
   TOSERVER_SET_USER_INFO: "TOSERVER_SET_USER_INFO",
   TOCLIENT_SOS_FINISHED: "TOCLIENT_SOS_FINISHED",
   TOCLIENT_HELPER_LOCATIONS: "TOCLIENT_HELPER_LOCATIONS",
+  TOCLIENT_SOS_LOCATIONS: "TOCLIENT_SOS_LOCATIONS",
   RECEIVE_MESSAGE: "receive_message",
   CHAT_HISTORY: "chat_history",
   JOIN_GROUP: "join_group",
@@ -153,7 +154,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     socketRef.current.on(
       SOCKET_EVENTS.TOCLIENT_COMMON_GROUPS_LOCATIONS,
       (data: Marker[]) => {
-        console.log("Received common group locations:", data);
         displayOrUpdateMarkers(data);
       }
     );
@@ -185,6 +185,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
           forceRefresh: true,
           timestamp: Date.now(),
           clearPrevious: false,
+        }
+      );
+      socketRef.current.on(
+        SOCKET_EVENTS.TOCLIENT_SOS_LOCATIONS,
+        (data: any) => {
+          if (!data || data.length === 0) {
+            console.log("No SOS locations received");
+            return;
+          }
+          displayOrUpdateMarkers(data);
         }
       );
     }
