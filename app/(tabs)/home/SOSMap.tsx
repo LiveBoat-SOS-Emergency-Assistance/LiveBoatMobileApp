@@ -190,6 +190,7 @@ export default function SOSMap() {
     setOtherUserMarkers,
     displayOrUpdateMarkers,
     registerCommonSocketEvents,
+    clearAndRefreshMarkers,
     reconnect,
   } = useSocketContext();
   const SOCKET_EVENTS: SocketEvents = {
@@ -220,13 +221,6 @@ export default function SOSMap() {
       socket?.current?.on(SOCKET_EVENTS.TOCLIENT_HELPER_LOCATIONS, (data) => {
         // console.log("The Helper locations:", data);
         if (data) {
-          // Toast.show({
-          //   type: "info",
-          //   text1: "Notification",
-          //   text2: "Someone is coming to support you!",
-          //   position: "top",
-          //   visibilityTime: 2000,
-          // });
           console.log("191 Data Rescuer of SOSMap:", data);
           // setListRescuer(data);
           displayOrUpdateMarkers(data);
@@ -383,8 +377,8 @@ export default function SOSMap() {
         "accuracySOS",
         "sosId",
       ]);
-      const userType = "NORMAL";
-      setUserInfo(userType);
+      // const userType = "NORMAL";
+      // setUserInfo(userType);
       console.log("userid", userId);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
       setOtherUserMarkers({});
@@ -396,8 +390,12 @@ export default function SOSMap() {
         visibilityTime: 2000,
       });
       console.log("Result", result);
-      router.push("/(tabs)/home");
       reconnect();
+      setUserInfo("NORMAL");
+      setTimeout(() => {
+        clearAndRefreshMarkers();
+      }, 1000);
+      router.push("/(tabs)/home");
     } catch (error: any) {
       console.error(error);
     }

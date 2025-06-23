@@ -13,8 +13,13 @@ interface SocketEvents {
 }
 export default function SOSDisable() {
   const [loading, setLoading] = useState(false);
-  const { socket, setOtherUserMarkers, setUserInfo, reconnect } =
-    useSocketContext();
+  const {
+    socket,
+    setOtherUserMarkers,
+    setUserInfo,
+    reconnect,
+    clearAndRefreshMarkers,
+  } = useSocketContext();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   console.log("SOSDisable 20, userId", userId);
   const SOCKET_EVENTS: SocketEvents = {
@@ -30,8 +35,8 @@ export default function SOSDisable() {
       const accuracy = await AsyncStorage.getItem("accuracySOS");
       const sosId = await AsyncStorage.getItem("sosId");
       console.log("socket emit", userId);
-      const userType = "NORMAL";
-      setUserInfo(userType);
+      // const userType = "NORMAL";
+      // setUserInfo(userType);
       console.log("SOSDisable 30, sosId userId", sosId, userId);
       socket?.current?.emit(SOCKET_EVENTS.TOSERVER_SOS_FINISHED, { userId });
 
@@ -56,8 +61,13 @@ export default function SOSDisable() {
       });
 
       setOtherUserMarkers({});
-      router.replace("/(tabs)/home");
       reconnect();
+      setUserInfo("NORMAL");
+      setTimeout(() => {
+        clearAndRefreshMarkers();
+      }, 1000);
+      router.replace("/(tabs)/home");
+
       setLoading(false);
     } catch (error: any) {
       console.error(error);
