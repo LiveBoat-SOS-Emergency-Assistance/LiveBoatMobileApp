@@ -49,6 +49,7 @@ const RippleMarker = ({
       if (isNaN(numericId) || numericId <= 0) {
         return;
       }
+      console.log("Fetching profile for ID:", numericId);
       const result = await userServices.getUserByID(numericId);
 
       if (result?.data) {

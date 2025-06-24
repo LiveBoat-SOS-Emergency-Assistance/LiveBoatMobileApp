@@ -135,35 +135,6 @@ export default function HomeScreen() {
     };
   }, []);
 
-  const handleGiveSupport = async (id: string) => {
-    try {
-      const result = await rescuerServices.postRescuer(Number(id), location);
-      if (result) {
-        Toast.show({
-          type: "success",
-          text1: "Help on the way!",
-          text2: "Thank you for responding to the SOS. Stay safe!",
-        });
-        await AsyncStorage.setItem("SOSID", id.toString());
-
-        router.push({
-          pathname: "/(tabs)/history/DetailSOS",
-          params: {
-            userProfile: JSON.stringify(profile),
-            checkHelping: "true",
-          },
-        });
-      }
-    } catch (error: any) {
-      Toast.show({
-        type: "error",
-        text1: "Notification!",
-        text2: "You are already assisting another SOS request.",
-      });
-      console.log("Error", error.response?.data);
-    }
-  };
-
   useEffect(() => {
     if (!socket.current || !currentSOS) return;
 

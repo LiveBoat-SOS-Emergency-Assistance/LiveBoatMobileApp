@@ -322,10 +322,8 @@ const Map = ({
                   return (
                     <RippleMarker
                       marker={marker}
-                      key={`sos-marker1-${
-                        marker?.userId || sosSender?.user_id
-                      }`}
-                      id={String(sosSender?.user_id || marker.userId)}
+                      key={`sos-marker1-${marker?.userId}`}
+                      id={String(marker.userId)}
                       coordinate={[marker.longitude, marker.latitude]}
                       isOnline={marker.isOnline}
                       onPress={() => {
@@ -341,8 +339,8 @@ const Map = ({
                           accuracy: Number(marker.accuracy) || 10,
                           userType: "SENDER",
                           avatarUrl:
-                            sosSender?.User?.avatar_url ||
                             marker.avatarUrl ||
+                            sosSender?.User?.avatar_url ||
                             "",
                           name: `${
                             marker.name || sosSender?.name || `${marker.userId}`
