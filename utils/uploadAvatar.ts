@@ -1,12 +1,12 @@
 import { baseURL } from "../baseUrl";
 import ImageResizer from "react-native-image-resizer";
+import axios from 'axios';
 
 async function convertWebpToPng(file: {
   uri: string;
   type: string;
   name: string;
 }) {
-  console.log("🛠 Converting webp to png...");
   const converted = await ImageResizer.createResizedImage(
     file.uri,
     1000,
@@ -33,7 +33,7 @@ export async function uploadFileToGCS(file: {
       finalFile = await convertWebpToPng(file);
     }
 
-    const response = await fetch(`${baseURL}/gcp-storage/generate-signed-url`, {
+    const response = await fetch(`${baseURL}/file-storage/cloudinary/generate-signed-url`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -47,27 +47,36 @@ export async function uploadFileToGCS(file: {
     });
 
     const data = await response.json();
+    const { signedUrl, fileUrl, public_id, timestamp, signature, api_key } = data[0];
 
-    const { signedUrl, fileUrl } = data[0];
+    const formData = new FormData();
+    formData.append("file", {
+      uri: finalFile.uri,
+      type: finalFile.type,
+      name: finalFile.name,
+    });
+    formData.append("api_key", api_key);
+    formData.append("timestamp", timestamp);
+    formData.append("signature", signature);
+    formData.append("public_id", public_id);
 
-    const blob = await (await fetch(finalFile.uri)).blob();
-    const uploadResponse = await fetch(signedUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": finalFile.type,
-      },
-      body: blob,
+    try {
+      if (typeof formData === "object" && formData !== null && "_parts" in formData) {
+        // @ts-ignore
+        void formData._parts.map((p: any) => p[0]);
+      }
+    } catch (e) {}
+
+    const uploadResponse = await axios.post(signedUrl, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
-    if (uploadResponse.ok) {
-      console.log("✅ File uploaded to GCS successfully!");
-      return { success: true, fileUrl };
+    if (uploadResponse.data.secure_url) {
+      return { success: true, fileUrl: uploadResponse.data.secure_url };
     } else {
-      console.error("❌ File upload failed:", uploadResponse.statusText);
       return { success: false };
     }
   } catch (error) {
-    console.error("❌ Error uploading file:", error);
     return { success: false };
   }
 }

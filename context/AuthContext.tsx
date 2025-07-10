@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!loading) {
         SplashScreen.hide();
         if (accessToken) {
-          router.replace("/(tabs)/home");
+          router.replace("/onboarding");
         } else {
           router.replace("/");
         }

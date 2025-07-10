@@ -13,4 +13,5 @@ export const SCREENS: Record<string, ScreenConfig> = {
   FORGOT_PASSWORD: { name: "(auth)/forgot_password", title: "" },
   CHANGE_PASSWORD: { name: "(auth)/change_password", title: "" },
   VERIFY_EMAIL_PASSWORD: { name: "(auth)/verify_email_phone", title: "" },
+  ONBOARDING: { name: "onboarding", title: "" },
 };

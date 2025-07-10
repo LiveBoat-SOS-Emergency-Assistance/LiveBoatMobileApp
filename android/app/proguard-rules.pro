@@ -12,3 +12,12 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
+# Don't strip MediaSoup classes
+-keep class org.mediasoup.** { *; }
+-keep class io.socket.** { *; }
+-keep class org.webrtc.** { *; }
+
+# Keep native method bindings
+-keepclasseswithmembers class * {
+    native <methods>;
+}

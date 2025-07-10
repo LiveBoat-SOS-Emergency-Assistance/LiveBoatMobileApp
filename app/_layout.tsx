@@ -36,6 +36,10 @@ const Layout = () => {
               }}
             >
               <Stack.Screen
+                name={SCREENS.ONBOARDING.name}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
                 name={SCREENS.INDEX.name}
                 options={{ headerShown: false }}
               />
